@@ -1,0 +1,242 @@
+@startuml SRS_Review_and_Edit_Sequence
+
+title SRS Review, Edit, and Approval Workflow
+
+actor "Product Owner" as PO
+actor "Software Engineer" as SE
+participant "React Frontend" as FE
+participant "API Gateway" as API
+participant "ArtifactService" as AS
+participant "MongoDB" as DB
+participant "NotificationService" as NS
+
+== View SRS Document ==
+
+PO -> FE: Click "View SRS"
+activate FE
+FE -> API: GET /api/projects/{id}/artifacts/?type=SRS
+activate API
+
+API -> API: Verify permissions
+API -> AS: get_artifacts(project_id, type=SRS)
+activate AS
+
+AS -> DB: SELECT artifacts\nWHERE project_id AND type='SRS'\nORDER BY version DESC
+activate DB
+DB --> AS: [srs_artifact]
+deactivate DB
+
+AS --> API: {artifact}
+deactivate AS
+API --> FE: 200 OK\n{srs_data, version: 1.0}
+deactivate API
+
+FE -> FE: Render rich text editor
+FE --> PO: Display SRS sections
+deactivate FE
+
+== Edit SRS Content ==
+
+PO -> FE: Edit "Functional Requirements" section
+activate FE
+FE -> FE: Track changes locally
+
+note right of FE
+  Auto-save every 30 seconds
+end note
+
+FE -> API: PATCH /api/artifacts/{id}/\n{section: "3.1", content: "..."}
+activate API
+
+API -> AS: update_artifact_section(artifact_id, data)
+activate AS
+
+AS -> DB: SELECT artifact FOR UPDATE
+activate DB
+DB --> AS: current_artifact
+deactivate DB
+
+AS -> AS: Validate content
+AS -> AS: Create version snapshot
+
+AS -> DB: INSERT artifact_version\n(artifact_id, version: 1.1, changes)
+activate DB
+DB --> AS: version_id
+deactivate DB
+
+AS -> DB: UPDATE artifact\n(content, version=1.1, updated_at)
+activate DB
+DB --> AS: OK
+deactivate DB
+
+AS -> DB: INSERT activity_log\n(action="SRS_EDITED", user_id, changes)
+activate DB
+DB --> AS: OK
+deactivate DB
+
+AS --> API: {artifact, version: 1.1}
+deactivate AS
+API --> FE: 200 OK
+deactivate API
+FE --> PO: Show "Saved" indicator
+deactivate FE
+
+== Add Comment ==
+
+SE -> FE: Navigate to SRS (read-only)
+activate FE
+FE -> API: GET /api/artifacts/{id}/
+activate API
+API -> DB: SELECT artifact
+activate DB
+DB --> API: artifact
+deactivate DB
+API --> FE: {artifact}
+deactivate API
+FE --> SE: Display SRS
+deactivate FE
+
+SE -> FE: Select section, click "Add Comment"
+activate FE
+SE -> FE: Type: "Should we add auth requirements?"
+FE -> API: POST /api/comments/\n{entity_type: "ARTIFACT",\nentity_id: artifact_id,\ncontent: "..."}
+activate API
+
+API -> DB: INSERT comment
+activate DB
+DB --> API: comment_id
+deactivate DB
+
+API -> NS: notify_mentioned_users(@PO)
+activate NS
+NS -> NS: Send email notification
+NS -> DB: INSERT notification
+activate DB
+DB --> NS: OK
+deactivate DB
+NS --> API: OK
+deactivate NS
+
+API --> FE: 201 Created\n{comment}
+deactivate API
+FE --> SE: Show comment inline
+deactivate FE
+
+== Respond to Comment ==
+
+PO -> FE: Receive notification
+activate FE
+FE -> API: GET /api/notifications/
+activate API
+API -> DB: SELECT notifications\nWHERE user_id\nORDER BY timestamp DESC
+activate DB
+DB --> API: [notifications]
+deactivate DB
+API --> FE: {notifications}
+deactivate API
+FE --> PO: Show "1 new comment"
+deactivate FE
+
+PO -> FE: Click notification, navigate to comment
+activate FE
+FE -> FE: Highlight commented section
+FE --> PO: Show comment thread
+deactivate FE
+
+PO -> FE: Click "Reply"
+activate FE
+PO -> FE: Type: "Good point, I'll add it"
+FE -> API: POST /api/comments/\n{parent_comment_id: comment_id,\ncontent: "..."}
+activate API
+
+API -> DB: INSERT comment\n(parent_comment_id)
+activate DB
+DB --> API: reply_id
+deactivate DB
+
+API -> NS: notify_thread_participants
+activate NS
+NS --> API: OK
+deactivate NS
+
+API --> FE: 201 Created
+deactivate API
+FE --> PO: Show reply in thread
+deactivate FE
+
+== Approval Workflow ==
+
+PO -> FE: Review complete, click "Approve SRS"
+activate FE
+FE -> FE: Show confirmation dialog
+FE -> API: POST /api/artifacts/{id}/approve/
+activate API
+
+API -> AS: approve_srs(artifact_id, user_id)
+activate AS
+
+AS -> DB: SELECT artifact
+activate DB
+DB --> AS: artifact
+deactivate DB
+
+alt SRS status is DRAFT
+  AS -> DB: UPDATE artifact\n(status='APPROVED',\napproved_by, approved_at)
+  activate DB
+  DB --> AS: OK
+  deactivate DB
+  
+  AS -> DB: INSERT activity_log\n(action="SRS_APPROVED")
+  activate DB
+  DB --> AS: OK
+  deactivate DB
+  
+  AS -> NS: notify_team_members
+  activate NS
+  NS --> AS: OK
+  deactivate NS
+  
+  AS --> API: {status: "approved"}
+else SRS has unresolved comments
+  AS --> API: {error: "Resolve comments first"}
+end
+
+deactivate AS
+API --> FE: 200 OK
+deactivate API
+FE --> PO: Show "SRS Approved" badge
+deactivate FE
+
+== Export SRS ==
+
+PO -> FE: Click "Export as PDF"
+activate FE
+FE -> API: GET /api/artifacts/{id}/export/?format=pdf
+activate API
+
+API -> AS: export_artifact(artifact_id, format)
+activate AS
+
+AS -> DB: SELECT artifact
+activate DB
+DB --> AS: artifact
+deactivate DB
+
+AS -> AS: Render content to HTML
+AS -> AS: Convert HTML to PDF\n(using ReportLab)
+AS -> AS: Add table of contents
+AS -> AS: Add page numbers, headers
+
+AS -> AS: Store PDF in temp storage
+
+AS --> API: {file_url, expires_in: 3600}
+deactivate AS
+
+API --> FE: 200 OK\n{download_url}
+deactivate API
+
+FE -> FE: Trigger download
+FE --> PO: PDF downloaded
+deactivate FE
+
+@enduml

@@ -1,0 +1,109 @@
+"""Project repository."""
+
+from typing import List, Optional, Dict
+from database import get_db
+from models.project import Project, ProjectCreate, ProjectUpdate
+from datetime import datetime
+
+
+class ProjectRepository:
+    """Repository for project data access."""
+    
+    def __init__(self):
+        self.collection_name = "projects"
+    
+    async def create(self, project_data: ProjectCreate, user_id: str, organization: str) -> Project:
+        """Create a new project."""
+        db = get_db()
+        
+        project_doc = {
+            "_id": f"proj_{str(datetime.utcnow().timestamp()).replace('.', '')}",
+            "name": project_data.name,
+            "description": project_data.description,
+            "template_type": project_data.template_type,
+            "brief_text": project_data.brief_text,
+            "questionnaire_data": project_data.questionnaire_data or {},
+            "owner_id": user_id,
+            "organization": organization,
+            "status": "draft",
+            "feature_tier": project_data.feature_tier or "pro",
+            "phase_status": project_data.phase_status,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }
+        
+        await db[self.collection_name].insert_one(project_doc)
+        return Project(**project_doc)
+    
+    async def get_by_id(self, project_id: str, organization: str) -> Optional[Project]:
+        """Get project by ID."""
+        db = get_db()
+        project_doc = await db[self.collection_name].find_one({
+            "_id": project_id,
+            "organization": organization
+        })
+        if project_doc:
+            return Project(**project_doc)
+        return None
+    
+    async def list_by_organization(self, organization: str, user_id: str) -> List[Project]:
+        """List all projects for an organization."""
+        db = get_db()
+        cursor = db[self.collection_name].find({
+            "organization": organization
+        }).sort("created_at", -1)
+        
+        projects = []
+        async for doc in cursor:
+            projects.append(Project(**doc))
+        return projects
+    
+    async def update(self, project_id: str, organization: str, update_data: ProjectUpdate) -> Optional[Project]:
+        """Update a project."""
+        db = get_db()
+        
+        # Build update document
+        update_doc = {"updated_at": datetime.utcnow()}
+        if update_data.name is not None:
+            update_doc["name"] = update_data.name
+        if update_data.description is not None:
+            update_doc["description"] = update_data.description
+        if update_data.status is not None:
+            update_doc["status"] = update_data.status
+        if update_data.brief_text is not None:
+            update_doc["brief_text"] = update_data.brief_text
+        if update_data.questionnaire_data is not None:
+            update_doc["questionnaire_data"] = update_data.questionnaire_data
+        if update_data.feature_tier is not None:
+            update_doc["feature_tier"] = update_data.feature_tier
+        
+        result = await db[self.collection_name].find_one_and_update(
+            {"_id": project_id, "organization": organization},
+            {"$set": update_doc},
+            return_document=True
+        )
+        
+        if result:
+            return Project(**result)
+        return None
+    
+    async def delete(self, project_id: str, organization: str) -> bool:
+        """Delete a project."""
+        db = get_db()
+        result = await db[self.collection_name].delete_one({
+            "_id": project_id,
+            "organization": organization
+        })
+        return result.deleted_count > 0
+
+    async def update_phase_status(self, project_id: str, organization: str, phase_status: Dict[str, str]) -> Optional[Project]:
+        """Update the phase status progression for a project."""
+        db = get_db()
+        result = await db[self.collection_name].find_one_and_update(
+            {"_id": project_id, "organization": organization},
+            {"$set": {"phase_status": phase_status, "updated_at": datetime.utcnow()}},
+            return_document=True
+        )
+        if result:
+            return Project(**result)
+        return None

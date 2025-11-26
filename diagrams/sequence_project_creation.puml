@@ -1,0 +1,205 @@
+@startuml Project_Creation_and_AI_Processing_Sequence
+
+title Project Creation and AI Processing Workflow
+
+actor "Product Owner" as PO
+participant "React Frontend" as FE
+participant "API Gateway" as API
+participant "ProjectService" as PS
+participant "MongoDB" as DB
+participant "Celery Queue" as Queue
+participant "Orchestrator" as Orch
+participant "ParsingAgent" as Parse
+participant "AnalystAgent" as Analyst
+participant "DesignerAgent" as Designer
+participant "PlannerAgent" as Planner
+participant "QualityAgent" as Quality
+
+== Project Creation ==
+
+PO -> FE: Fill project form
+activate FE
+FE -> FE: Validate form data
+FE -> API: POST /api/projects/\n{name, brief, settings}
+activate API
+
+API -> API: Authenticate JWT
+API -> PS: create_project(data)
+activate PS
+
+PS -> DB: INSERT project\n(status=DRAFT)
+activate DB
+DB --> PS: project_id
+deactivate DB
+
+PS --> API: {project}
+deactivate PS
+API --> FE: 201 Created\n{project}
+deactivate API
+FE --> PO: Show project dashboard
+deactivate FE
+
+== AI Processing Trigger ==
+
+PO -> FE: Click "Start AI Processing"
+activate FE
+FE -> API: POST /api/projects/{id}/process/\n{detail_level: "standard"}
+activate API
+
+API -> PS: initiate_processing(project_id, options)
+activate PS
+
+PS -> DB: UPDATE project\n(status=PROCESSING)
+activate DB
+DB --> PS: OK
+deactivate DB
+
+PS -> Queue: queue_job(PARSING_AGENT, input_data)
+activate Queue
+Queue --> PS: job_id_1
+deactivate Queue
+
+PS --> API: {status: "processing", job_ids: [...]}
+deactivate PS
+API --> FE: 202 Accepted
+deactivate API
+FE --> PO: Show "Processing..." with progress
+deactivate FE
+
+== Async Agent Processing ==
+
+Queue -> Orch: Job available
+activate Orch
+
+Orch -> Parse: execute(project_brief)
+activate Parse
+
+Parse -> Parse: Load HuggingFace model
+Parse -> Parse: NER extraction
+Parse -> Parse: Classify requirements
+
+Parse -> DB: INSERT requirements\n(type, title, description,\nconfidence_score)
+activate DB
+DB --> Parse: requirement_ids
+deactivate DB
+
+Parse --> Orch: {requirements_extracted: 15,\nconfidence_avg: 0.87}
+deactivate Parse
+
+Orch -> Analyst: execute(requirements)
+activate Analyst
+
+Analyst -> DB: SELECT requirements
+activate DB
+DB --> Analyst: [requirements]
+deactivate DB
+
+Analyst -> Analyst: Categorize requirements
+Analyst -> Analyst: Detect conflicts
+Analyst -> Analyst: Generate clarifications
+
+Analyst -> DB: UPDATE requirements\n(category, priority, status)
+activate DB
+DB --> Analyst: OK
+deactivate DB
+
+Analyst --> Orch: {categorized: true,\nconflicts: 2}
+deactivate Analyst
+
+Orch -> Designer: execute(requirements)
+activate Designer
+
+Designer -> DB: SELECT requirements
+activate DB
+DB --> Designer: [requirements]
+deactivate DB
+
+Designer -> Designer: Generate Use Case diagram
+Designer -> Designer: Generate Class diagram
+Designer -> Designer: Generate Sequence diagrams
+
+Designer -> DB: INSERT artifacts\n(type=DIAGRAM, content=PlantUML)
+activate DB
+DB --> Designer: artifact_ids
+deactivate DB
+
+Designer --> Orch: {diagrams_created: 5}
+deactivate Designer
+
+Orch -> Planner: execute(requirements)
+activate Planner
+
+Planner -> DB: SELECT requirements
+activate DB
+DB --> Planner: [requirements]
+deactivate DB
+
+Planner -> Planner: Create WBS
+Planner -> Planner: Estimate tasks
+Planner -> Planner: Calculate dependencies
+Planner -> Planner: Generate Gantt
+
+Planner -> DB: INSERT tasks\n(title, estimate, dependencies)
+activate DB
+DB --> Planner: task_ids
+deactivate DB
+
+Planner -> DB: INSERT gantt_chart
+activate DB
+DB --> Planner: gantt_id
+deactivate DB
+
+Planner --> Orch: {tasks_created: 47,\ntotal_effort: 320h}
+deactivate Planner
+
+Orch -> Quality: execute(artifacts)
+activate Quality
+
+Quality -> DB: SELECT artifacts, requirements
+activate DB
+DB --> Quality: [data]
+deactivate DB
+
+Quality -> Quality: Analyze security risks
+Quality -> Quality: Check performance concerns
+Quality -> Quality: Compliance check
+
+Quality -> DB: INSERT risks\n(severity, probability, mitigation)
+activate DB
+DB --> Quality: risk_ids
+deactivate DB
+
+Quality -> DB: INSERT artifact\n(type=RISK_REPORT)
+activate DB
+DB --> Quality: artifact_id
+deactivate DB
+
+Quality --> Orch: {risks_found: 8,\ncritical: 2}
+deactivate Quality
+
+Orch -> DB: UPDATE project\n(status=COMPLETED)
+activate DB
+DB --> Orch: OK
+deactivate DB
+
+Orch -> API: send_notification(project_owner)
+API -> FE: WebSocket: processing_complete
+deactivate Orch
+
+== User Reviews Results ==
+
+FE -> PO: Notification: "Processing Complete!"
+PO -> FE: Navigate to SRS tab
+activate FE
+FE -> API: GET /api/projects/{id}/artifacts/
+activate API
+API -> DB: SELECT artifacts WHERE project_id
+activate DB
+DB --> API: [artifacts]
+deactivate DB
+API --> FE: {artifacts}
+deactivate API
+FE --> PO: Display SRS, Diagrams, Tasks, Risks
+deactivate FE
+
+@enduml

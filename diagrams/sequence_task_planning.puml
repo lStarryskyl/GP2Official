@@ -1,0 +1,327 @@
+@startuml Task_Planning_and_Assignment_Sequence
+
+title Task Planning, Scheduling, and Assignment Workflow
+
+actor "Project Manager" as PM
+actor "Software Engineer" as SE
+participant "React Frontend" as FE
+participant "API Gateway" as API
+participant "TaskService" as TS
+participant "PlannerAgent" as Planner
+participant "GanttService" as GS
+participant "MongoDB" as DB
+participant "NotificationService" as NS
+
+== View Generated Tasks ==
+
+PM -> FE: Navigate to "Tasks" tab
+activate FE
+FE -> API: GET /api/projects/{id}/tasks/
+activate API
+
+API -> TS: get_tasks(project_id)
+activate TS
+
+TS -> DB: SELECT tasks\nWHERE project_id\nORDER BY start_date
+activate DB
+DB --> TS: [tasks]
+deactivate DB
+
+TS --> API: {tasks: [], total_count: 47}
+deactivate TS
+API --> FE: 200 OK
+deactivate API
+
+FE -> FE: Render task list with filters
+FE --> PM: Display 47 tasks
+deactivate FE
+
+== Review Task Estimates ==
+
+PM -> FE: Click task "Implement User Auth"
+activate FE
+FE -> API: GET /api/tasks/{task_id}/
+activate API
+API -> DB: SELECT task
+activate DB
+DB --> API: {task_details}
+deactivate DB
+API --> FE: task
+deactivate API
+FE --> PM: Show task details\n(estimate: 16h, confidence: 0.75)
+deactivate FE
+
+PM -> FE: Adjust estimate to 20h
+activate FE
+FE -> API: PATCH /api/tasks/{task_id}/\n{estimate_hours: 20}
+activate API
+
+API -> TS: update_task(task_id, data)
+activate TS
+
+TS -> DB: UPDATE task\nSET estimate_hours=20
+activate DB
+DB --> TS: OK
+deactivate DB
+
+TS -> GS: recalculate_timeline(project_id)
+activate GS
+
+GS -> DB: SELECT tasks, dependencies
+activate DB
+DB --> GS: [tasks]
+deactivate DB
+
+GS -> GS: Calculate critical path
+GS -> GS: Adjust dependent task dates
+
+GS -> DB: UPDATE gantt_chart
+activate DB
+DB --> GS: OK
+deactivate DB
+
+GS --> TS: {new_completion_date}
+deactivate GS
+
+TS --> API: {task, project_date_shifted: true}
+deactivate TS
+API --> FE: 200 OK
+deactivate API
+FE --> PM: Show updated timeline
+deactivate FE
+
+== View Gantt Chart ==
+
+PM -> FE: Click "Gantt View"
+activate FE
+FE -> API: GET /api/projects/{id}/gantt/
+activate API
+
+API -> GS: get_gantt_chart(project_id)
+activate GS
+
+GS -> DB: SELECT gantt_chart
+activate DB
+DB --> GS: gantt_data
+deactivate DB
+
+GS -> DB: SELECT tasks WHERE project_id
+activate DB
+DB --> GS: [tasks]
+deactivate DB
+
+GS -> GS: Build timeline JSON
+GS -> GS: Identify critical path
+GS -> GS: Calculate milestones
+
+GS --> API: {timeline, critical_path, milestones}
+deactivate GS
+API --> FE: 200 OK
+deactivate API
+
+FE -> FE: Render interactive Gantt chart
+FE -> FE: Highlight critical path in red
+FE --> PM: Display Gantt with 12-week timeline
+deactivate FE
+
+== Assign Task to Developer ==
+
+PM -> FE: Select task, click "Assign"
+activate FE
+FE -> API: GET /api/projects/{id}/members/
+activate API
+API -> DB: SELECT users\nWHERE organization_id
+activate DB
+DB --> API: [users]
+deactivate DB
+API --> FE: team_members
+deactivate API
+FE --> PM: Show dropdown with team members
+deactivate FE
+
+PM -> FE: Select "John Doe (SE)"
+activate FE
+FE -> API: POST /api/tasks/{task_id}/assign/\n{assignee_id: user_id}
+activate API
+
+API -> TS: assign_task(task_id, assignee_id)
+activate TS
+
+TS -> DB: SELECT user WHERE id=assignee_id
+activate DB
+DB --> TS: user
+deactivate DB
+
+TS -> DB: SELECT tasks WHERE assignee_id\nAND status IN ('TODO', 'IN_PROGRESS')
+activate DB
+DB --> TS: [assigned_tasks]
+deactivate DB
+
+TS -> TS: Calculate user workload
+
+alt Workload < 40h/week
+  TS -> DB: UPDATE task\nSET assignee_id=user_id
+  activate DB
+  DB --> TS: OK
+  deactivate DB
+  
+  TS -> NS: notify_assignee(user_id, task_id)
+  activate NS
+  NS -> NS: Send email: "New task assigned"
+  NS -> DB: INSERT notification
+  activate DB
+  DB --> NS: OK
+  deactivate DB
+  NS --> TS: OK
+  deactivate NS
+  
+  TS --> API: {task, assigned: true}
+else Workload >= 40h/week
+  TS --> API: {error: "User over-allocated"}
+end
+
+deactivate TS
+API --> FE: 200 OK
+deactivate API
+FE --> PM: Show "Task assigned to John Doe"
+deactivate FE
+
+== Developer Accepts Task ==
+
+SE -> FE: Receive email notification
+activate FE
+SE -> FE: Login, view "My Tasks"
+FE -> API: GET /api/tasks/?assignee_id={me}
+activate API
+API -> DB: SELECT tasks WHERE assignee_id
+activate DB
+DB --> API: [my_tasks]
+deactivate DB
+API --> FE: tasks
+deactivate API
+FE --> SE: Show 3 assigned tasks
+deactivate FE
+
+SE -> FE: Click "Start" on task
+activate FE
+FE -> API: PATCH /api/tasks/{task_id}/\n{status: "IN_PROGRESS"}
+activate API
+
+API -> TS: update_task_status(task_id, status)
+activate TS
+
+TS -> DB: UPDATE task\nSET status='IN_PROGRESS',\nstarted_at=NOW()
+activate DB
+DB --> TS: OK
+deactivate DB
+
+TS -> DB: INSERT activity_log\n(action="TASK_STARTED")
+activate DB
+DB --> TS: OK
+deactivate DB
+
+TS --> API: {task}
+deactivate TS
+API --> FE: 200 OK
+deactivate API
+FE --> SE: Task moved to "In Progress"
+deactivate FE
+
+== Update Task Progress ==
+
+SE -> FE: Log 4 hours worked
+activate FE
+FE -> API: PATCH /api/tasks/{task_id}/\n{actual_hours: 4}
+activate API
+
+API -> TS: update_actual_hours(task_id, hours)
+activate TS
+
+TS -> DB: UPDATE task\nSET actual_hours=actual_hours+4
+activate DB
+DB --> TS: OK
+deactivate DB
+
+TS -> TS: Calculate variance\n(actual vs estimate)
+
+TS --> API: {task, variance: -16h}
+deactivate TS
+API --> FE: 200 OK
+deactivate API
+FE --> SE: Show "4h logged, 16h remaining"
+deactivate FE
+
+== Complete Task ==
+
+SE -> FE: Click "Mark as Done"
+activate FE
+FE -> API: PATCH /api/tasks/{task_id}/\n{status: "DONE"}
+activate API
+
+API -> TS: complete_task(task_id)
+activate TS
+
+TS -> DB: SELECT task
+activate DB
+DB --> TS: task
+deactivate DB
+
+alt Acceptance criteria met
+  TS -> DB: UPDATE task\nSET status='DONE',\ncompleted_at=NOW()
+  activate DB
+  DB --> TS: OK
+  deactivate DB
+  
+  TS -> NS: notify_pm_and_po(task_id)
+  activate NS
+  NS --> TS: OK
+  deactivate NS
+  
+  TS -> GS: check_dependent_tasks(task_id)
+  activate GS
+  GS -> DB: SELECT tasks\nWHERE dependencies CONTAINS task_id
+  activate DB
+  DB --> GS: [dependent_tasks]
+  deactivate DB
+  GS -> GS: Unblock dependent tasks
+  GS --> TS: {unblocked: 2}
+  deactivate GS
+  
+  TS --> API: {task, dependent_tasks_unblocked: 2}
+else Missing acceptance criteria
+  TS --> API: {error: "Complete acceptance criteria first"}
+end
+
+deactivate TS
+API --> FE: 200 OK
+deactivate API
+FE --> SE: Task completed!\n2 dependent tasks now available
+deactivate FE
+
+== Export Tasks ==
+
+PM -> FE: Click "Export Tasks"
+activate FE
+FE -> API: GET /api/projects/{id}/tasks/export/?format=csv
+activate API
+
+API -> TS: export_tasks(project_id, format)
+activate TS
+
+TS -> DB: SELECT tasks
+activate DB
+DB --> TS: [tasks]
+deactivate DB
+
+TS -> TS: Format as CSV\n(id, title, assignee, due_date, status)
+
+TS --> API: {csv_file}
+deactivate TS
+API --> FE: 200 OK\n{download_url}
+deactivate API
+
+FE -> FE: Trigger download
+FE --> PM: CSV file downloaded
+deactivate FE
+
+@enduml

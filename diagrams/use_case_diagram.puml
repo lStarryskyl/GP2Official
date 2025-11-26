@@ -1,0 +1,183 @@
+@startuml The_Architect_AI_Use_Case_Diagram
+
+!define RECTANGLE_COLOR #E8F4F8
+!define ACTOR_COLOR #FFE5B4
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+' Define Actors
+actor "Product Owner" as PO <<Primary>> #LightBlue
+actor "Software Engineer" as SE <<Primary>> #LightGreen
+actor "Project Manager" as PM <<Primary>> #LightYellow
+actor "System Admin" as ADMIN <<Secondary>> #LightCoral
+actor "AI Agent System" as AI <<System>> #Plum
+
+rectangle "The Architect AI System" {
+  
+  package "Project Management" {
+    usecase "UC-1: Create New Project" as UC1
+    usecase "UC-2: Upload Documents" as UC2
+    usecase "UC-3: Use Project Template" as UC3
+    usecase "UC-4: Clone Project" as UC4
+    usecase "UC-5: Search Projects" as UC5
+  }
+  
+  package "Requirements Management" {
+    usecase "UC-6: View Requirements" as UC6
+    usecase "UC-7: Edit Requirement" as UC7
+    usecase "UC-8: Approve Requirement" as UC8
+    usecase "UC-9: Clarify Ambiguities" as UC9
+    usecase "UC-10: Add Manual Requirement" as UC10
+  }
+  
+  package "AI Processing" {
+    usecase "UC-11: Trigger AI Processing" as UC11
+    usecase "UC-12: Extract Requirements" as UC12
+    usecase "UC-13: Generate SRS Document" as UC13
+    usecase "UC-14: Generate UML Diagrams" as UC14
+    usecase "UC-15: Create Task Plan" as UC15
+    usecase "UC-16: Perform Risk Analysis" as UC16
+    usecase "UC-17: Generate Test Cases" as UC17
+  }
+  
+  package "Document Management" {
+    usecase "UC-18: View SRS" as UC18
+    usecase "UC-19: Edit SRS" as UC19
+    usecase "UC-20: Export SRS (PDF/DOCX)" as UC20
+    usecase "UC-21: View Diagrams" as UC21
+    usecase "UC-22: Edit Diagram Code" as UC22
+    usecase "UC-23: Export Diagrams" as UC23
+  }
+  
+  package "Task Planning" {
+    usecase "UC-24: View Task List" as UC24
+    usecase "UC-25: Assign Tasks" as UC25
+    usecase "UC-26: Update Task Status" as UC26
+    usecase "UC-27: View Gantt Chart" as UC27
+    usecase "UC-28: Adjust Schedule" as UC28
+    usecase "UC-29: Export Tasks" as UC29
+  }
+  
+  package "Quality & Risk" {
+    usecase "UC-30: View Risk Report" as UC30
+    usecase "UC-31: Add Custom Risk" as UC31
+    usecase "UC-32: View Quality Metrics" as UC32
+  }
+  
+  package "Collaboration" {
+    usecase "UC-33: Add Comment" as UC33
+    usecase "UC-34: Mention User" as UC34
+    usecase "UC-35: View Activity Feed" as UC35
+    usecase "UC-36: Approve SRS" as UC36
+  }
+  
+  package "Administration" {
+    usecase "UC-37: Manage Users" as UC37
+    usecase "UC-38: Manage Organizations" as UC38
+    usecase "UC-39: Configure System" as UC39
+    usecase "UC-40: View Audit Logs" as UC40
+  }
+  
+  package "Integration (Phase 8)" {
+    usecase "UC-41: Connect Trello/Jira" as UC41
+    usecase "UC-42: Sync Tasks Externally" as UC42
+    usecase "UC-43: Export to Calendar" as UC43
+  }
+}
+
+' Product Owner relationships
+PO --> UC1
+PO --> UC2
+PO --> UC3
+PO --> UC4
+PO --> UC5
+PO --> UC6
+PO --> UC7
+PO --> UC8
+PO --> UC9
+PO --> UC10
+PO --> UC11
+PO --> UC18
+PO --> UC19
+PO --> UC20
+PO --> UC33
+PO --> UC34
+PO --> UC35
+PO --> UC36
+
+' Software Engineer relationships
+SE --> UC5
+SE --> UC6
+SE --> UC18
+SE --> UC21
+SE --> UC24
+SE --> UC26
+SE --> UC33
+SE --> UC35
+
+' Project Manager relationships
+PM --> UC5
+PM --> UC24
+PM --> UC25
+PM --> UC27
+PM --> UC28
+PM --> UC29
+PM --> UC30
+PM --> UC31
+PM --> UC32
+PM --> UC33
+PM --> UC41
+PM --> UC42
+PM --> UC43
+
+' System Admin relationships
+ADMIN --> UC37
+ADMIN --> UC38
+ADMIN --> UC39
+ADMIN --> UC40
+
+' AI Agent System relationships
+AI --> UC12
+AI --> UC13
+AI --> UC14
+AI --> UC15
+AI --> UC16
+AI --> UC17
+
+' Include relationships
+UC1 ..> UC2 : <<include>>
+UC11 ..> UC12 : <<include>>
+UC13 ..> UC12 : <<include>>
+UC14 ..> UC12 : <<include>>
+UC15 ..> UC12 : <<include>>
+UC16 ..> UC12 : <<include>>
+UC17 ..> UC12 : <<include>>
+
+' Extend relationships
+UC1 ..> UC3 : <<extend>>
+UC9 ..> UC12 : <<extend>>
+UC34 ..> UC33 : <<extend>>
+UC22 ..> UC21 : <<extend>>
+
+' Generalization
+UC20 <|-- UC23
+UC29 <|-- UC42
+
+note right of AI
+  Multi-agent system:
+  - Parsing Agent
+  - Analyst Agent
+  - Designer Agent
+  - Planner Agent
+  - Quality Agent
+  - Test Generator Agent
+end note
+
+note bottom of UC11
+  Triggers the entire
+  AI processing pipeline
+end note
+
+@enduml

@@ -1,0 +1,532 @@
+@startuml The_Architect_AI_Class_Diagram
+
+!define CLASS_BG_COLOR #F0F8FF
+!define ABSTRACT_BG_COLOR #FFE4E1
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor CLASS_BG_COLOR
+  BorderColor #4682B4
+  ArrowColor #4682B4
+}
+
+' Core User & Organization
+class User {
+  - id: UUID
+  - email: String
+  - username: String
+  - password_hash: String
+  - first_name: String
+  - last_name: String
+  - role: Role
+  - organization_id: UUID
+  - created_at: DateTime
+  - last_login: DateTime
+  - is_active: Boolean
+  --
+  + authenticate(password: String): Boolean
+  + has_permission(project_id: UUID, action: String): Boolean
+  + get_projects(): List<Project>
+  + reset_password(token: String, new_password: String): void
+}
+
+enum Role {
+  PRODUCT_OWNER
+  SOFTWARE_ENGINEER
+  PROJECT_MANAGER
+  SYSTEM_ADMIN
+}
+
+class Organization {
+  - id: UUID
+  - name: String
+  - admin_user_id: UUID
+  - subscription_tier: SubscriptionTier
+  - settings: JSON
+  - created_at: DateTime
+  - updated_at: DateTime
+  --
+  + add_user(user: User): void
+  + remove_user(user_id: UUID): void
+  + get_projects(): List<Project>
+  + update_settings(settings: JSON): void
+  + get_usage_stats(): UsageStats
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+' Project Management
+class Project {
+  - id: UUID
+  - name: String
+  - description: Text
+  - brief: Text
+  - organization_id: UUID
+  - owner_id: UUID
+  - status: ProjectStatus
+  - template_id: UUID
+  - created_at: DateTime
+  - updated_at: DateTime
+  - settings: JSON
+  --
+  + initiate_processing(options: ProcessingOptions): void
+  + get_requirements(): List<Requirement>
+  + get_artifacts(): List<Artifact>
+  + get_tasks(): List<Task>
+  + clone(): Project
+  + archive(): void
+  + calculate_completion(): Float
+}
+
+enum ProjectStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  ARCHIVED
+}
+
+class ProjectTemplate {
+  - id: UUID
+  - name: String
+  - description: Text
+  - category: String
+  - template_data: JSON
+  - is_public: Boolean
+  - created_by: UUID
+  --
+  + apply_to_project(project: Project): void
+}
+
+' Requirements
+class Requirement {
+  - id: UUID
+  - project_id: UUID
+  - type: RequirementType
+  - category: String
+  - title: String
+  - description: Text
+  - priority: Priority
+  - status: RequirementStatus
+  - source_line_refs: JSON
+  - confidence_score: Float
+  - created_by_id: UUID
+  - version: Integer
+  - created_at: DateTime
+  - updated_at: DateTime
+  --
+  + update_status(status: RequirementStatus): void
+  + link_to_artifact(artifact_id: UUID): void
+  + get_related_tasks(): List<Task>
+  + get_test_cases(): List<TestCase>
+  + add_tag(tag: String): void
+}
+
+enum RequirementType {
+  FUNCTIONAL
+  NON_FUNCTIONAL
+  CONSTRAINT
+  ASSUMPTION
+}
+
+enum RequirementStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  IMPLEMENTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+' Artifacts & Documents
+abstract class Artifact {
+  - id: UUID
+  - project_id: UUID
+  - type: ArtifactType
+  - content: JSON
+  - file_url: String
+  - version: Integer
+  - generated_by_agent: String
+  - confidence_score: Float
+  - metadata: JSON
+  - created_at: DateTime
+  --
+  + export(format: ExportFormat): File
+  + get_diff(other_version: Artifact): Diff
+  {abstract} + render(): String
+}
+
+enum ArtifactType {
+  SRS
+  USE_CASE_DIAGRAM
+  CLASS_DIAGRAM
+  SEQUENCE_DIAGRAM
+  GANTT_CHART
+  RISK_REPORT
+}
+
+class SRSDocument extends Artifact {
+  - sections: JSON
+  - detail_level: DetailLevel
+  - ieee_compliant: Boolean
+  --
+  + render(): String
+  + get_section(section_name: String): String
+  + update_section(section_name: String, content: String): void
+  + generate_toc(): String
+}
+
+enum DetailLevel {
+  CONCISE
+  STANDARD
+  EXHAUSTIVE
+}
+
+class Diagram extends Artifact {
+  - diagram_type: DiagramType
+  - plantuml_code: Text
+  - svg_content: Text
+  - nodes: JSON
+  - edges: JSON
+  - layout_config: JSON
+  --
+  + render(): String
+  + render_svg(): String
+  + export_plantuml(): String
+  + update_layout(config: JSON): void
+  + validate_syntax(): Boolean
+}
+
+enum DiagramType {
+  USE_CASE
+  CLASS
+  SEQUENCE
+  COMPONENT
+  DEPLOYMENT
+}
+
+' Task Planning
+class Task {
+  - id: UUID
+  - project_id: UUID
+  - requirement_id: UUID
+  - title: String
+  - description: Text
+  - estimate_hours: Float
+  - actual_hours: Float
+  - start_date: Date
+  - due_date: Date
+  - status: TaskStatus
+  - priority: Priority
+  - assignee_id: UUID
+  - dependencies: List<UUID>
+  - tags: List<String>
+  - acceptance_criteria: Text
+  - created_at: DateTime
+  - updated_at: DateTime
+  --
+  + assign_to(user_id: UUID): void
+  + update_status(status: TaskStatus): void
+  + add_dependency(task_id: UUID): void
+  + calculate_slack_time(): Integer
+  + is_on_critical_path(): Boolean
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+class GanttChart {
+  - id: UUID
+  - project_id: UUID
+  - timeline_data: JSON
+  - critical_path: List<UUID>
+  - milestones: JSON
+  - created_at: DateTime
+  --
+  + calculate_critical_path(): List<Task>
+  + calculate_project_duration(): Integer
+  + export_icalendar(): String
+  + get_task_ordering(): List<Task>
+}
+
+' AI Agents
+abstract class Agent {
+  - id: UUID
+  - type: AgentType
+  - status: AgentStatus
+  - config: JSON
+  --
+  {abstract} + execute(input_data: JSON): JSON
+  + validate_input(input_data: JSON): Boolean
+  + calculate_confidence(result: JSON): Float
+}
+
+enum AgentType {
+  PARSING
+  ANALYST
+  DESIGNER
+  PLANNER
+  QUALITY
+  TEST_GENERATOR
+}
+
+enum AgentStatus {
+  IDLE
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+class ParsingAgent extends Agent {
+  - model_name: String
+  - ner_threshold: Float
+  --
+  + execute(input_data: JSON): JSON
+  + extract_requirements(brief: String): List<Requirement>
+  + identify_entities(text: String): List<Entity>
+}
+
+class DesignerAgent extends Agent {
+  --
+  + execute(input_data: JSON): JSON
+  + generate_use_case_diagram(requirements: List<Requirement>): Diagram
+  + generate_class_diagram(requirements: List<Requirement>): Diagram
+  + generate_sequence_diagram(workflow: Workflow): Diagram
+}
+
+class PlannerAgent extends Agent {
+  --
+  + execute(input_data: JSON): JSON
+  + create_wbs(requirements: List<Requirement>): List<Task>
+  + estimate_effort(task: Task): Float
+  + calculate_dependencies(tasks: List<Task>): void
+}
+
+class QualityAgent extends Agent {
+  --
+  + execute(input_data: JSON): JSON
+  + analyze_risks(artifacts: List<Artifact>): RiskReport
+  + check_security_issues(requirements: List<Requirement>): List<Risk>
+  + check_compliance(requirements: List<Requirement>, standard: String): ComplianceReport
+}
+
+class AgentJob {
+  - id: UUID
+  - project_id: UUID
+  - agent_type: AgentType
+  - status: JobStatus
+  - input_data: JSON
+  - output_data: JSON
+  - error_message: Text
+  - started_at: DateTime
+  - completed_at: DateTime
+  - execution_time_ms: Integer
+  --
+  + execute(): void
+  + retry(): void
+  + get_logs(): List<String>
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+' Quality & Risk
+class Risk {
+  - id: UUID
+  - project_id: UUID
+  - title: String
+  - description: Text
+  - category: RiskCategory
+  - severity: Integer
+  - probability: Integer
+  - mitigation: Text
+  - status: RiskStatus
+  --
+  + calculate_priority(): Integer
+  + update_status(status: RiskStatus): void
+}
+
+enum RiskCategory {
+  SECURITY
+  PERFORMANCE
+  SCALABILITY
+  MAINTAINABILITY
+  COMPLIANCE
+  TECHNICAL
+}
+
+enum RiskStatus {
+  IDENTIFIED
+  MITIGATING
+  MITIGATED
+  ACCEPTED
+}
+
+' Test Cases
+class TestCase {
+  - id: UUID
+  - project_id: UUID
+  - requirement_id: UUID
+  - task_id: UUID
+  - type: TestType
+  - title: String
+  - description: Text
+  - preconditions: Text
+  - test_steps: JSON
+  - expected_result: Text
+  - gherkin_scenario: Text
+  - status: TestStatus
+  - created_at: DateTime
+  --
+  + execute(): TestResult
+  + update_status(status: TestStatus): void
+}
+
+enum TestType {
+  UNIT
+  INTEGRATION
+  E2E
+  ACCEPTANCE
+}
+
+enum TestStatus {
+  PENDING
+  PASSED
+  FAILED
+  SKIPPED
+}
+
+' Collaboration
+class Comment {
+  - id: UUID
+  - project_id: UUID
+  - entity_type: String
+  - entity_id: UUID
+  - user_id: UUID
+  - content: Text
+  - parent_comment_id: UUID
+  - created_at: DateTime
+  - updated_at: DateTime
+  --
+  + reply(content: String): Comment
+  + edit(content: String): void
+  + delete(): void
+  + mention_users(user_ids: List<UUID>): void
+}
+
+class ActivityLog {
+  - id: UUID
+  - project_id: UUID
+  - user_id: UUID
+  - action: String
+  - entity_type: String
+  - entity_id: UUID
+  - metadata: JSON
+  - timestamp: DateTime
+  --
+  + get_project_activity(project_id: UUID): List<ActivityLog>
+}
+
+' Integration
+class Integration {
+  - id: UUID
+  - project_id: UUID
+  - integration_type: IntegrationType
+  - credentials: JSON
+  - config: JSON
+  - sync_enabled: Boolean
+  - last_sync_at: DateTime
+  - created_at: DateTime
+  --
+  + authenticate(): Boolean
+  + sync_tasks(): void
+  + disconnect(): void
+  + test_connection(): Boolean
+}
+
+enum IntegrationType {
+  TRELLO
+  JIRA
+  ASANA
+  MONDAY
+  GOOGLE_CALENDAR
+  OUTLOOK_CALENDAR
+}
+
+' Relationships
+User "*" --> "1" Organization : belongs to
+User "1" --> "1" Role : has
+Organization "1" --> "1" SubscriptionTier : has
+
+Project "*" --> "1" Organization : belongs to
+Project "*" --> "1" User : owned by
+Project "0..1" --> "0..1" ProjectTemplate : uses
+Project "1" --> "*" Requirement : contains
+Project "1" --> "*" Artifact : contains
+Project "1" --> "*" Task : contains
+Project "1" --> "*" AgentJob : has
+Project "1" --> "*" Comment : has
+Project "1" --> "*" Risk : has
+Project "1" --> "*" TestCase : has
+Project "1" --> "*" Integration : has
+Project "1" --> "1" GanttChart : has
+
+Requirement "1" --> "1" RequirementType : has
+Requirement "1" --> "1" RequirementStatus : has
+Requirement "1" --> "1" Priority : has
+Requirement "1" --> "*" Task : generates
+Requirement "1" --> "*" TestCase : has
+
+Artifact "1" --> "1" ArtifactType : has
+SRSDocument "1" --> "1" DetailLevel : has
+Diagram "1" --> "1" DiagramType : has
+
+Task "1" --> "1" TaskStatus : has
+Task "1" --> "1" Priority : has
+Task "0..1" --> "1" User : assigned to
+Task "*" --> "*" Task : depends on
+GanttChart "1" --> "*" Task : schedules
+
+Agent "1" --> "1" AgentType : is
+Agent "1" --> "1" AgentStatus : has
+AgentJob "1" --> "1" Agent : executes
+AgentJob "1" --> "1" JobStatus : has
+
+Risk "1" --> "1" RiskCategory : categorized as
+Risk "1" --> "1" RiskStatus : has
+
+TestCase "1" --> "1" TestType : is
+TestCase "1" --> "1" TestStatus : has
+
+Comment "1" --> "1" User : created by
+ActivityLog "1" --> "1" User : performed by
+
+Integration "1" --> "1" IntegrationType : is
+
+note top of Agent
+  Abstract base class for all AI agents.
+  Agents are executed asynchronously via Celery.
+end note
+
+note right of Artifact
+  Abstract base class for all generated artifacts.
+  Supports versioning and diff tracking.
+end note
+
+@enduml

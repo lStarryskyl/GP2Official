@@ -1,0 +1,323 @@
+@startuml The_Architect_AI_ER_Diagram
+
+!define TABLE_BG #E8F4F8
+!define PK_COLOR #FFD700
+!define FK_COLOR #90EE90
+
+skinparam linetype ortho
+
+' Organizations and Users
+entity "organizations" as org {
+  * **id : UUID** <<PK>>
+  --
+  * name : String
+  * admin_user_id : UUID <<FK>>
+  * subscription_tier : Enum
+  * settings : JSON
+  * created_at : DateTime
+  * updated_at : DateTime
+}
+
+entity "users" as user {
+  * **id : UUID** <<PK>>
+  --
+  * email : String <<UNIQUE>>
+  * username : String <<UNIQUE>>
+  * password_hash : String
+  * first_name : String
+  * last_name : String
+  * role : Enum
+  * organization_id : UUID <<FK>>
+  * is_active : Boolean
+  * created_at : DateTime
+  * last_login : DateTime
+}
+
+' Projects
+entity "projects" as project {
+  * **id : UUID** <<PK>>
+  --
+  * name : String
+  * description : Text
+  * brief : Text
+  * organization_id : UUID <<FK>>
+  * owner_id : UUID <<FK>>
+  * status : Enum
+  * template_id : UUID <<FK>>
+  * created_at : DateTime
+  * updated_at : DateTime
+  * settings : JSON
+}
+
+entity "project_templates" as template {
+  * **id : UUID** <<PK>>
+  --
+  * name : String
+  * description : Text
+  * category : String
+  * template_data : JSON
+  * is_public : Boolean
+  * created_by : UUID <<FK>>
+  * created_at : DateTime
+}
+
+' Requirements
+entity "requirements" as req {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * type : Enum
+  * category : String
+  * title : String
+  * description : Text
+  * priority : Enum
+  * status : Enum
+  * source_line_refs : JSON
+  * confidence_score : Float
+  * created_by_id : UUID <<FK>>
+  * version : Integer
+  * created_at : DateTime
+  * updated_at : DateTime
+}
+
+entity "requirement_tags" as req_tag {
+  * **id : UUID** <<PK>>
+  --
+  * requirement_id : UUID <<FK>>
+  * tag : String
+}
+
+' Artifacts
+entity "artifacts" as artifact {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * type : Enum
+  * content : JSON/Text
+  * file_url : String
+  * version : Integer
+  * generated_by_agent : String
+  * confidence_score : Float
+  * metadata : JSON
+  * created_at : DateTime
+}
+
+entity "diagrams" as diagram {
+  * **id : UUID** <<PK>>
+  --
+  * artifact_id : UUID <<FK>> <<UNIQUE>>
+  * diagram_type : Enum
+  * plantuml_code : Text
+  * svg_content : Text
+  * nodes : JSON
+  * edges : JSON
+  * layout_config : JSON
+  * created_at : DateTime
+}
+
+' Tasks
+entity "tasks" as task {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * requirement_id : UUID <<FK>>
+  * title : String
+  * description : Text
+  * estimate_hours : Float
+  * actual_hours : Float
+  * start_date : Date
+  * due_date : Date
+  * status : Enum
+  * priority : Enum
+  * assignee_id : UUID <<FK>>
+  * dependencies : JSON Array
+  * tags : JSON Array
+  * acceptance_criteria : Text
+  * created_at : DateTime
+  * updated_at : DateTime
+}
+
+entity "gantt_charts" as gantt {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>> <<UNIQUE>>
+  * timeline_data : JSON
+  * critical_path : JSON Array
+  * milestones : JSON
+  * created_at : DateTime
+  * updated_at : DateTime
+}
+
+' AI Agents
+entity "agent_jobs" as job {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * agent_type : Enum
+  * status : Enum
+  * input_data : JSON
+  * output_data : JSON
+  * error_message : Text
+  * started_at : DateTime
+  * completed_at : DateTime
+  * execution_time_ms : Integer
+}
+
+' Quality & Risk
+entity "risks" as risk {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * title : String
+  * description : Text
+  * category : Enum
+  * severity : Integer
+  * probability : Integer
+  * mitigation : Text
+  * status : Enum
+  * created_at : DateTime
+  * updated_at : DateTime
+}
+
+' Test Cases
+entity "test_cases" as test {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * requirement_id : UUID <<FK>>
+  * task_id : UUID <<FK>>
+  * type : Enum
+  * title : String
+  * description : Text
+  * preconditions : Text
+  * test_steps : JSON
+  * expected_result : Text
+  * gherkin_scenario : Text
+  * status : Enum
+  * created_at : DateTime
+}
+
+' Collaboration
+entity "comments" as comment {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * entity_type : String
+  * entity_id : UUID
+  * user_id : UUID <<FK>>
+  * content : Text
+  * parent_comment_id : UUID <<FK>>
+  * created_at : DateTime
+  * updated_at : DateTime
+}
+
+entity "activity_logs" as activity {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * user_id : UUID <<FK>>
+  * action : String
+  * entity_type : String
+  * entity_id : UUID
+  * metadata : JSON
+  * timestamp : DateTime
+}
+
+' Integrations
+entity "integrations" as integration {
+  * **id : UUID** <<PK>>
+  --
+  * project_id : UUID <<FK>>
+  * integration_type : Enum
+  * credentials : JSON (encrypted)
+  * config : JSON
+  * sync_enabled : Boolean
+  * last_sync_at : DateTime
+  * created_at : DateTime
+}
+
+' Relationships
+org ||--o{ user : "has members"
+org ||--o{ project : "owns"
+
+user ||--o{ project : "creates"
+user ||--o{ comment : "writes"
+user ||--o{ activity : "performs"
+user ||--o{ task : "assigned"
+user ||--o{ template : "creates"
+
+template ||--o{ project : "used by"
+
+project ||--o{ req : "contains"
+project ||--o{ artifact : "generates"
+project ||--o{ task : "has"
+project ||--o{ job : "processes"
+project ||--o{ risk : "identifies"
+project ||--o{ test : "includes"
+project ||--o{ comment : "has"
+project ||--o{ activity : "logs"
+project ||--o{ integration : "connects"
+project ||--|| gantt : "schedules"
+
+req ||--o{ req_tag : "tagged"
+req ||--o{ task : "generates"
+req ||--o{ test : "validates"
+
+artifact ||--o| diagram : "visualized as"
+
+task ||--o{ test : "verified by"
+
+comment ||--o{ comment : "replies to"
+
+' Indexes
+note right of user
+  **Indexes:**
+  - email (unique)
+  - username (unique)
+  - organization_id
+  - role
+end note
+
+note right of project
+  **Indexes:**
+  - organization_id
+  - owner_id
+  - status
+  - created_at
+end note
+
+note right of req
+  **Indexes:**
+  - project_id
+  - type
+  - status
+  - priority
+  - created_at
+end note
+
+note right of task
+  **Indexes:**
+  - project_id
+  - requirement_id
+  - assignee_id
+  - status
+  - due_date
+  - priority
+end note
+
+note right of job
+  **Indexes:**
+  - project_id
+  - agent_type
+  - status
+  - started_at
+end note
+
+note bottom of artifact
+  **Storage Strategy:**
+  - Small content: JSON in DB
+  - Large content: S3 + URL reference
+  - Versioned with full history
+end note
+
+@enduml

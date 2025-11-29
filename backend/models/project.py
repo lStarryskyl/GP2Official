@@ -24,10 +24,7 @@ class ProjectTemplateType(str, Enum):
 
 
 def default_phase_status() -> Dict[str, str]:
-    """Default phase status for new projects.
-    
-    Phase order: Planning → Feasibility → Requirements → Validation → Design → Development → Tasks → Summary
-    """
+
     return {
         "planning": "ready",
         "feasibility_study": "locked",
@@ -50,6 +47,11 @@ class ProjectBase(BaseModel):
     feature_tier: str = "pro"
     phase_status: Dict[str, str] = Field(default_factory=default_phase_status)
     roadmap: Optional[List[Dict[str, Any]]] = None
+    roadmap_summary: Optional[List[Dict[str, Any]]] = None
+    feasibility_studies: Optional[List[Dict[str, Any]]] = None
+    development_stack: Optional[List[Dict[str, Any]]] = None
+    development_notes: Optional[Dict[str, Any]] = None
+    feasibility_sections: Optional[List[Dict[str, Any]]] = None
 
 
 class ProjectCreate(ProjectBase):
@@ -65,6 +67,12 @@ class ProjectUpdate(BaseModel):
     brief_text: Optional[str] = None
     questionnaire_data: Optional[Dict[str, Any]] = None
     feature_tier: Optional[str] = None
+    roadmap: Optional[List[Dict[str, Any]]] = None
+    roadmap_summary: Optional[List[Dict[str, Any]]] = None
+    feasibility_studies: Optional[List[Dict[str, Any]]] = None
+    feasibility_sections: Optional[List[Dict[str, Any]]] = None
+    development_stack: Optional[List[Dict[str, Any]]] = None
+    development_notes: Optional[Dict[str, Any]] = None
 
 
 class Project(ProjectBase):
@@ -94,5 +102,10 @@ class ProjectResponse(BaseModel):
     phase_status: Dict[str, str] = Field(default_factory=default_phase_status)
     brief_text: Optional[str]
     roadmap: Optional[List[Dict[str, Any]]] = None
+    roadmap_summary: Optional[List[Dict[str, Any]]] = None
+    feasibility_studies: Optional[List[Dict[str, Any]]] = None
+    feasibility_sections: Optional[List[Dict[str, Any]]] = None
+    development_stack: Optional[List[Dict[str, Any]]] = None
+    development_notes: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime

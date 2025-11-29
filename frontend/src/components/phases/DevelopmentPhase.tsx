@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -15,17 +15,15 @@ import {
   GitBranch,
   Layers,
   Terminal,
-  FileCode,
   FolderTree,
   ArrowRight,
   CheckCircle2,
-  Clock,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
   Copy,
-  ExternalLink,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface TechStackItem {
   name: string;
@@ -34,6 +32,8 @@ interface TechStackItem {
   icon: string;
   recommended: boolean;
 }
+
+type TechStackMap = Record<string, TechStackItem[]>;
 
 interface DevelopmentPhaseProps {
   projectId: string;
@@ -49,7 +49,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   const [activeTab, setActiveTab] = useState<'stack' | 'flow' | 'structure' | 'components'>('stack');
   const [expandedCategory, setExpandedCategory] = useState<Set<string>>(new Set(['frontend', 'backend']));
 
-  const techStack: Record<string, TechStackItem[]> = {
+  const initialTechStack: TechStackMap = {
     frontend: [
       { name: 'React', category: 'Framework', description: 'Component-based UI library', icon: '⚛️', recommended: true },
       { name: 'TypeScript', category: 'Language', description: 'Type-safe JavaScript', icon: '📘', recommended: true },
@@ -150,6 +150,125 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     cyan: { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-700' },
   };
 
+  const [techStackData, setTechStackData] = useState<TechStackMap>(initialTechStack);
+  const [newTech, setNewTech] = useState<TechStackItem>({
+    name: '',
+    category: Object.keys(initialTechStack)[0] || 'frontend',
+    description: '',
+    icon: '✨',
+    recommended: false,
+  });
+  const [bestPractices, setBestPractices] = useState<string[]>([
+    'Use connection pooling for database',
+    'Implement Redis caching for hot data',
+    'Enable gzip compression for API responses',
+    'Use CDN for static assets',
+    'Implement lazy loading in frontend',
+  ]);
+  const [watchOuts, setWatchOuts] = useState<string[]>([
+    'N+1 query problems in ORM',
+    'Memory leaks in long-running processes',
+    'Unbounded pagination queries',
+    'Missing database indexes',
+    'Synchronous blocking operations',
+  ]);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState({
+    bestPractices: bestPractices.join('\n'),
+    watchOuts: watchOuts.join('\n'),
+  });
+  const [flowStepsAi, setFlowStepsAi] = useState<string[] | null>(null);
+  const [folderStructureAi, setFolderStructureAi] = useState<string | null>(null);
+  const [componentsAi, setComponentsAi] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.getDevelopment(projectId);
+        if (cancelled) return;
+
+        if (Array.isArray(data.stack) && data.stack.length > 0) {
+          const next: TechStackMap = { ...initialTechStack };
+          data.stack.forEach((raw: any) => {
+            const category = raw.category || 'frontend';
+            const item: TechStackItem = {
+              name: raw.name || '',
+              category,
+              description: raw.description || '',
+              icon: raw.icon || '✨',
+              recommended: !!raw.recommended,
+            };
+            if (!next[category]) next[category] = [];
+            next[category] = [item, ...next[category]];
+          });
+          setTechStackData(next);
+        }
+
+        if (data.notes && typeof data.notes === 'object') {
+          const bp = Array.isArray(data.notes.bestPractices)
+            ? data.notes.bestPractices
+            : typeof data.notes.bestPractices === 'string'
+            ? data.notes.bestPractices.split('\n').map((s: string) => s.trim()).filter(Boolean)
+            : bestPractices;
+          const wo = Array.isArray(data.notes.watchOuts)
+            ? data.notes.watchOuts
+            : typeof data.notes.watchOuts === 'string'
+            ? data.notes.watchOuts.split('\n').map((s: string) => s.trim()).filter(Boolean)
+            : watchOuts;
+
+          setBestPractices(bp);
+          setWatchOuts(wo);
+          setNotesDraft({
+            bestPractices: bp.join('\n'),
+            watchOuts: wo.join('\n'),
+          });
+
+          if (Array.isArray((data.notes as any).flowSteps)) {
+            setFlowStepsAi((data.notes as any).flowSteps as string[]);
+          }
+          if (typeof (data.notes as any).folderStructure === 'string') {
+            setFolderStructureAi((data.notes as any).folderStructure as string);
+          }
+          if (Array.isArray((data.notes as any).components)) {
+            setComponentsAi((data.notes as any).components as string[]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load development data', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  const persistDevelopment = async (nextStack: TechStackMap, nextBest: string[], nextWatch: string[]) => {
+    if (!projectId) return;
+    const flatStack: any[] = [];
+    Object.entries(nextStack).forEach(([category, items]) => {
+      items.forEach((item) => {
+        flatStack.push({
+          name: item.name,
+          category: item.category || category,
+          description: item.description,
+          icon: item.icon,
+          recommended: item.recommended,
+        });
+      });
+    });
+    const notes = {
+      bestPractices: nextBest,
+      watchOuts: nextWatch,
+    };
+    try {
+      await api.saveDevelopment(projectId, { stack: flatStack, notes });
+    } catch (err) {
+      console.error('Failed to save development data', err);
+    }
+  };
+
   const toggleCategory = (category: string) => {
     setExpandedCategory((prev) => {
       const next = new Set(prev);
@@ -158,6 +277,101 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       return next;
     });
   };
+
+  const handleAddTech = () => {
+    if (!newTech.name.trim() || !newTech.description.trim()) return;
+    setTechStackData((prev) => {
+      const next: TechStackMap = {
+        ...prev,
+        [newTech.category]: [newTech, ...(prev[newTech.category] || [])],
+      };
+      persistDevelopment(next, bestPractices, watchOuts);
+      return next;
+    });
+    setNewTech((prev) => ({ ...prev, name: '', description: '' }));
+    setExpandedCategory((prev) => new Set(prev).add(newTech.category));
+  };
+
+  const handleToggleRecommended = (category: string, idx: number) => {
+    setTechStackData((prev) => {
+      const next: TechStackMap = {
+        ...prev,
+        [category]: prev[category].map((item, i) =>
+          i === idx ? { ...item, recommended: !item.recommended } : item
+        ),
+      };
+      persistDevelopment(next, bestPractices, watchOuts);
+      return next;
+    });
+  };
+
+  const handleDeleteTech = (category: string, idx: number) => {
+    setTechStackData((prev) => {
+      const next: TechStackMap = {
+        ...prev,
+        [category]: prev[category].filter((_, i) => i !== idx),
+      };
+      persistDevelopment(next, bestPractices, watchOuts);
+      return next;
+    });
+  };
+
+  const startEditingNotes = () => {
+    setNotesDraft({
+      bestPractices: bestPractices.join('\n'),
+      watchOuts: watchOuts.join('\n'),
+    });
+    setEditingNotes(true);
+  };
+
+  const saveNotes = () => {
+    const nextBest = notesDraft.bestPractices
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const nextWatch = notesDraft.watchOuts
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    setBestPractices(nextBest);
+    setWatchOuts(nextWatch);
+    persistDevelopment(techStackData, nextBest, nextWatch);
+    setEditingNotes(false);
+  };
+
+  const resolvedFlowSteps = React.useMemo(() => {
+    if (flowStepsAi && flowStepsAi.length) {
+      return flowStepsAi.map((raw, index) => {
+        const [namePart, descPart] = raw.split(':');
+        const name = (namePart || `Step ${index + 1}`).trim();
+        const description = (descPart || name).trim();
+        return {
+          id: index + 1,
+          name,
+          description,
+          icon: GitBranch,
+          color: 'emerald' as const,
+        };
+      });
+    }
+    return flowSteps;
+  }, [flowStepsAi]);
+
+  const resolvedFolderStructure = folderStructureAi || folderStructure;
+
+  const resolvedComponents = React.useMemo(() => {
+    if (componentsAi && componentsAi.length) {
+      return [
+        {
+          layer: 'Components',
+          description: 'AI-generated component breakdown based on the development phase.',
+          items: componentsAi,
+          color: 'purple' as const,
+        },
+      ];
+    }
+    return componentBreakdown;
+  }, [componentsAi]);
 
   return (
     <div className="space-y-6">
@@ -187,7 +401,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       {/* Tech Stack Tab */}
       {activeTab === 'stack' && (
         <div className="space-y-4">
-          {Object.entries(techStack).map(([category, items]) => {
+          {Object.entries(techStackData).map(([category, items]) => {
             const isExpanded = expandedCategory.has(category);
             const categoryIcons: Record<string, React.ReactNode> = {
               frontend: <Globe className="h-5 w-5" />,
@@ -198,26 +412,85 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
             return (
               <Card key={category}>
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => toggleCategory(category)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleCategory(category);
+                    }
+                  }}
+                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
                       {categoryIcons[category]}
                     </div>
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="text-base">Add Custom Technology</CardTitle>
+            <CardDescription>Capture bespoke stack choices for this project.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid md:grid-cols-2 gap-3">
+              <input
+                className="border rounded-lg px-3 py-2 text-sm"
+                placeholder="Technology name"
+                value={newTech.name}
+                onChange={(e) => setNewTech((prev) => ({ ...prev, name: e.target.value }))}
+              />
+              <select
+                className="border rounded-lg px-3 py-2 text-sm"
+                value={newTech.category}
+                onChange={(e) => setNewTech((prev) => ({ ...prev, category: e.target.value }))}
+              >
+                {Object.keys(techStackData).map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              <input
+                className="border rounded-lg px-3 py-2 text-sm"
+                placeholder="Emoji/Icon"
+                value={newTech.icon}
+                onChange={(e) => setNewTech((prev) => ({ ...prev, icon: e.target.value }))}
+              />
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={newTech.recommended}
+                  onChange={(e) => setNewTech((prev) => ({ ...prev, recommended: e.target.checked }))}
+                />
+                Recommended
+              </label>
+            </div>
+            <textarea
+              className="border rounded-lg px-3 py-2 text-sm w-full"
+              rows={3}
+              placeholder="Why is this technology needed?"
+              value={newTech.description}
+              onChange={(e) => setNewTech((prev) => ({ ...prev, description: e.target.value }))}
+            />
+            <Button onClick={handleAddTech} disabled={!newTech.name.trim() || !newTech.description.trim()}>
+              Add to Stack
+            </Button>
+          </CardContent>
+        </Card>
                     <div className="text-left">
                       <h3 className="font-semibold text-gray-900 capitalize">{category}</h3>
                       <p className="text-sm text-gray-500">{items.length} technologies</p>
                     </div>
                   </div>
                   {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                </button>
+                </div>
 
                 {isExpanded && (
                   <CardContent className="pt-0">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {items.map((item) => (
+                      {items.map((item, idx) => (
                         <div
                           key={item.name}
                           className="p-3 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all"
@@ -225,12 +498,25 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xl">{item.icon}</span>
                             <span className="font-medium text-gray-900">{item.name}</span>
-                            {item.recommended && (
-                              <Badge variant="success" className="text-xs">Recommended</Badge>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-emerald-600"
+                              onClick={() => handleToggleRecommended(category, idx)}
+                            >
+                              {item.recommended ? 'Recommended ✓' : 'Mark Recommended'}
+                            </Button>
                           </div>
                           <p className="text-xs text-gray-500">{item.description}</p>
                           <Badge variant="secondary" className="mt-2 text-xs">{item.category}</Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-red-500 mt-1"
+                            onClick={() => handleDeleteTech(category, idx)}
+                          >
+                            Remove
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -256,7 +542,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             <div className="relative">
               {/* Flow Steps */}
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {flowSteps.map((step, idx) => {
+                {resolvedFlowSteps.map((step, idx) => {
                   const colors = colorMap[step.color];
                   return (
                     <React.Fragment key={step.id}>
@@ -267,7 +553,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                         </div>
                         <p className="text-xs text-gray-600">{step.description}</p>
                       </div>
-                      {idx < flowSteps.length - 1 && (
+                      {idx < resolvedFlowSteps.length - 1 && (
                         <ArrowRight className="h-6 w-6 text-gray-400 flex-shrink-0" />
                       )}
                     </React.Fragment>
@@ -322,7 +608,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
           </CardHeader>
           <CardContent className="p-0">
             <pre className="p-6 bg-gray-900 text-gray-100 text-sm font-mono overflow-x-auto">
-              {folderStructure}
+              {resolvedFolderStructure}
             </pre>
           </CardContent>
         </Card>
@@ -331,7 +617,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       {/* Components Tab */}
       {activeTab === 'components' && (
         <div className="space-y-4">
-          {componentBreakdown.map((layer) => {
+          {resolvedComponents.map((layer) => {
             const colors = colorMap[layer.color];
             return (
               <Card key={layer.layer} className={`border-l-4 ${colors.border}`}>
@@ -400,6 +686,9 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             <Zap className="h-5 w-5 text-amber-600" />
             Performance & Scalability Notes
           </CardTitle>
+          <Button variant="outline" size="sm" onClick={editingNotes ? saveNotes : startEditingNotes}>
+            {editingNotes ? 'Save Notes' : 'Edit Notes'}
+          </Button>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid md:grid-cols-2 gap-6">
@@ -408,26 +697,40 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 Best Practices
               </h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>• Use connection pooling for database</li>
-                <li>• Implement Redis caching for hot data</li>
-                <li>• Enable gzip compression for API responses</li>
-                <li>• Use CDN for static assets</li>
-                <li>• Implement lazy loading in frontend</li>
-              </ul>
+              {editingNotes ? (
+                <textarea
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  rows={6}
+                  value={notesDraft.bestPractices}
+                  onChange={(e) => setNotesDraft((prev) => ({ ...prev, bestPractices: e.target.value }))}
+                />
+              ) : (
+                <ul className="space-y-2 text-sm text-gray-600">
+                  {bestPractices.map((note, idx) => (
+                    <li key={idx}>• {note}</li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div>
               <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 Watch Out For
               </h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>• N+1 query problems in ORM</li>
-                <li>• Memory leaks in long-running processes</li>
-                <li>• Unbounded pagination queries</li>
-                <li>• Missing database indexes</li>
-                <li>• Synchronous blocking operations</li>
-              </ul>
+              {editingNotes ? (
+                <textarea
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  rows={6}
+                  value={notesDraft.watchOuts}
+                  onChange={(e) => setNotesDraft((prev) => ({ ...prev, watchOuts: e.target.value }))}
+                />
+              ) : (
+                <ul className="space-y-2 text-sm text-gray-600">
+                  {watchOuts.map((note, idx) => (
+                    <li key={idx}>• {note}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </CardContent>
@@ -445,7 +748,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
           <div className="grid md:grid-cols-4 gap-4">
             <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
               <div className="text-2xl font-bold text-blue-700">
-                {Object.values(techStack).flat().length}
+                {Object.values(techStackData).flat().length}
               </div>
               <div className="text-sm text-blue-600">Technologies</div>
             </div>

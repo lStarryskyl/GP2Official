@@ -43,6 +43,17 @@ class GenerationConfig(BaseModel):
     style_palette: Optional[Dict[str, str]] = None
 
 
+class RoadmapSubItem(BaseModel):
+    id: str
+    title: str
+    status: str
+    notes: Optional[str] = None
+    children: Optional[List["RoadmapSubItem"]] = None
+
+
+RoadmapSubItem.model_rebuild()
+
+
 class RoadmapMilestone(BaseModel):
     id: str
     name: str
@@ -53,10 +64,28 @@ class RoadmapMilestone(BaseModel):
     status: str
     color: str
     dependencies: Optional[List[str]] = None
+    subItems: Optional[List[RoadmapSubItem]] = None
 
 
 class RoadmapPayload(BaseModel):
     milestones: List[RoadmapMilestone]
+    summary: Optional[List[Dict[str, Any]]] = None
+
+
+class FeasibilityStudy(BaseModel):
+    id: str
+    title: str
+    body: str
+    tags: Optional[List[str]] = None
+    source: Optional[str] = None
+
+
+class FeasibilityStudiesPayload(BaseModel):
+    studies: List[FeasibilityStudy]
+
+
+class FeasibilitySectionsPayload(BaseModel):
+    sections: List[Dict[str, Any]]
 
 
 @router.post("/", response_model=ProjectResponse)
@@ -148,7 +177,10 @@ async def get_project_roadmap(
 ):
     await project_service.get_project(project_id, current_user)
     project = await project_service.get_project(project_id, current_user)
-    return {"milestones": project.roadmap or []}
+    return {
+        "milestones": project.roadmap or [],
+        "summary": project.roadmap_summary or [],
+    }
 
 
 @router.put("/{project_id}/roadmap/", response_model=ProjectResponse)
@@ -158,7 +190,96 @@ async def update_project_roadmap(
     current_user: User = Depends(get_current_user)
 ):
     await project_service.get_project(project_id, current_user)
-    update = ProjectUpdate(roadmap=[m.dict() for m in payload.milestones])
+    update = ProjectUpdate(
+        roadmap=[m.dict() for m in payload.milestones],
+        roadmap_summary=payload.summary,
+    )
+    return await project_service.update_project(project_id, update, current_user)
+
+
+@router.get("/{project_id}/feasibility-studies/", response_model=FeasibilityStudiesPayload)
+async def get_feasibility_studies(
+    project_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    project = await project_service.get_project(project_id, current_user)
+    return {"studies": project.feasibility_studies or []}
+
+
+@router.put("/{project_id}/feasibility-studies/", response_model=ProjectResponse)
+async def update_feasibility_studies(
+    project_id: str,
+    payload: FeasibilityStudiesPayload,
+    current_user: User = Depends(get_current_user)
+):
+    await project_service.get_project(project_id, current_user)
+    update = ProjectUpdate(feasibility_studies=[study.dict() for study in payload.studies])
+    return await project_service.update_project(project_id, update, current_user)
+
+
+@router.get("/{project_id}/feasibility-sections/", response_model=FeasibilitySectionsPayload)
+async def get_feasibility_sections(
+    project_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    project = await project_service.get_project(project_id, current_user)
+    return {"sections": project.feasibility_sections or []}
+
+
+@router.put("/{project_id}/feasibility-sections/", response_model=ProjectResponse)
+async def update_feasibility_sections(
+    project_id: str,
+    payload: FeasibilitySectionsPayload,
+    current_user: User = Depends(get_current_user)
+):
+    await project_service.get_project(project_id, current_user)
+    update = ProjectUpdate(feasibility_sections=payload.sections)
+    return await project_service.update_project(project_id, update, current_user)
+
+
+class DevelopmentNotesPayload(BaseModel):
+    """Development notes payload for best practices and watch-outs."""
+    notes: Dict[str, Any]
+
+
+class DevelopmentStackItem(BaseModel):
+    """Single development stack entry."""
+    name: str
+    category: str
+    description: str
+    icon: str
+    recommended: bool = False
+
+
+class DevelopmentPayload(BaseModel):
+    """Development stack and notes payload."""
+    stack: List[Dict[str, Any]]
+    notes: Optional[Dict[str, Any]] = None
+
+
+@router.get("/{project_id}/development/", response_model=DevelopmentPayload)
+async def get_development_data(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    project = await project_service.get_project(project_id, current_user)
+    return DevelopmentPayload(
+        stack=project.development_stack or [],
+        notes=project.development_notes or {},
+    )
+
+
+@router.put("/{project_id}/development/", response_model=ProjectResponse)
+async def update_development_data(
+    project_id: str,
+    payload: DevelopmentPayload,
+    current_user: User = Depends(get_current_user),
+):
+    await project_service.get_project(project_id, current_user)
+    update = ProjectUpdate(
+        development_stack=payload.stack,
+        development_notes=payload.notes,
+    )
     return await project_service.update_project(project_id, update, current_user)
 
 

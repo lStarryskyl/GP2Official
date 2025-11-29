@@ -251,13 +251,46 @@ class ApiClient {
     return response.data.phases;
   }
 
-  async getRoadmap(projectId: string): Promise<{ milestones: any[] }> {
+  async getRoadmap(projectId: string): Promise<{ milestones: any[]; summary?: any[] }> {
     const response = await this.client.get(`/projects/${projectId}/roadmap/`);
     return response.data;
   }
 
-  async saveRoadmap(projectId: string, data: { milestones: any[] }): Promise<any> {
+  async saveRoadmap(projectId: string, data: { milestones: any[]; summary?: any[] }): Promise<any> {
     const response = await this.client.put(`/projects/${projectId}/roadmap/`, data);
+    return response.data;
+  }
+
+  async getFeasibilityStudies(projectId: string): Promise<{ studies: any[] }> {
+    const response = await this.client.get(`/projects/${projectId}/feasibility-studies/`);
+    return response.data;
+  }
+
+  async saveFeasibilityStudies(projectId: string, data: { studies: any[] }): Promise<any> {
+    const response = await this.client.put(`/projects/${projectId}/feasibility-studies/`, data);
+    return response.data;
+  }
+
+  async getFeasibilitySections(projectId: string): Promise<{ sections: any[] }> {
+    const response = await this.client.get(`/projects/${projectId}/feasibility-sections/`);
+    return response.data;
+  }
+
+  async saveFeasibilitySections(projectId: string, data: { sections: any[] }): Promise<any> {
+    const response = await this.client.put(`/projects/${projectId}/feasibility-sections/`, data);
+    return response.data;
+  }
+
+  async getDevelopment(projectId: string): Promise<{ stack: any[]; notes?: Record<string, any> }> {
+    const response = await this.client.get(`/projects/${projectId}/development/`);
+    return response.data;
+  }
+
+  async saveDevelopment(
+    projectId: string,
+    data: { stack: any[]; notes?: Record<string, any> }
+  ): Promise<any> {
+    const response = await this.client.put(`/projects/${projectId}/development/`, data);
     return response.data;
   }
 

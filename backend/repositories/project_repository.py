@@ -29,6 +29,9 @@ class ProjectRepository:
             "feature_tier": project_data.feature_tier or "pro",
             "phase_status": project_data.phase_status,
             "roadmap": project_data.__dict__.get('roadmap') if hasattr(project_data, 'roadmap') else None,
+            "roadmap_summary": project_data.__dict__.get('roadmap_summary') if hasattr(project_data, 'roadmap_summary') else None,
+            "feasibility_studies": project_data.__dict__.get('feasibility_studies') if hasattr(project_data, 'feasibility_studies') else None,
+            "feasibility_sections": project_data.__dict__.get('feasibility_sections') if hasattr(project_data, 'feasibility_sections') else None,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }
@@ -79,6 +82,16 @@ class ProjectRepository:
             update_doc["feature_tier"] = update_data.feature_tier
         if getattr(update_data, 'roadmap', None) is not None:
             update_doc["roadmap"] = update_data.roadmap
+        if getattr(update_data, 'roadmap_summary', None) is not None:
+            update_doc["roadmap_summary"] = update_data.roadmap_summary
+        if getattr(update_data, 'feasibility_studies', None) is not None:
+            update_doc["feasibility_studies"] = update_data.feasibility_studies
+        if getattr(update_data, 'feasibility_sections', None) is not None:
+            update_doc["feasibility_sections"] = update_data.feasibility_sections
+        if getattr(update_data, 'development_stack', None) is not None:
+            update_doc["development_stack"] = update_data.development_stack
+        if getattr(update_data, 'development_notes', None) is not None:
+            update_doc["development_notes"] = update_data.development_notes
         
         result = await db[self.collection_name].find_one_and_update(
             {"_id": project_id, "organization": organization},

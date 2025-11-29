@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
@@ -180,6 +180,13 @@ export const PhaseDetailPage: React.FC = () => {
     return artifact?.content_json?.markdown || '';
   }, [artifacts, phaseId]);
 
+  const unifiedPromptRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const latestArtifact = useMemo(() => {
+    if (!phaseId) return null;
+    return artifacts.find((art) => art.type === `PHASE_${phaseId.toUpperCase()}`);
+  }, [artifacts, phaseId]);
+
   const handleGenerate = async (prompt?: string) => {
     if (!id || !phaseId) return;
     setIsGenerating(true);
@@ -190,6 +197,245 @@ export const PhaseDetailPage: React.FC = () => {
       setPhaseStatus(response.phase_status);
       const updatedArtifacts = await api.getArtifacts(id);
       setArtifacts(updatedArtifacts);
+
+      // Auto-sync AI outputs into structured project fields for certain phases
+      const latestPhaseArtifact = updatedArtifacts.find(
+        (art) => art.type === `PHASE_${phaseId.toUpperCase()}`
+      );
+
+      if (latestPhaseArtifact && latestPhaseArtifact.content_json?.markdown) {
+        const markdown = latestPhaseArtifact.content_json.markdown as string;
+
+        if (phaseId === 'development') {
+          // Very lightweight parser: look for headings and bullet lists / blocks
+          const lines = markdown.split('\n');
+          const stack: any[] = [];
+          const best: string[] = [];
+          const watch: string[] = [];
+          const flow: string[] = [];
+          const structureLines: string[] = [];
+          const components: string[] = [];
+          let currentSection:
+            | 'none'
+            | 'stack'
+            | 'best'
+            | 'watch'
+            | 'flow'
+            | 'structure'
+            | 'components' = 'none';
+          let inCodeBlock = false;
+
+          for (const raw of lines) {
+            const line = raw.replace(/\r?$/, '');
+            const trimmed = line.trim();
+            const lower = trimmed.toLowerCase();
+
+            if (trimmed.startsWith('```')) {
+              inCodeBlock = !inCodeBlock;
+              if (inCodeBlock && (currentSection === 'structure' || lower.includes('folder') || lower.includes('directory'))) {
+                currentSection = 'structure';
+              }
+              continue;
+            }
+
+            if (!inCodeBlock && trimmed.startsWith('#')) {
+              if (lower.includes('tech stack') || lower.includes('technology stack')) {
+                currentSection = 'stack';
+              } else if (lower.includes('best practice')) {
+                currentSection = 'best';
+              } else if (lower.includes('risk') || lower.includes('watch out')) {
+                currentSection = 'watch';
+              } else if (lower.includes('system flow') || lower.includes('request flow')) {
+                currentSection = 'flow';
+              } else if (lower.includes('folder structure') || lower.includes('directory structure')) {
+                currentSection = 'structure';
+              } else if (lower.includes('component')) {
+                currentSection = 'components';
+              } else {
+                currentSection = 'none';
+              }
+              continue;
+            }
+
+            if (!trimmed) {
+              if (inCodeBlock && currentSection === 'structure') {
+                structureLines.push('');
+              }
+              continue;
+            }
+
+            if (inCodeBlock && currentSection === 'structure') {
+              structureLines.push(line);
+              continue;
+            }
+
+            if (!trimmed.startsWith('-') && !trimmed.startsWith('*')) {
+              continue;
+            }
+
+            const content = trimmed.replace(/^[-*]\s*/, '').trim();
+            if (!content) continue;
+
+            if (currentSection === 'stack') {
+              // Try to parse "Name: description" or just a name
+              const [namePart, descPart] = content.split(':');
+              const name = (namePart || '').trim();
+              const description = (descPart || '').trim();
+              if (name) {
+                stack.push({
+                  name,
+                  category: 'general',
+                  description: description || name,
+                  icon: '✨',
+                  recommended: true,
+                });
+              }
+            } else if (currentSection === 'best') {
+              best.push(content);
+            } else if (currentSection === 'watch') {
+              watch.push(content);
+            } else if (currentSection === 'flow') {
+              flow.push(content);
+            } else if (currentSection === 'components') {
+              components.push(content);
+            }
+          }
+
+          if (stack.length || best.length || watch.length || flow.length || structureLines.length || components.length) {
+            try {
+              // Merge with existing project development data if available
+              const existing = await api.getDevelopment(id);
+              const mergedStack = [...(existing.stack || []), ...stack];
+              const mergedBest = [
+                ...(Array.isArray(existing.notes?.bestPractices) ? existing.notes!.bestPractices : []),
+                ...best,
+              ];
+              const mergedWatch = [
+                ...(Array.isArray(existing.notes?.watchOuts) ? existing.notes!.watchOuts : []),
+                ...watch,
+              ];
+
+              const existingNotes = (existing.notes || {}) as Record<string, any>;
+              const nextNotes: Record<string, any> = {
+                ...existingNotes,
+                bestPractices: mergedBest,
+                watchOuts: mergedWatch,
+              };
+
+              if (flow.length) {
+                nextNotes.flowSteps = flow;
+              }
+              if (structureLines.length) {
+                nextNotes.folderStructure = structureLines.join('\n');
+              }
+              if (components.length) {
+                nextNotes.components = components;
+              }
+
+              await api.saveDevelopment(id, {
+                stack: mergedStack,
+                notes: nextNotes,
+              });
+            } catch (err) {
+              console.error('Failed to auto-sync development data from phase artifact', err);
+            }
+          }
+        } else if (phaseId === 'planning') {
+          // Convert planning markdown into basic roadmap milestones
+          const lines = markdown.split('\n');
+          const milestones: {
+            id: string;
+            name: string;
+            phase: string;
+            startMonth: number;
+            endMonth: number;
+            progress: number;
+            status: 'completed' | 'in_progress' | 'upcoming';
+            color: string;
+            dependencies?: string[];
+            subItems?: any[];
+          }[] = [];
+
+          let currentName: string | null = null;
+          for (const raw of lines) {
+            const line = raw.trim();
+            if (!line) continue;
+            if (line.startsWith('#')) {
+              // Treat headings as potential milestone names
+              const name = line.replace(/^#+\s*/, '').trim();
+              if (name) {
+                currentName = name;
+                milestones.push({
+                  id: `mile_${milestones.length + 1}_${Date.now()}`,
+                  name,
+                  phase: 'Planning',
+                  startMonth: milestones.length,
+                  endMonth: milestones.length + 1,
+                  progress: 0,
+                  status: 'upcoming',
+                  color: 'blue',
+                });
+              }
+            } else if ((line.startsWith('-') || line.startsWith('*')) && !currentName) {
+              // Fallback: bullet lines as standalone milestones if no heading seen yet
+              const name = line.replace(/^[-*]\s*/, '').trim();
+              if (!name) continue;
+              milestones.push({
+                id: `mile_${milestones.length + 1}_${Date.now()}`,
+                name,
+                phase: 'Planning',
+                startMonth: milestones.length,
+                endMonth: milestones.length + 1,
+                progress: 0,
+                status: 'upcoming',
+                color: 'blue',
+              });
+            }
+          }
+
+          if (milestones.length) {
+            try {
+              const summary = milestones.map((m) => ({
+                id: m.id,
+                name: m.name,
+                phase: m.phase,
+                status: m.status,
+                window: `${m.startMonth} → ${m.endMonth}`,
+                progress: m.progress,
+              }));
+              await api.saveRoadmap(id, { milestones, summary });
+            } catch (err) {
+              console.error('Failed to auto-sync planning roadmap from phase artifact', err);
+            }
+          }
+        } else if (phaseId === 'feasibility_study') {
+          // Convert feasibility markdown into a single structured study
+          const titleLine = markdown.split('\n').find((l) => l.trim().startsWith('#')) || '# Feasibility Study';
+          const title = titleLine.replace(/^#+\s*/, '').trim() || 'Feasibility Study';
+          const body = markdown.trim();
+          const tags: string[] = [];
+
+          if (body.toLowerCase().includes('market')) tags.push('market');
+          if (body.toLowerCase().includes('technical')) tags.push('technical');
+          if (body.toLowerCase().includes('economic') || body.toLowerCase().includes('roi')) tags.push('economic');
+
+          const newStudy = {
+            id: `study_${Date.now()}`,
+            title,
+            body,
+            tags,
+            source: 'user+ai',
+          };
+
+          try {
+            const existing = await api.getFeasibilityStudies(id);
+            const merged = [...(existing.studies || []), newStudy];
+            await api.saveFeasibilityStudies(id, { studies: merged });
+          } catch (err) {
+            console.error('Failed to auto-sync feasibility studies from phase artifact', err);
+          }
+        }
+      }
       if (prompt) setInput(''); // Clear input if prompt was provided externally
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to generate phase output');
@@ -362,20 +608,9 @@ export const PhaseDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
-
-            {/* Phase Content */}
-            {children}
-
-            {/* Next Phase Navigation */}
             {nextPhase && (
               <Card className={`bg-gradient-to-r ${colors.gradient}`}>
-                <CardContent className="p-6 flex items-center justify-between">
+                <CardContent className="flex items-center justify-between">
                   <div className="text-white">
                     <p className="text-sm opacity-80">Next Phase</p>
                     <h3 className="text-xl font-bold">Step {nextPhase.stepNumber}: {nextPhase.title}</h3>
@@ -391,6 +626,46 @@ export const PhaseDetailPage: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+
+            <Card className="bg-gray-50 border border-gray-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-gray-600" />
+                  Prompt for this phase
+                </CardTitle>
+                <CardDescription>Custom prompt will re-run the active phase using the latest project context.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <textarea
+                  ref={unifiedPromptRef}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  rows={3}
+                  placeholder="E.g., 'Generate the validation checklist with stakeholder signoff steps'"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    disabled={isGenerating}
+                    onClick={() => {
+                      const prompt = unifiedPromptRef.current?.value || '';
+                      if (!prompt.trim()) return;
+                      handleGenerate(prompt);
+                    }}
+                  >
+                    {isGenerating ? 'Generating…' : 'Run prompt for this phase'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Phase Content */}
+            {children}
           </div>
         </div>
 
@@ -767,6 +1042,7 @@ export const PhaseDetailPage: React.FC = () => {
           projectId={id || ''}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
+          content={phaseMarkdown}
         />
       </PhaseWrapper>
     );
@@ -818,23 +1094,6 @@ export const PhaseDetailPage: React.FC = () => {
   }
 
   // ============================================
-  // GANTT CHART PHASE (Previously 'tasks')
-  // ============================================
-  if (phaseId === 'tasks') {
-    return (
-      <PhaseWrapper>
-        <GanttChartPhase
-          projectId={id || ''}
-          tasks={tasks}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          onUpdateTask={handleUpdateTask}
-        />
-      </PhaseWrapper>
-    );
-  }
-
-  // ============================================
   // FINAL SUMMARY PHASE
   // ============================================
   if (phaseId === 'summary') {
@@ -858,7 +1117,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   // LEGACY TASKS PHASE - Keep for backwards compatibility
   // ============================================
-  if (phaseId === 'tasks_legacy') {
+  if (phaseId === 'tasks' || phaseId === 'tasks_legacy') {
     const completedCount = tasks.filter((t) => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === 'completed').length;
     const progressPct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
     const totalHours = tasks.reduce((sum, t) => sum + (t.estimate_hours || 0), 0);
@@ -1687,7 +1946,6 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
               <CardContent className="p-4">
@@ -1879,6 +2137,56 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           )}
 
+          {latestArtifact && (
+            <Card className="border border-dashed border-gray-200">
+              <CardContent className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase text-gray-500">Last generated</p>
+                  <p className="text-sm font-semibold text-gray-900">{latestArtifact.title}</p>
+                  <p className="text-xs text-gray-500">
+                    {latestArtifact.metadata?.generated_at
+                      ? `Updated ${new Date(latestArtifact.metadata.generated_at).toLocaleString()}`
+                      : `Updated ${new Date(latestArtifact.updated_at).toLocaleString()}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Phase</p>
+                  <p className="text-sm font-semibold text-gray-900">Design & Architecture</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="bg-gray-50 border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-gray-600" />
+                Prompt for this phase
+              </CardTitle>
+              <CardDescription>Custom prompt will re-run the active phase using the latest project context.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <textarea
+                ref={unifiedPromptRef}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                rows={3}
+                placeholder="E.g., 'Generate the validation checklist with stakeholder signoff steps'"
+              />
+              <div className="flex justify-end">
+                <Button
+                  disabled={isGenerating}
+                  onClick={() => {
+                    const prompt = unifiedPromptRef.current?.value || '';
+                    if (!prompt.trim()) return;
+                    handleGenerate(prompt);
+                  }}
+                >
+                  {isGenerating ? 'Generating…' : 'Run prompt for this phase'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Created Designs */}
           <Card>
             <CardHeader>
@@ -1920,57 +2228,6 @@ export const PhaseDetailPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Architecture Overview */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Code className="h-5 w-5 text-blue-500" />
-                  Technical Stack
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { layer: 'Frontend', tech: 'React, TypeScript, TailwindCSS', color: 'bg-blue-100 text-blue-700' },
-                    { layer: 'Backend', tech: 'Django, Python, REST API', color: 'bg-emerald-100 text-emerald-700' },
-                    { layer: 'Database', tech: 'PostgreSQL, Redis', color: 'bg-purple-100 text-purple-700' },
-                    { layer: 'Infrastructure', tech: 'Docker, AWS/GCP', color: 'bg-amber-100 text-amber-700' },
-                  ].map((item) => (
-                    <div key={item.layer} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${item.color}`}>{item.layer}</span>
-                      <span className="text-sm text-gray-600">{item.tech}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-gray-500" />
-                  Architecture Principles
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { principle: 'Modularity', desc: 'Loosely coupled, highly cohesive modules' },
-                    { principle: 'Scalability', desc: 'Horizontal scaling with load balancing' },
-                    { principle: 'Security', desc: 'Defense in depth, least privilege' },
-                    { principle: 'Maintainability', desc: 'Clean code, comprehensive testing' },
-                  ].map((item) => (
-                    <div key={item.principle} className="p-3 rounded-lg border border-gray-200">
-                      <p className="font-medium text-gray-900">{item.principle}</p>
-                      <p className="text-xs text-gray-500">{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* AI Architecture Assistant */}
           <Card className="bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200">

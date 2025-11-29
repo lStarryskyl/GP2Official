@@ -1,11 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   ZoomIn,
   ZoomOut,
   Flag,
@@ -20,6 +18,8 @@ import {
   Milestone,
   ArrowRight,
 } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { api } from '@/lib/api';
 
 interface RoadmapMilestone {
   id: string;
@@ -31,6 +31,14 @@ interface RoadmapMilestone {
   status: 'completed' | 'in_progress' | 'upcoming';
   color: string;
   dependencies?: string[];
+  subItems?: RoadmapSubItem[];
+}
+
+interface RoadmapSubItem {
+  id: string;
+  title: string;
+  status: 'completed' | 'in_progress' | 'upcoming';
+  notes?: string;
 }
 
 interface PlanningRoadmapPhaseProps {
@@ -47,22 +55,157 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
   const [viewMode, setViewMode] = useState<'quarterly' | 'monthly'>('quarterly');
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
-  const [visibleQuarter, setVisibleQuarter] = useState(0);
+  const [milestones, setMilestones] = useState<RoadmapMilestone[]>([]);
+  const [loadingRoadmap, setLoadingRoadmap] = useState(true);
+  const [savingRoadmap, setSavingRoadmap] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [draftMilestone, setDraftMilestone] = useState<Omit<RoadmapMilestone, 'id'>>({
+    name: '',
+    phase: 'Planning',
+    startMonth: 0,
+    endMonth: 1,
+    progress: 0,
+    status: 'upcoming',
+    color: 'blue',
+    dependencies: [],
+  });
 
-  // Sample roadmap data - would come from API
-  const milestones: RoadmapMilestone[] = useMemo(() => [
-    { id: 'm1', name: 'Feasibility Complete', phase: 'Feasibility', startMonth: 0, endMonth: 1, progress: 100, status: 'completed', color: 'purple' },
-    { id: 'm2', name: 'Requirements Defined', phase: 'Requirements', startMonth: 1, endMonth: 2.5, progress: 75, status: 'in_progress', color: 'blue', dependencies: ['m1'] },
-    { id: 'm3', name: 'Architecture Approved', phase: 'Design', startMonth: 2, endMonth: 3.5, progress: 40, status: 'in_progress', color: 'red', dependencies: ['m2'] },
-    { id: 'm4', name: 'MVP Development', phase: 'Development', startMonth: 3, endMonth: 6, progress: 0, status: 'upcoming', color: 'green', dependencies: ['m3'] },
-    { id: 'm5', name: 'Alpha Testing', phase: 'Testing', startMonth: 5, endMonth: 7, progress: 0, status: 'upcoming', color: 'amber', dependencies: ['m4'] },
-    { id: 'm6', name: 'Beta Release', phase: 'Testing', startMonth: 7, endMonth: 9, progress: 0, status: 'upcoming', color: 'amber', dependencies: ['m5'] },
-    { id: 'm7', name: 'Production Deployment', phase: 'Deployment', startMonth: 9, endMonth: 10, progress: 0, status: 'upcoming', color: 'cyan', dependencies: ['m6'] },
-    { id: 'm8', name: 'Launch', phase: 'Launch', startMonth: 10, endMonth: 11, progress: 0, status: 'upcoming', color: 'emerald', dependencies: ['m7'] },
-  ], []);
+  const loadRoadmap = useCallback(async () => {
+    if (!projectId) return;
+    setLoadingRoadmap(true);
+    setError(null);
+    try {
+      const data = await api.getRoadmap(projectId);
+      setMilestones((data.milestones || []) as RoadmapMilestone[]);
+    } catch (err) {
+      console.error('Failed to load roadmap', err);
+      setError('Unable to load roadmap milestones.');
+    } finally {
+      setLoadingRoadmap(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    loadRoadmap();
+  }, [loadRoadmap]);
+
+  const persistRoadmap = useCallback(
+    async (nextMilestones: RoadmapMilestone[]) => {
+      if (!projectId) return;
+      setSavingRoadmap(true);
+      setError(null);
+      setMilestones(nextMilestones);
+      try {
+        const summary = nextMilestones.map((m) => {
+          const start = months[Math.max(0, Math.min(months.length - 1, Math.floor(m.startMonth)))] || 'TBD';
+          const end = months[Math.max(0, Math.min(months.length - 1, Math.floor(m.endMonth)))] || start;
+          return {
+            id: m.id,
+            name: m.name,
+            phase: m.phase,
+            status: m.status,
+            window: `${start} → ${end}`,
+            progress: m.progress,
+          };
+        });
+        await api.saveRoadmap(projectId, { milestones: nextMilestones, summary });
+      } catch (err) {
+        console.error('Failed to save roadmap', err);
+        setError('Saving roadmap failed. Please retry.');
+      } finally {
+        setSavingRoadmap(false);
+      }
+    },
+    [projectId]
+  );
+
+  const handleAddMilestone = async () => {
+    if (!draftMilestone.name.trim()) return;
+    const newMilestone: RoadmapMilestone = {
+      ...draftMilestone,
+      id: `mile_${Math.random().toString(36).slice(2, 9)}`,
+    };
+    await persistRoadmap([newMilestone, ...milestones]);
+    setDraftMilestone({
+      name: '',
+      phase: draftMilestone.phase,
+      startMonth: 0,
+      endMonth: 1,
+      progress: 0,
+      status: 'upcoming',
+      color: draftMilestone.color,
+      dependencies: [],
+    });
+    setSelectedMilestone(newMilestone.id);
+  };
+
+  const handleUpdateMilestone = async (milestoneId: string, updates: Partial<RoadmapMilestone>) => {
+    const next = milestones.map((m) => (m.id === milestoneId ? { ...m, ...updates } : m));
+    await persistRoadmap(next);
+  };
+
+  const handleDeleteMilestone = async (milestoneId: string) => {
+    const next = milestones.filter((m) => m.id !== milestoneId);
+    await persistRoadmap(next);
+    if (selectedMilestone === milestoneId) {
+      setSelectedMilestone(null);
+    }
+  };
+
+  const handleAddSubItem = async (milestoneId: string) => {
+    const next = milestones.map((m) =>
+      m.id === milestoneId
+        ? {
+            ...m,
+            subItems: [
+              ...(m.subItems || []),
+              {
+                id: `sub_${Math.random().toString(36).slice(2, 9)}`,
+                title: 'New sub-item',
+                status: 'upcoming' as RoadmapSubItem['status'],
+              },
+            ],
+          }
+        : m
+    );
+    await persistRoadmap(next);
+  };
+
+  const handleUpdateSubItem = async (
+    milestoneId: string,
+    subItemId: string,
+    patch: Partial<RoadmapSubItem>
+  ) => {
+    const next = milestones.map((m) =>
+      m.id === milestoneId
+        ? {
+            ...m,
+            subItems: (m.subItems || []).map((child) =>
+              child.id === subItemId ? { ...child, ...patch } : child
+            ),
+          }
+        : m
+    );
+    await persistRoadmap(next);
+  };
+
+  const handleDeleteSubItem = async (milestoneId: string, subItemId: string) => {
+    const next = milestones.map((m) =>
+      m.id === milestoneId
+        ? {
+            ...m,
+            subItems: (m.subItems || []).filter((child) => child.id !== subItemId),
+          }
+        : m
+    );
+    await persistRoadmap(next);
+  };
 
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const statusOptions: RoadmapMilestone['status'][] = ['completed', 'in_progress', 'upcoming'];
+  const phaseOptions = ['Planning', 'Feasibility', 'Requirements', 'Design', 'Development', 'Testing', 'Deployment', 'Launch'];
+  const colorOptions = ['purple', 'blue', 'red', 'green', 'amber', 'cyan', 'emerald'];
 
   const colorMap: Record<string, { bg: string; border: string; text: string; bar: string }> = {
     purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700', bar: 'bg-purple-500' },
@@ -85,11 +228,187 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
     }
   };
 
+  const orderedMilestones = useMemo(() =>
+    [...milestones].sort((a, b) => a.startMonth - b.startMonth),
+    [milestones]
+  );
+
+  const milestonesOnly = useMemo(() => orderedMilestones, [orderedMilestones]);
+
   const totalMonths = 12;
   const monthWidth = (100 / totalMonths) * (zoomLevel / 100);
+  const overallProgress = milestonesOnly.length
+    ? Math.round(milestonesOnly.reduce((a, m) => a + (m.progress || 0), 0) / milestonesOnly.length)
+    : 0;
+
+  const planBullets = useMemo(() =>
+    milestonesOnly.map((m) => {
+      const start = months[Math.max(0, Math.min(months.length - 1, Math.floor(m.startMonth)))] || 'TBD';
+      const end = months[Math.max(0, Math.min(months.length - 1, Math.floor(m.endMonth)))] || start;
+      return {
+        id: m.id,
+        name: m.name,
+        phase: m.phase,
+        status: m.status,
+        window: `${start} → ${end}`,
+        progress: m.progress,
+      };
+    }),
+    [milestonesOnly, months]
+  );
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Roadmap Builder</span>
+            <Badge variant={savingRoadmap ? 'warning' : 'secondary'}>
+              {savingRoadmap ? 'Saving...' : 'Autosaved'}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Create and maintain your roadmap milestones. Changes save automatically to the backend.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">Milestone Name</label>
+              <Input
+                placeholder="Define the milestone..."
+                value={draftMilestone.name}
+                onChange={(e) => setDraftMilestone((prev) => ({ ...prev, name: e.target.value }))}
+              />
+              <label className="text-sm font-medium text-gray-700">Phase</label>
+              <select
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={draftMilestone.phase}
+                onChange={(e) => setDraftMilestone((prev) => ({ ...prev, phase: e.target.value }))}
+              >
+                {phaseOptions.map((phase) => (
+                  <option key={phase} value={phase}>
+                    {phase}
+                  </option>
+                ))}
+              </select>
+              <label className="text-sm font-medium text-gray-700">Timeline (month index)</label>
+              <div className="flex gap-3">
+                <Input
+                  type="number"
+                  min={0}
+                  max={11}
+                  value={draftMilestone.startMonth}
+                  onChange={(e) =>
+                    setDraftMilestone((prev) => ({ ...prev, startMonth: Number(e.target.value) }))
+                  }
+                  placeholder="Start"
+                />
+                <Input
+                  type="number"
+                  min={draftMilestone.startMonth}
+                  max={12}
+                  value={draftMilestone.endMonth}
+                  onChange={(e) =>
+                    setDraftMilestone((prev) => ({ ...prev, endMonth: Number(e.target.value) }))
+                  }
+                  placeholder="End"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">Status</label>
+              <select
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={draftMilestone.status}
+                onChange={(e) => setDraftMilestone((prev) => ({ ...prev, status: e.target.value as RoadmapMilestone['status'] }))}
+              >
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status.replace('_', ' ')}
+                  </option>
+                ))}
+              </select>
+              <label className="text-sm font-medium text-gray-700">Progress (%)</label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={draftMilestone.progress}
+                onChange={(e) =>
+                  setDraftMilestone((prev) => ({ ...prev, progress: Number(e.target.value) }))
+                }
+              />
+              <label className="text-sm font-medium text-gray-700">Color Theme</label>
+              <select
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={draftMilestone.color}
+                onChange={(e) => setDraftMilestone((prev) => ({ ...prev, color: e.target.value }))}
+              >
+                {colorOptions.map((color) => (
+                  <option key={color} value={color}>
+                    {color}
+                  </option>
+                ))}
+              </select>
+              <label className="text-sm font-medium text-gray-700">Dependencies</label>
+              <select
+                multiple
+                value={draftMilestone.dependencies || []}
+                onChange={(e) =>
+                  setDraftMilestone((prev) => ({
+                    ...prev,
+                    dependencies: Array.from(e.target.selectedOptions, (option) => option.value),
+                  }))
+                }
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm h-24"
+              >
+                {milestones.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Choose start/end as month indexes (0 = Jan). Use dependencies to enforce ordering.
+            </div>
+            <Button onClick={handleAddMilestone} disabled={!draftMilestone.name.trim()}>
+              Add Milestone
+            </Button>
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Strategic Plan Highlights</CardTitle>
+          <CardDescription>Concise bullet points derived from your milestone roadmap.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {planBullets.length === 0 ? (
+            <p className="text-sm text-gray-500">Add milestones above to generate a planning brief.</p>
+          ) : (
+            <ul className="space-y-3">
+              {planBullets.map((bullet) => (
+                <li key={bullet.id} className="flex items-start gap-3">
+                  {getStatusIcon(bullet.status)}
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">{bullet.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {bullet.phase} · {bullet.window} · {bullet.progress}% complete
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Controls */}
       <Card>
         <CardContent className="p-4">
@@ -132,15 +451,10 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                 </Button>
               </div>
 
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="sm" onClick={() => setVisibleQuarter((q) => Math.max(0, q - 1))}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium px-2">2024</span>
-                <Button variant="outline" size="sm" onClick={() => setVisibleQuarter((q) => Math.min(3, q + 1))}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              2024
+            </div>
             </div>
 
             <Button onClick={() => onGenerate('Generate project roadmap with milestones and dependencies')} disabled={isGenerating}>
@@ -181,6 +495,13 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
           <CardDescription>Visual representation of project phases and milestones</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
+          {loadingRoadmap ? (
+            <div className="p-8 text-center text-gray-500">Loading roadmap...</div>
+          ) : milestones.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No milestones yet. Use the builder above or AI generate to create your roadmap.
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <div style={{ minWidth: `${zoomLevel * 10}px` }}>
               {/* Month/Quarter Headers */}
@@ -190,7 +511,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                 </div>
                 <div className="flex-1 flex">
                   {viewMode === 'quarterly'
-                    ? quarters.map((q, i) => (
+                    ? quarters.map((q) => (
                         <div
                           key={q}
                           className="flex-1 p-3 text-center font-medium text-gray-700 border-r"
@@ -199,7 +520,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                           {q} 2024
                         </div>
                       ))
-                    : months.map((m, i) => (
+                    : months.map((m) => (
                         <div
                           key={m}
                           className="flex-1 p-2 text-center text-sm text-gray-600 border-r"
@@ -214,9 +535,9 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               {/* Milestone Rows */}
               <div className="relative">
                 {/* Dependency Lines - rendered as absolute positioned divs instead of SVG */}
-                {milestones.map((milestone) =>
+                {milestonesOnly.map((milestone) =>
                   milestone.dependencies?.map((depId) => {
-                    const dep = milestones.find((m) => m.id === depId);
+                    const dep = milestonesOnly.find((m) => m.id === depId);
                     if (!dep) return null;
                     const depIdx = milestones.findIndex((m) => m.id === depId);
                     const mIdx = milestones.findIndex((m) => m.id === milestone.id);
@@ -241,79 +562,106 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                   })
                 )}
 
-                {milestones.map((milestone, idx) => {
+                {milestonesOnly.map((milestone) => {
                   const colors = colorMap[milestone.color];
                   const left = (milestone.startMonth / totalMonths) * 100;
                   const width = ((milestone.endMonth - milestone.startMonth) / totalMonths) * 100;
                   const isSelected = selectedMilestone === milestone.id;
 
                   return (
-                    <div
-                      key={milestone.id}
-                      className={`flex border-b hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}
-                      style={{ height: '72px' }}
-                    >
-                      {/* Phase Name */}
-                      <div className="w-48 flex-shrink-0 p-3 border-r flex items-center gap-2">
-                        {getStatusIcon(milestone.status)}
-                        <div>
-                          <div className="font-medium text-gray-900 text-sm">{milestone.name}</div>
-                          <div className="text-xs text-gray-500">{milestone.phase}</div>
-                        </div>
-                      </div>
-
-                      {/* Timeline Bar */}
-                      <div className="flex-1 relative p-3">
-                        {/* Grid lines */}
-                        <div className="absolute inset-0 flex">
-                          {months.map((_, i) => (
-                            <div
-                              key={i}
-                              className="flex-1 border-r border-gray-100"
-                              style={{ minWidth: `${monthWidth}%` }}
-                            />
-                          ))}
-                        </div>
-
-                        {/* Milestone Bar */}
-                        <div
-                          className={`absolute top-1/2 -translate-y-1/2 h-10 rounded-lg cursor-pointer transition-all hover:scale-y-110 ${colors.border} border-2 ${
-                            isSelected ? 'ring-2 ring-blue-400 ring-offset-2' : ''
-                          }`}
-                          style={{
-                            left: `${left}%`,
-                            width: `${width}%`,
-                            minWidth: '80px',
-                          }}
-                          onClick={() => setSelectedMilestone(isSelected ? null : milestone.id)}
-                        >
-                          {/* Background */}
-                          <div className={`absolute inset-0 rounded-md ${colors.bg} opacity-50`} />
-
-                          {/* Progress Fill */}
-                          <div
-                            className={`absolute inset-y-0 left-0 rounded-l-md ${colors.bar} opacity-80`}
-                            style={{ width: `${milestone.progress}%`, borderRadius: milestone.progress === 100 ? '0.375rem' : '0.375rem 0 0 0.375rem' }}
-                          />
-
-                          {/* Label */}
-                          <div className="absolute inset-0 flex items-center justify-between px-2">
-                            <span className={`text-xs font-medium ${colors.text} truncate`}>
-                              {milestone.progress}%
-                            </span>
-                            {milestone.status === 'completed' && (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                            )}
+                    <div key={milestone.id} className="border-b">
+                      <div className={`flex hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`} style={{ height: '72px' }}>
+                        <div className="w-48 flex-shrink-0 p-3 border-r flex items-center gap-2">
+                          {getStatusIcon(milestone.status)}
+                          <div>
+                            <div className="font-medium text-gray-900 text-sm">{milestone.name}</div>
+                            <div className="text-xs text-gray-500">{milestone.phase}</div>
                           </div>
                         </div>
-
-                        {/* Start/End Flags */}
-                        <div
-                          className="absolute top-0 w-px h-full bg-gray-300"
-                          style={{ left: `${left}%` }}
-                        >
-                          <Flag className="h-3 w-3 text-gray-400 absolute -top-1 -left-1.5" />
+                        <div className="flex-1 relative p-3">
+                          <div className="absolute inset-0 flex">
+                            {months.map((_, i) => (
+                              <div
+                                key={i}
+                                className="flex-1 border-r border-gray-100"
+                                style={{ minWidth: `${monthWidth}%` }}
+                              />
+                            ))}
+                          </div>
+                          <div
+                            className={`absolute top-1/2 -translate-y-1/2 h-10 rounded-lg cursor-pointer transition-all hover:scale-y-110 ${colors.border} border-2 ${
+                              isSelected ? 'ring-2 ring-blue-400 ring-offset-2' : ''
+                            }`}
+                            style={{
+                              left: `${left}%`,
+                              width: `${width}%`,
+                              minWidth: '80px',
+                            }}
+                            onClick={() => setSelectedMilestone(isSelected ? null : milestone.id)}
+                          >
+                            <div className={`absolute inset-0 rounded-md ${colors.bg} opacity-50`} />
+                            <div
+                              className={`absolute inset-y-0 left-0 rounded-l-md ${colors.bar} opacity-80`}
+                              style={{ width: `${milestone.progress}%`, borderRadius: milestone.progress === 100 ? '0.375rem' : '0.375rem 0 0 0.375rem' }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-between px-2">
+                              <span className={`text-xs font-medium ${colors.text} truncate`}>
+                                {milestone.progress}%
+                              </span>
+                              {milestone.status === 'completed' && (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                          <div
+                            className="absolute top-0 w-px h-full bg-gray-300"
+                            style={{ left: `${left}%` }}
+                          >
+                            <Flag className="h-3 w-3 text-gray-400 absolute -top-1 -left-1.5" />
+                          </div>
                         </div>
+                      </div>
+                      {milestone.subItems?.length ? (
+                        <div className="bg-gray-50 border-t border-gray-100 px-10 py-3 space-y-2">
+                          {milestone.subItems.map((child) => (
+                            <div key={child.id} className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={child.status === 'completed'}
+                                onChange={(e) =>
+                                  handleUpdateSubItem(milestone.id, child.id, {
+                                    status: e.target.checked ? 'completed' : 'in_progress',
+                                  })
+                                }
+                                className="rounded"
+                              />
+                              <input
+                                className="flex-1 text-sm border border-gray-200 rounded px-2 py-1"
+                                value={child.title}
+                                onChange={(e) => handleUpdateSubItem(milestone.id, child.id, { title: e.target.value })}
+                              />
+                              <select
+                                className="text-xs border border-gray-200 rounded px-2 py-1"
+                                value={child.status}
+                                onChange={(e) => handleUpdateSubItem(milestone.id, child.id, { status: e.target.value as RoadmapSubItem['status'] })}
+                              >
+                                {statusOptions.map((status) => (
+                                  <option key={status} value={status}>
+                                    {status.replace('_', ' ')}
+                                  </option>
+                                ))}
+                              </select>
+                              <button className="text-xs text-red-500" onClick={() => handleDeleteSubItem(milestone.id, child.id)}>
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="px-10 py-2 bg-gray-50 border-t border-gray-100">
+                        <button className="text-xs text-blue-600" onClick={() => handleAddSubItem(milestone.id)}>
+                          + Add child item
+                        </button>
                       </div>
                     </div>
                   );
@@ -321,6 +669,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               </div>
             </div>
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -343,17 +692,44 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                   <div className="space-y-3">
                     <div>
                       <span className="text-sm text-gray-500">Milestone</span>
-                      <p className="font-medium">{m.name}</p>
+                      <Input
+                        value={m.name}
+                        onChange={(e) => handleUpdateMilestone(m.id, { name: e.target.value })}
+                        className="mt-1"
+                      />
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">Phase</span>
-                      <p className="font-medium">{m.phase}</p>
+                      <select
+                        className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                        value={m.phase}
+                        onChange={(e) => handleUpdateMilestone(m.id, { phase: e.target.value })}
+                      >
+                        {phaseOptions.map((phase) => (
+                          <option key={phase} value={phase}>
+                            {phase}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">Timeline</span>
-                      <p className="font-medium">
-                        {months[Math.floor(m.startMonth)]} → {months[Math.floor(m.endMonth)]}
-                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={11}
+                          value={m.startMonth}
+                          onChange={(e) => handleUpdateMilestone(m.id, { startMonth: Number(e.target.value) })}
+                        />
+                        <Input
+                          type="number"
+                          min={m.startMonth}
+                          max={12}
+                          value={m.endMonth}
+                          onChange={(e) => handleUpdateMilestone(m.id, { endMonth: Number(e.target.value) })}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -363,16 +739,31 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div className={`h-full ${colors.bar}`} style={{ width: `${m.progress}%` }} />
                         </div>
-                        <span className="font-medium">{m.progress}%</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={m.progress}
+                          onChange={(e) => handleUpdateMilestone(m.id, { progress: Number(e.target.value) })}
+                          className="w-20"
+                        />
                       </div>
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">Status</span>
                       <div className="flex items-center gap-2 mt-1">
                         {getStatusIcon(m.status)}
-                        <Badge variant={m.status === 'completed' ? 'success' : m.status === 'in_progress' ? 'warning' : 'secondary'}>
-                          {m.status.replace('_', ' ')}
-                        </Badge>
+                        <select
+                          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+                          value={m.status}
+                          onChange={(e) => handleUpdateMilestone(m.id, { status: e.target.value as RoadmapMilestone['status'] })}
+                        >
+                          {statusOptions.map((status) => (
+                            <option key={status} value={status}>
+                              {status.replace('_', ' ')}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     {m.dependencies && m.dependencies.length > 0 && (
@@ -388,8 +779,45 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                             ) : null;
                           })}
                         </div>
+                        <select
+                          multiple
+                          className="mt-2 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm h-24"
+                          value={m.dependencies || []}
+                          onChange={(e) =>
+                            handleUpdateMilestone(m.id, {
+                              dependencies: Array.from(e.target.selectedOptions, (option) => option.value),
+                            })
+                          }
+                        >
+                          {milestones
+                            .filter((ms) => ms.id !== m.id)
+                            .map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.name}
+                              </option>
+                            ))}
+                        </select>
                       </div>
                     )}
+                    <div>
+                      <span className="text-sm text-gray-500">Color Theme</span>
+                      <select
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"
+                        value={m.color}
+                        onChange={(e) => handleUpdateMilestone(m.id, { color: e.target.value })}
+                      >
+                        {colorOptions.map((color) => (
+                          <option key={color} value={color}>
+                            {color}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteMilestone(m.id)}>
+                        Delete Milestone
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -408,7 +836,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {milestones.filter((m) => m.status === 'completed').length}
+                  {milestonesOnly.filter((m) => m.status === 'completed').length}
                 </p>
                 <p className="text-xs text-gray-500">Completed</p>
               </div>
@@ -423,7 +851,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {milestones.filter((m) => m.status === 'in_progress').length}
+                  {milestonesOnly.filter((m) => m.status === 'in_progress').length}
                 </p>
                 <p className="text-xs text-gray-500">In Progress</p>
               </div>
@@ -438,7 +866,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {milestones.filter((m) => m.status === 'upcoming').length}
+                  {milestonesOnly.filter((m) => m.status === 'upcoming').length}
                 </p>
                 <p className="text-xs text-gray-500">Upcoming</p>
               </div>
@@ -476,10 +904,10 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                 <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-500 to-orange-500"
-                    style={{ width: `${Math.round(milestones.reduce((a, m) => a + m.progress, 0) / milestones.length)}%` }}
+                    style={{ width: `${overallProgress}%` }}
                   />
                 </div>
-                <span className="font-bold">{Math.round(milestones.reduce((a, m) => a + m.progress, 0) / milestones.length)}%</span>
+                <span className="font-bold">{overallProgress}%</span>
               </div>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -490,7 +918,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               <span className="text-gray-600">Next Milestone</span>
               <div className="flex items-center gap-2">
                 <span className="font-bold">
-                  {milestones.find((m) => m.status === 'in_progress')?.name || milestones.find((m) => m.status === 'upcoming')?.name}
+                  {milestonesOnly.find((m) => m.status === 'in_progress')?.name || milestonesOnly.find((m) => m.status === 'upcoming')?.name}
                 </span>
                 <ArrowRight className="h-4 w-4 text-gray-400" />
               </div>

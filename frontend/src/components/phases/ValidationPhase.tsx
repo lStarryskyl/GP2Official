@@ -36,45 +36,69 @@ interface ValidationPhaseProps {
   projectId: string;
   onGenerate: (prompt: string) => Promise<void>;
   isGenerating: boolean;
+  content: string;
 }
+
+const parseValidationItems = (markdown: string): ValidationItem[] => {
+  if (!markdown.trim()) return [];
+  const lines = markdown.split('\n');
+  const items: ValidationItem[] = [];
+  let currentType: ValidationItem['type'] = 'stakeholder';
+  let counter = 1;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const lower = line.toLowerCase();
+
+    if (line.startsWith('#')) {
+      if (lower.includes('stakeholder')) currentType = 'stakeholder';
+      else if (lower.includes('requirement')) currentType = 'requirement';
+      else if (lower.includes('prototype') || lower.includes('prototype')) currentType = 'prototype';
+      else if (lower.includes('risk')) currentType = 'risk';
+      continue;
+    }
+
+    if (!line.startsWith('-') && !line.startsWith('*')) continue;
+    const content = line.replace(/^[-*]\s*/, '').trim();
+    if (!content) continue;
+
+    const [namePart, descPart] = content.split(':');
+    const name = (namePart || '').trim() || `Item ${counter}`;
+    const description = (descPart || '').trim() || name;
+
+    const idPrefix =
+      currentType === 'stakeholder'
+        ? 's'
+        : currentType === 'requirement'
+        ? 'r'
+        : currentType === 'prototype'
+        ? 'p'
+        : 'k';
+
+    items.push({
+      id: `${idPrefix}${counter}`,
+      type: currentType,
+      name,
+      description,
+      status: 'pending',
+    });
+    counter += 1;
+  }
+
+  return items;
+};
 
 export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
   projectId,
   onGenerate,
   isGenerating,
+  content,
 }) => {
   const [activeTab, setActiveTab] = useState<'stakeholder' | 'requirements' | 'prototype' | 'risks'>('stakeholder');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  // Mock validation data
-  const stakeholderValidations: ValidationItem[] = [
-    { id: 's1', type: 'stakeholder', name: 'Product Owner Sign-off', description: 'Approval of product vision and scope', status: 'approved', reviewer: 'John Smith', date: '2024-01-15', comments: 'Aligned with business goals' },
-    { id: 's2', type: 'stakeholder', name: 'Technical Lead Review', description: 'Technical feasibility confirmation', status: 'approved', reviewer: 'Jane Doe', date: '2024-01-16', comments: 'Architecture approved with minor suggestions' },
-    { id: 's3', type: 'stakeholder', name: 'Security Team Approval', description: 'Security requirements and compliance review', status: 'pending', reviewer: 'Security Team' },
-    { id: 's4', type: 'stakeholder', name: 'Legal Compliance', description: 'GDPR and data privacy compliance check', status: 'review', reviewer: 'Legal Dept' },
-  ];
-
-  const requirementValidations: ValidationItem[] = [
-    { id: 'r1', type: 'requirement', name: 'FR-001: User Authentication', description: 'Multi-factor authentication system', status: 'approved', comments: 'Meets security standards' },
-    { id: 'r2', type: 'requirement', name: 'FR-002: Dashboard Analytics', description: 'Real-time analytics dashboard', status: 'approved', comments: 'Performance requirements validated' },
-    { id: 'r3', type: 'requirement', name: 'FR-003: Payment Integration', description: 'Stripe/PayPal integration', status: 'pending', comments: 'Awaiting payment gateway approval' },
-    { id: 'r4', type: 'requirement', name: 'NFR-001: Response Time', description: 'API response under 200ms', status: 'review', comments: 'Need load testing results' },
-    { id: 'r5', type: 'requirement', name: 'NFR-002: Availability', description: '99.9% uptime SLA', status: 'approved', comments: 'Infrastructure plan reviewed' },
-  ];
-
-  const prototypeValidations: ValidationItem[] = [
-    { id: 'p1', type: 'prototype', name: 'Login Flow Prototype', description: 'User authentication flow mockup', status: 'approved', reviewer: 'UX Team', comments: 'User testing completed successfully' },
-    { id: 'p2', type: 'prototype', name: 'Dashboard Wireframes', description: 'Main dashboard layout and components', status: 'approved', reviewer: 'Product Team', comments: 'Approved with navigation changes' },
-    { id: 'p3', type: 'prototype', name: 'Mobile Responsive Design', description: 'Mobile-first responsive layouts', status: 'pending', reviewer: 'Design Team' },
-    { id: 'p4', type: 'prototype', name: 'API Contract Specs', description: 'OpenAPI/Swagger documentation', status: 'review', reviewer: 'Backend Team' },
-  ];
-
-  const riskValidations: ValidationItem[] = [
-    { id: 'k1', type: 'risk', name: 'Third-party API Dependency', description: 'Risk of external API downtime', status: 'approved', comments: 'Mitigation: Implement circuit breaker pattern' },
-    { id: 'k2', type: 'risk', name: 'Data Migration Risk', description: 'Legacy data format compatibility', status: 'review', comments: 'Need migration test plan' },
-    { id: 'k3', type: 'risk', name: 'Scalability Concerns', description: 'Database scaling for 100k+ users', status: 'approved', comments: 'Sharding strategy approved' },
-    { id: 'k4', type: 'risk', name: 'Timeline Risk', description: 'Tight deadline for MVP launch', status: 'pending', comments: 'Contingency plan needed' },
-  ];
+  const initialItems = parseValidationItems(content);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -101,27 +125,28 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
     setExpandedItems(newExpanded);
   };
 
-  // Local editable state for all items
-  const allItems = [...stakeholderValidations, ...requirementValidations, ...prototypeValidations, ...riskValidations];
+  // Local editable state for all items parsed from AI content
   const [itemsById, setItemsById] = useState<Record<string, ValidationItem>>(() => {
     const map: Record<string, ValidationItem> = {};
-    allItems.forEach((item) => {
+    initialItems.forEach((item) => {
       map[item.id] = { ...item };
     });
     return map;
   });
 
+  const getItemsByType = (type: ValidationItem['type']) =>
+    Object.values(itemsById).filter((i) => i.type === type);
+
   const getValidationItems = () => {
-    const items = Object.values(itemsById);
     switch (activeTab) {
       case 'stakeholder':
-        return items.filter((i) => i.type === 'stakeholder');
+        return getItemsByType('stakeholder');
       case 'requirements':
-        return items.filter((i) => i.type === 'requirement');
+        return getItemsByType('requirement');
       case 'prototype':
-        return items.filter((i) => i.type === 'prototype');
+        return getItemsByType('prototype');
       case 'risks':
-        return items.filter((i) => i.type === 'risk');
+        return getItemsByType('risk');
       default:
         return [];
     }
@@ -186,7 +211,7 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
             >
               <Users className="h-4 w-4" />
               Stakeholder Sign-off
-              <Badge variant="secondary" className="ml-1">{stakeholderValidations.length}</Badge>
+              <Badge variant="secondary" className="ml-1">{getItemsByType('stakeholder').length}</Badge>
             </Button>
             <Button
               variant={activeTab === 'requirements' ? 'default' : 'outline'}
@@ -196,7 +221,7 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
             >
               <FileCheck className="h-4 w-4" />
               Requirements
-              <Badge variant="secondary" className="ml-1">{requirementValidations.length}</Badge>
+              <Badge variant="secondary" className="ml-1">{getItemsByType('requirement').length}</Badge>
             </Button>
             <Button
               variant={activeTab === 'prototype' ? 'default' : 'outline'}
@@ -206,7 +231,7 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
             >
               <FileText className="h-4 w-4" />
               Prototype
-              <Badge variant="secondary" className="ml-1">{prototypeValidations.length}</Badge>
+              <Badge variant="secondary" className="ml-1">{getItemsByType('prototype').length}</Badge>
             </Button>
             <Button
               variant={activeTab === 'risks' ? 'default' : 'outline'}
@@ -216,12 +241,19 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
             >
               <Shield className="h-4 w-4" />
               Risk Confirmation
-              <Badge variant="secondary" className="ml-1">{riskValidations.length}</Badge>
+              <Badge variant="secondary" className="ml-1">{getItemsByType('risk').length}</Badge>
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
+            {getValidationItems().length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p>No validation items parsed from AI output yet.</p>
+                <p className="text-sm mt-1">Run the Validation phase AI to generate a checklist.</p>
+              </div>
+            )}
             {getValidationItems().map((item) => {
               const liveItem = itemsById[item.id] || item;
               const isExpanded = expandedItems.has(item.id);

@@ -144,8 +144,14 @@ class PhaseFlowService:
                 "API specifications, UX wireframe descriptions, and integration touchpoints."
             ),
             "development": (
-                "Outline the Development Plan: implementation phases, tech stack rationale, quality safeguards, "
-                "deployment strategy, coding standards, and handoff checkpoints."
+                "Regenerate a complete Development Plan using all available project context (planning, feasibility, "
+                "requirements, validation, and design outputs). Describe: \n"
+                "- System architecture and request/response flow end-to-end.\n"
+                "- Recommended tech stack and how each piece fits (frontend, backend, database, infrastructure).\n"
+                "- Suggested folder / module structure for the codebase, aligned with the chosen stack.\n"
+                "- Backend and frontend component breakdown (controllers/routes, services, repositories, models, UI components).\n"
+                "- Example configuration or code snippets where helpful (not full apps, but starters).\n"
+                "Make the output easy to map onto tabs: Stack, Flow, Structure, and Components."
             ),
             "tasks": (
                 "Author the Execution Map: break work into epics, stories, and tasks with time estimates. "

@@ -83,14 +83,24 @@ export const phaseConfigs: PhaseConfig[] = [
     order: 6,
   },
   {
+    id: 'cost_benefit',
+    title: 'Costs & Benefits',
+    shortTitle: 'Costs',
+    description: 'Cost, effort, and ROI analysis across phases',
+    canvasMode: 'costs',
+    stepNumber: 8,
+    color: 'orange',
+    order: 7,
+  },
+  {
     id: 'summary',
     title: 'Summary',
     shortTitle: 'Summary',
     description: 'Final summary, risks, and next steps',
     canvasMode: 'freeform',
-    stepNumber: 8,
+    stepNumber: 9,
     color: 'orange',
-    order: 7,
+    order: 8,
   },
 ];
 

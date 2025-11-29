@@ -1,10 +1,12 @@
 """Project routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
+
 from pydantic import BaseModel
 
 from models.project import ProjectCreate, ProjectUpdate, ProjectResponse
+
 from models.user import User
 from services.project_service import ProjectService
 from routes.auth import get_current_user
@@ -39,6 +41,22 @@ class GenerationConfig(BaseModel):
     generate_costs: bool = True
     uml_types: Optional[List[str]] = None
     style_palette: Optional[Dict[str, str]] = None
+
+
+class RoadmapMilestone(BaseModel):
+    id: str
+    name: str
+    phase: str
+    startMonth: float
+    endMonth: float
+    progress: float
+    status: str
+    color: str
+    dependencies: Optional[List[str]] = None
+
+
+class RoadmapPayload(BaseModel):
+    milestones: List[RoadmapMilestone]
 
 
 @router.post("/", response_model=ProjectResponse)
@@ -121,6 +139,27 @@ async def project_requirements(
         )
         for req in requirements
     ]
+
+
+@router.get("/{project_id}/roadmap/", response_model=RoadmapPayload)
+async def get_project_roadmap(
+    project_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    await project_service.get_project(project_id, current_user)
+    project = await project_service.get_project(project_id, current_user)
+    return {"milestones": project.roadmap or []}
+
+
+@router.put("/{project_id}/roadmap/", response_model=ProjectResponse)
+async def update_project_roadmap(
+    project_id: str,
+    payload: RoadmapPayload,
+    current_user: User = Depends(get_current_user)
+):
+    await project_service.get_project(project_id, current_user)
+    update = ProjectUpdate(roadmap=[m.dict() for m in payload.milestones])
+    return await project_service.update_project(project_id, update, current_user)
 
 
 @router.get("/{project_id}/requirements/export/")

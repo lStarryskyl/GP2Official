@@ -128,6 +128,11 @@ class ApiClient {
     return response.data;
   }
 
+  async createRequirement(projectId: string, data: Partial<Requirement>): Promise<Requirement> {
+    const response = await this.client.post(`/projects/${projectId}/requirements/`, data);
+    return response.data;
+  }
+
   async updateRequirement(id: string, data: Partial<Requirement>): Promise<Requirement> {
     const response = await this.client.patch(`/requirements/${id}/`, data);
     return response.data;
@@ -244,6 +249,16 @@ class ApiClient {
   async unlockPhases(projectId: string): Promise<Record<string, string>> {
     const response = await this.client.post(`/projects/${projectId}/phases/unlock-all/`);
     return response.data.phases;
+  }
+
+  async getRoadmap(projectId: string): Promise<{ milestones: any[] }> {
+    const response = await this.client.get(`/projects/${projectId}/roadmap/`);
+    return response.data;
+  }
+
+  async saveRoadmap(projectId: string, data: { milestones: any[] }): Promise<any> {
+    const response = await this.client.put(`/projects/${projectId}/roadmap/`, data);
+    return response.data;
   }
 
   // UML PlantUML diagrams (generated use case / class / sequence)

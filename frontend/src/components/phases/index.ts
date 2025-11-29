@@ -1,0 +1,8 @@
+export { FeasibilityStudyPhase } from './FeasibilityStudyPhase';
+export { PlanningRoadmapPhase } from './PlanningRoadmapPhase';
+export { SystemDesignPhase } from './SystemDesignPhase';
+export { DevelopmentPhase } from './DevelopmentPhase';
+export { GanttChartPhase } from './GanttChartPhase';
+export { FinalSummaryPhase } from './FinalSummaryPhase';
+export { ValidationPhase } from './ValidationPhase';
+export { DesignPhase } from './DesignPhase';

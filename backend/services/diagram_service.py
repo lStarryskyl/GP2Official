@@ -178,8 +178,17 @@ class DiagramService:
     async def seed_mode(self, project_id: str, organization: str, mode: str) -> DiagramState:
         """Seed a canvas mode from existing project data."""
         normalized = mode.lower()
-        if normalized not in {"requirements", "srs", "costs", "freeform"}:
-            raise ValueError("Unsupported diagram mode")
+        
+        # Supported modes with special handling
+        supported_modes = {"requirements", "srs", "costs", "freeform"}
+        # Additional modes that map to freeform
+        freeform_modes = {"roadmap", "gantt", "diagrams", "plantuml"}
+        
+        # Map unsupported modes to freeform
+        if normalized not in supported_modes and normalized not in freeform_modes:
+            normalized = "freeform"
+        elif normalized in freeform_modes:
+            normalized = "freeform"
 
         stage = "canvas" if normalized == "freeform" else f"{normalized}_canvas"
         if normalized == "requirements":
@@ -195,7 +204,7 @@ class DiagramService:
             nodes, edges = [], []
             title = "Freeform Canvas"
 
-        metadata = {"seeded_from": normalized}
+        metadata = {"seeded_from": mode.lower()}  # Keep original mode for reference
         return await self.repo.upsert_stage(project_id, stage, nodes, edges, title, metadata)
 
     def _next_metadata(self, existing: Dict[str, Any] | None, incoming: Dict[str, Any] | None = None) -> Dict[str, Any]:

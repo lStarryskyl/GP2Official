@@ -1,272 +1,290 @@
-# Architect AI - Software Planning Automation
+# GP2 Official - AI-Powered Project Planning Platform
 
-An intelligent platform that automates the software planning lifecycle from project brief to comprehensive SRS, UML diagrams, and task plans.
+A comprehensive software project planning platform with AI assistance. Guide your projects through 8 structured phases from initial planning to final summary.
 
-## 🏗️ Architecture
+## Features
 
-**Clean Architecture with SOLID Principles:**
+- **8-Phase Project Workflow**: Planning → Feasibility → Requirements → Validation → Design → Development → Tasks → Summary
+- **AI-Powered Generation**: Supports multiple LLM providers (or runs without AI in mock mode)
+- **PlantUML Diagrams**: Architecture, ERD, Class, Sequence, State, and Activity diagrams
+- **Interactive Canvas**: Miro-like diagram editing with drag-and-drop
+- **Real-time Collaboration**: Multi-user project support with role-based access
+- **Export Options**: Download diagrams, requirements, and documentation
 
-```
-API Layer (Django REST Framework)
-    ↓
-Application Services (Use Cases)
-    ↓
-Repository Interfaces (Ports)
-    ↓
-Infrastructure (Django ORM, LLM Clients)
-```
+## Tech Stack
 
-## 🚀 Quick Start
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for fast development
+- **TailwindCSS** for styling
+- **React Flow** for diagram canvas
+- **Zustand** for state management
+
+### Backend
+- **FastAPI** (Python 3.11+)
+- **MongoDB** database (with in-memory fallback for development)
+- **JWT Authentication**
+- **Optional AI**: Supports Gemini, HuggingFace, or mock mode
+
+## Running Locally
 
 ### Prerequisites
 
 - Python 3.11+
-- PostgreSQL 15+
-- Node.js 18+ (for frontend)
-- Docker & Docker Compose (optional)
+- Node.js 18+
+- MongoDB (optional - app works with in-memory storage)
 
-### Backend Setup
+### Step 1: Clone the Repository
 
-**1. Start Database (Docker):**
 ```bash
-docker-compose up -d postgres redis
+git clone https://github.com/yourusername/GP2Official.git
+cd GP2Official
 ```
 
-**2. Install Dependencies:**
+### Step 2: Backend Setup
+
 ```bash
 cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-**3. Setup Environment:**
-```bash
-cp .env.example .env
-# Edit .env with your settings
+### Step 3: Configure Environment
+
+Create a `.env` file in the `backend` folder:
+
+```env
+# Required
+SECRET_KEY=your-secret-key-here-change-this
+
+# Database (optional - uses in-memory if MongoDB unavailable)
+MONGO_URL=mongodb://localhost:27017
+DATABASE_NAME=architect_ai
+
+# Or use in-memory database (no MongoDB needed)
+USE_IN_MEMORY_DB=true
+
+# Frontend URL for CORS
+FRONTEND_ORIGIN=http://localhost:5173
+
+# AI Provider (optional - defaults to mock/stub mode)
+LLM_PROVIDER=stub
 ```
 
-**4. Run Migrations:**
+### Step 4: Run Backend
+
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+# From backend folder
+uvicorn main:app --reload --port 8000
 ```
 
-**5. Create Superuser:**
+Backend API runs at: `http://localhost:8000`
+
+### Step 5: Frontend Setup
+
+Open a new terminal:
+
 ```bash
-python manage.py createsuperuser
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
 ```
 
-**6. Run Development Server:**
+Frontend runs at: `http://localhost:5173`
+
+### Step 6: Access the App
+
+1. Open `http://localhost:5173` in your browser
+2. Register a new account
+3. Create your first project
+4. Start working through the 8 phases!
+
+## Quick Start (No Database Required)
+
+For the fastest setup without MongoDB:
+
 ```bash
-python manage.py runserver
+# Terminal 1 - Backend
+cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+echo USE_IN_MEMORY_DB=true > .env
+echo SECRET_KEY=dev-secret-key >> .env
+uvicorn main:app --reload --port 8000
+
+# Terminal 2 - Frontend
+cd frontend
+npm install
+npm run dev
 ```
 
-Backend will be available at: `http://localhost:8000`
+Note: In-memory mode means data is lost when the server restarts.
 
-### API Documentation
+## Project Phases
 
-- **Swagger UI:** http://localhost:8000/swagger/
-- **ReDoc:** http://localhost:8000/redoc/
-- **Admin Panel:** http://localhost:8000/admin/
+The platform guides users through 8 sequential phases:
 
-## 📡 API Endpoints
+| Step | Phase | Description |
+|------|-------|-------------|
+| 1 | **Planning** | Project vision, objectives, stakeholders, and success metrics |
+| 2 | **Feasibility Study** | Market, technical, economic, and legal analysis |
+| 3 | **Requirements Gathering** | User stories, functional/non-functional requirements |
+| 4 | **Validation** | Stakeholder sign-off, prototype validation, risk confirmation |
+| 5 | **Design** | Architecture diagrams, ERD, class diagrams, API specs |
+| 6 | **Development** | Tech stack, implementation plan, coding standards |
+| 7 | **Tasks** | Epic breakdown, Gantt visualization, dependencies |
+| 8 | **Summary** | Final metrics, lessons learned, recommendations |
+
+## API Endpoints
 
 ### Authentication
-
-```bash
-# Register
-POST /api/auth/register/
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!",
-  "first_name": "John",
-  "last_name": "Doe",
-  "organization_name": "Acme Corp"
-}
-
-# Login
-POST /api/auth/login/
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!"
-}
-
-# Get Current User
-GET /api/auth/me/
-Authorization: Bearer <access_token>
+```
+POST /api/auth/register/    - Register new user
+POST /api/auth/login/       - Login and get JWT
+GET  /api/auth/me/          - Get current user
 ```
 
 ### Projects
+```
+GET    /api/projects/                    - List projects
+POST   /api/projects/                    - Create project
+GET    /api/projects/{id}/               - Get project details
+PATCH  /api/projects/{id}/               - Update project
+DELETE /api/projects/{id}/               - Delete project
+```
 
+### Phase Workflow
+```
+GET  /api/projects/{id}/phases/                    - Get phase status
+POST /api/projects/{id}/phases/{phase}/generate/   - Generate phase content
+POST /api/projects/{id}/phases/unlock-all/         - Unlock all phases
+```
+
+### Diagrams
+```
+GET  /api/projects/{id}/sdlc-diagrams/{stage}/        - Get diagram workspace
+PUT  /api/projects/{id}/sdlc-diagrams/{stage}/        - Save diagram
+POST /api/projects/{id}/sdlc-diagrams/{stage}/chat/   - AI diagram assistant
+POST /api/projects/{id}/diagrams/sync/                - Sync canvas with data
+```
+
+## Project Structure
+
+```
+GP2Official/
+├── backend/
+│   ├── emergentintegrations/   # LLM client (Gemini, HuggingFace)
+│   ├── models/                 # Data models
+│   ├── repositories/           # Data access layer
+│   ├── routes/                 # API endpoints
+│   ├── services/               # Business logic
+│   ├── config.py               # App configuration
+│   └── main.py                 # FastAPI app entry
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/         # React components
+│   │   │   ├── phases/         # Phase-specific components
+│   │   │   ├── canvas/         # Diagram canvas (MiroCanvas)
+│   │   │   └── ui/             # Shared UI components
+│   │   ├── constants/          # Design system, phase configs
+│   │   ├── lib/                # API client, utilities
+│   │   ├── pages/              # Route pages
+│   │   ├── store/              # Zustand state stores
+│   │   └── types/              # TypeScript definitions
+│   └── package.json
+│
+└── README.md
+```
+
+## Environment Variables
+
+All environment variables are optional. The app runs with sensible defaults.
+
+### Backend (.env)
+```env
+# Required for production
+SECRET_KEY=your-secret-key-change-this
+
+# Database
+MONGO_URL=mongodb://localhost:27017
+DATABASE_NAME=architect_ai
+USE_IN_MEMORY_DB=true  # Set to true to skip MongoDB
+
+# CORS
+FRONTEND_ORIGIN=http://localhost:5173
+
+# AI (optional - defaults to stub/mock mode)
+LLM_PROVIDER=stub  # Options: stub, gemini, huggingface
+LLM_API_KEY=       # Only needed if using gemini/huggingface
+LLM_MODEL_NAME=    # Model name for the provider
+```
+
+## AI Integration (Optional)
+
+The platform works without any AI configuration using **stub/mock mode**. Each phase has a dedicated AI assistant that returns placeholder content when no AI is configured.
+
+To enable real AI:
+1. Set `LLM_PROVIDER` to `gemini` or `huggingface`
+2. Add your `LLM_API_KEY`
+3. Optionally set `LLM_MODEL_NAME`
+
+Supported providers:
+- **stub/mock** - Default, no API key needed
+- **gemini** - Google Gemini API
+- **huggingface** - HuggingFace Inference API
+
+## PlantUML Diagrams
+
+Diagrams use PlantUML with proper encoding (deflate + custom base64).
+
+Supported diagram types:
+- Architecture diagrams
+- Entity Relationship Diagrams (ERD)
+- Class diagrams
+- Sequence diagrams
+- State machine diagrams
+- Activity diagrams
+
+## Development
+
+### Run Backend
 ```bash
-# List Projects
-GET /api/projects/
-
-# Create Project
-POST /api/projects/
-{
-  "name": "My Project",
-  "description": "Project description",
-  "template_type": "WEB_APP",
-  "brief_text": "Build a web application for..."
-}
-
-# Get Project
-GET /api/projects/{id}/
-
-# Update Project
-PATCH /api/projects/{id}/
-
-# Delete Project
-DELETE /api/projects/{id}/
-
-# Start AI Generation
-POST /api/projects/{id}/generate/
-{
-  "detail_level": "STANDARD",
-  "include_uml": true,
-  "include_tasks": true
-}
-
-# Get Requirements
-GET /api/projects/{id}/requirements/
-
-# Get Tasks
-GET /api/projects/{id}/tasks/
-
-# Get Artifacts (SRS, UML)
-GET /api/projects/{id}/artifacts/
-
-# Get Activity Log
-GET /api/projects/{id}/activity/
+cd backend
+uvicorn main:app --reload --port 8000
 ```
 
-### Generation Jobs
-
+### Run Frontend
 ```bash
-# Get Job Status
-GET /api/generation-jobs/{job_id}/
+cd frontend
+npm run dev
 ```
 
-### Requirements
-
+### Build for Production
 ```bash
-# Update Requirement
-PATCH /api/requirements/{id}/
-{
-  "status": "APPROVED",
-  "priority": "HIGH"
-}
+# Frontend
+cd frontend
+npm run build
+
+# Backend
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### Tasks
+## License
 
-```bash
-# Update Task
-PATCH /api/tasks/{id}/
-{
-  "status": "IN_PROGRESS",
-  "estimate_hours": 8.0
-}
-```
-
-## 🧪 Testing
-
-### Test with cURL
-
-```bash
-# Register
-curl -X POST http://localhost:8000/api/auth/register/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "Test123!",
-    "first_name": "Test",
-    "last_name": "User",
-    "organization_name": "Test Org"
-  }'
-
-# Login (save the access token)
-curl -X POST http://localhost:8000/api/auth/login/ \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "Test123!"}'
-
-# Create Project (use token from login)
-curl -X POST http://localhost:8000/api/projects/ \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" \
-  -d '{
-    "name": "My First Project",
-    "description": "Test project",
-    "template_type": "WEB_APP",
-    "brief_text": "Build a todo list web application with user authentication"
-  }'
-
-# Generate (use project_id from create response)
-curl -X POST http://localhost:8000/api/projects/<PROJECT_ID>/generate/ \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" \
-  -d '{"detail_level": "STANDARD", "include_uml": true, "include_tasks": true}'
-```
-
-## 🏛️ Domain Models
-
-- **Organization** - Multi-tenant container
-- **User** - with roles (Owner, Admin, Member)
-- **Project** - Software project
-- **Requirement** - FR/NFR/Constraints
-- **Artifact** - SRS, UML, Proposals
-- **Task** - Work items with estimates
-- **GenerationJob** - AI processing jobs
-- **ActivityLog** - Audit trail
-
-## 🤖 AI Generation
-
-Currently using **Stub LLM** for testing. Returns realistic mock data.
-
-**To use real LLM:**
-1. Implement `ILLMClient` for your provider (OpenAI, HuggingFace, etc.)
-2. Update `api/dependencies.py` to use real client
-3. Configure API keys in `.env`
-
-## 🔒 Security
-
-- JWT authentication with short-lived tokens
-- Multi-tenant data isolation (organization scoping)
-- Role-based access control
-- Password hashing with Django's PBKDF2
-- CORS configured for frontend origins
-
-## 📁 Project Structure
-
-```
-backend/
-├── domain/              # Domain models (entities)
-├── interfaces/          # Repository & service interfaces
-├── infrastructure/      # Implementations (Django ORM, LLM)
-├── application/         # Application services (use cases)
-├── api/                 # REST API (DRF views, serializers)
-└── config/              # Django settings
-```
-
-## 🛠️ Development
-
-### Run Tests
-```bash
-pytest
-```
-
-### Code Quality
-```bash
-# Format
-black .
-
-# Lint
-flake8
-
-# Type Check
-mypy .
-```
-
-## 📝 License
-
-Proprietary - All Rights Reserved
+MIT License

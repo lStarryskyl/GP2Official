@@ -28,6 +28,7 @@ class ProjectRepository:
             "status": "draft",
             "feature_tier": project_data.feature_tier or "pro",
             "phase_status": project_data.phase_status,
+            "roadmap": project_data.__dict__.get('roadmap') if hasattr(project_data, 'roadmap') else None,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }
@@ -76,6 +77,8 @@ class ProjectRepository:
             update_doc["questionnaire_data"] = update_data.questionnaire_data
         if update_data.feature_tier is not None:
             update_doc["feature_tier"] = update_data.feature_tier
+        if getattr(update_data, 'roadmap', None) is not None:
+            update_doc["roadmap"] = update_data.roadmap
         
         result = await db[self.collection_name].find_one_and_update(
             {"_id": project_id, "organization": organization},

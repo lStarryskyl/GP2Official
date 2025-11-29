@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Plus, Sparkles, FolderOpen, Calendar, TrendingUp, Zap } from 'lucide-react';
+import { Plus, Sparkles, FolderOpen, Calendar, TrendingUp, Zap, BarChart3, Eye, ArrowRight, Layers } from 'lucide-react';
 import type { Project } from '@/types';
 
 export const ProjectsPage: React.FC = () => {
@@ -178,23 +178,37 @@ export const ProjectsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Action button */}
-                    <Button
-                      variant="outline"
-                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 group-hover:bg-gradient-to-r group-hover:from-amber-500 group-hover:to-orange-600 group-hover:text-white group-hover:border-transparent transition-all duration-300"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (resolvedId) {
-                          navigate(`/projects/${resolvedId}`);
-                        }
-                      }}
-                    >
-                      <span className="group-hover:hidden">View Details</span>
-                      <span className="hidden group-hover:inline-flex items-center gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        Open Project
-                      </span>
-                    </Button>
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-50 transition-all duration-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (resolvedId) {
+                            navigate(`/projects/${resolvedId}`);
+                          }
+                        }}
+                      >
+                        <Layers className="w-4 h-4 mr-1" />
+                        Phases
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-50 transition-all duration-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (resolvedId) {
+                            navigate(`/projects/${resolvedId}/summary`);
+                          }
+                        }}
+                      >
+                        <BarChart3 className="w-4 h-4 mr-1" />
+                        Summary
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               </div>

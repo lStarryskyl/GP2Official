@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
@@ -137,6 +137,21 @@ export const ProjectDetailPage: React.FC = () => {
     }
     return acc;
   }, {});
+
+  const completedTasks = useMemo(
+    () => tasks.filter((task) => (task.status || '').toLowerCase() === 'completed'),
+    [tasks]
+  );
+
+  const progressPct = tasks.length ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+
+  const requirementCoverage = useMemo(() => {
+    if (!requirements.length) return 0;
+    const covered = requirements.filter((req) =>
+      tasks.some((task) => task.requirement_id === req.requirement_id)
+    ).length;
+    return Math.round((covered / requirements.length) * 100);
+  }, [requirements, tasks]);
 
   if (isLoading) {
     return (
@@ -284,62 +299,66 @@ export const ProjectDetailPage: React.FC = () => {
           </aside>
 
           <div className="flex-1 space-y-6">
-            <div className="space-y-4 phase-board">
+            {/* Phase Navigation Grid - Professional Design */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 phase-board">
               {phaseConfigs.map((phase) => {
                 const status = phaseStatus[phase.id] || 'locked';
                 const output = phaseOutputs[phase.id];
-                const locked = status === 'locked';
+                const isCompleted = status === 'completed';
+                const isActive = status === 'in_progress';
+                
                 return (
-                  <Card key={phase.id} className="phase-card">
-                    <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {phase.title}
-                          <Badge
-                            variant={
-                              status === 'completed'
-                                ? 'success'
-                                : status === 'ready'
-                                ? 'default'
-                                : status === 'in_progress'
-                                ? 'warning'
-                                : 'secondary'
-                            }
-                          >
-                            {status.replace('_', ' ')}
-                          </Badge>
-                        </CardTitle>
-                        <CardDescription>{phase.description}</CardDescription>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`)
-                        }
-                      >
-                        View Phase
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <p className="text-sm text-gray-600">{phase.description}</p>
-                      <div className="text-xs text-gray-500">
-                        {locked
-                          ? 'Locked until previous phase is complete.'
-                          : status === 'completed'
-                          ? 'Phase completed. Review the latest summary below.'
-                          : status === 'in_progress'
-                          ? 'In progress ??? open the phase to continue collaborating with Acorn.'
-                          : 'Ready to start ??? open the phase when you are ready to work on it.'}
-                      </div>
-                      {output ? (
-                        <div className="border border-gray-100 rounded-md p-3 bg-gray-50 max-h-64 overflow-auto text-sm">
-                          <ReactMarkdown>{output}</ReactMarkdown>
+                  <Card 
+                    key={phase.id} 
+                    className={`phase-card cursor-pointer transition-all duration-200 hover:shadow-md group ${
+                      isCompleted 
+                        ? 'bg-white border-l-4 border-l-green-500' 
+                        : isActive 
+                        ? 'bg-white border-l-4 border-l-amber-500 shadow-md' 
+                        : 'bg-white border border-gray-100 hover:border-amber-200'
+                    }`}
+                    onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`)}
+                  >
+                    <CardContent className="p-5">
+                      {/* Step Number + Status */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
+                          isCompleted 
+                            ? 'bg-green-500 text-white' 
+                            : isActive 
+                            ? 'bg-amber-500 text-white' 
+                            : 'bg-gray-100 text-gray-500 group-hover:bg-amber-50 group-hover:text-amber-600'
+                        }`}>
+                          {isCompleted ? (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            phase.stepNumber
+                          )}
                         </div>
-                      ) : (
-                        <div className="border border-dashed border-gray-200 rounded-md p-4 text-xs text-gray-500">
-                          No summary has been generated for this phase yet. Use ???View Phase??? to open Acorn Draft and
-                          capture details.
+                        {isActive && (
+                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                            In Progress
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Title + Description */}
+                      <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-amber-700 transition-colors">
+                        {phase.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        {phase.description}
+                      </p>
+                      
+                      {/* Generated indicator */}
+                      {output && (
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 text-xs text-green-600">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Content ready
                         </div>
                       )}
                     </CardContent>

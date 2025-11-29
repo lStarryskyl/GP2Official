@@ -1,7 +1,7 @@
 """Project models."""
 
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 from enum import Enum
 
@@ -24,14 +24,19 @@ class ProjectTemplateType(str, Enum):
 
 
 def default_phase_status() -> Dict[str, str]:
+    """Default phase status for new projects.
+    
+    Phase order: Planning → Feasibility → Requirements → Validation → Design → Development → Tasks → Summary
+    """
     return {
         "planning": "ready",
-        "cost_benefit": "locked",
-        "tasks": "locked",
+        "feasibility_study": "locked",
         "requirements_gathering": "locked",
-        "requirements_validation": "locked",
-        "design_architecture": "locked",
+        "validation": "locked",
+        "design": "locked",
         "development": "locked",
+        "tasks": "locked",
+        "summary": "locked",
     }
 
 
@@ -44,6 +49,7 @@ class ProjectBase(BaseModel):
     questionnaire_data: Optional[Dict[str, Any]] = None
     feature_tier: str = "pro"
     phase_status: Dict[str, str] = Field(default_factory=default_phase_status)
+    roadmap: Optional[List[Dict[str, Any]]] = None
 
 
 class ProjectCreate(ProjectBase):
@@ -87,5 +93,6 @@ class ProjectResponse(BaseModel):
     feature_tier: str
     phase_status: Dict[str, str] = Field(default_factory=default_phase_status)
     brief_text: Optional[str]
+    roadmap: Optional[List[Dict[str, Any]]] = None
     created_at: datetime
     updated_at: datetime

@@ -656,7 +656,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                 </p>
               );
             }
-            const lines = summaryText.split('\n').filter((line) => line.trim());
+            const lines = summaryText.split('\n').filter((line: string) => line.trim());
             return (
               <div className="space-y-2 text-sm text-gray-700">
                 {latestStudy?.title && (

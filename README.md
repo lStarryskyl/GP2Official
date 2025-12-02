@@ -85,9 +85,15 @@ LLM_PROVIDER=stub
 ### Step 4: Run Backend
 
 ```bash
-# From backend folder
-uvicorn main:app --reload --port 8000
+# From backend folder (after activating the venv)
+# macOS / Linux
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# Windows PowerShell
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+> Tip: need a single command? Use `python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000`
 
 Backend API runs at: `http://localhost:8000`
 
@@ -105,7 +111,12 @@ npm install
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:5173`
+Frontend runs at: `http://localhost:5173`. If you need to bind to another interface/port:
+
+```bash
+# macOS / Linux / Windows
+npm run dev -- --host 0.0.0.0 --port 5173
+```
 
 ### Step 6: Access the App
 
@@ -140,6 +151,19 @@ npm run dev
 ```
 
 Note: In-memory mode means data is lost when the server restarts.
+
+## Everyday Developer Commands
+
+| Task | macOS / Linux | Windows PowerShell |
+|------|---------------|--------------------|
+| Activate backend venv | `source backend/venv/bin/activate` | `.\backend\venv\Scripts\Activate.ps1` |
+| Install backend deps | `pip install -r backend/requirements.txt` | `pip install -r backend/requirements.txt` |
+| Start backend | `cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000` | `cd backend; uvicorn main:app --reload --host 0.0.0.0 --port 8000` |
+| Install frontend deps | `cd frontend && npm install` | same |
+| Start frontend dev server | `cd frontend && npm run dev` | same |
+| Production build check | `cd frontend && npm run build` | same |
+
+> Before pushing, run `npm run build` (frontend) and ensure the backend boots without errors so CI and teammates have a smooth experience.
 
 ## Project Phases
 

@@ -3,6 +3,31 @@ import { persist } from 'zustand/middleware';
 import type { User, RegisterRequest } from '@/types';
 import { api } from '@/lib/api';
 
+const normalizeErrorMessage = (value: any, fallback: string) => {
+  if (!value) return fallback;
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    const parts = value.map((item) => {
+      if (!item) return '';
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object') {
+        const loc = Array.isArray(item.loc) ? item.loc.join('.') : item.loc;
+        const msg = item.msg || item.message || '';
+        return loc ? `${loc}: ${msg}` : msg || JSON.stringify(item);
+      }
+      return String(item);
+    });
+    return parts.filter(Boolean).join(' | ') || fallback;
+  }
+  if (typeof value === 'object') {
+    if (value.msg) return value.msg;
+    if (value.message) return value.message;
+    if (value.detail) return normalizeErrorMessage(value.detail, fallback);
+    return JSON.stringify(value);
+  }
+  return String(value);
+};
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -37,7 +62,8 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
         } catch (error: any) {
-          const message = error.response?.data?.detail || error.response?.data?.error || 'Login failed';
+          const raw = error.response?.data?.detail || error.response?.data?.error || 'Login failed';
+          const message = normalizeErrorMessage(raw, 'Login failed');
           set({ error: message, isLoading: false });
           throw error;
         }
@@ -57,7 +83,8 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
         } catch (error: any) {
-          const message = error.response?.data?.detail || error.response?.data?.error || 'Registration failed';
+          const raw = error.response?.data?.detail || error.response?.data?.error || 'Registration failed';
+          const message = normalizeErrorMessage(raw, 'Registration failed');
           set({ error: message, isLoading: false });
           throw error;
         }

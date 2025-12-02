@@ -271,6 +271,32 @@ export interface WorkspaceInvite {
   accepted_by?: string | null;
 }
 
+export interface ChangeLogFileDetail {
+  name: string;
+  timestamp?: string;
+  order?: number;
+  [key: string]: any;
+}
+
+export interface ChangeLogEntry {
+  id: string;
+  project_id: string;
+  organization?: string | null;
+  author_id: string;
+  description: string;
+  files: string[];
+  task_ids: string[];
+  requirement_ids: string[];
+  entry_type: string;
+  ai_summary?: string | null;
+  diagram_url?: string | null;
+  metadata: Record<string, any> & {
+    file_details?: ChangeLogFileDetail[];
+  };
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ScenarioSnapshot {
   project_id: string;
   name: string;

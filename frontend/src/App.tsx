@@ -14,6 +14,8 @@ import { AcornDraftPage } from './pages/AcornDraftPage';
 import { ProjectSummaryPage } from './pages/ProjectSummaryPage';
 import { GuidedWorkspaceBuilder } from './pages/GuidedWorkspaceBuilder';
 import ProfilePage from './pages/ProfilePage';
+import ProjectGovernancePage from './pages/ProjectGovernancePage';
+import DevelopmentUpdatesPage from './pages/DevelopmentUpdatesPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -65,6 +67,22 @@ function App() {
           element={
             <PrivateRoute>
               <ProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/governance"
+          element={
+            <PrivateRoute>
+              <ProjectGovernancePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/updates"
+          element={
+            <PrivateRoute>
+              <DevelopmentUpdatesPage />
             </PrivateRoute>
           }
         />

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import type { User, WorkspaceInvite } from '@/types';
+import type { User, WorkspaceInvite, SocialLink } from '@/types';
 import { ROLE_OPTIONS } from '@/constants/roles';
 import { Loader2, Link as LinkIcon, Mail, MapPin, Briefcase, Shield, Send } from 'lucide-react';
 
@@ -131,7 +131,7 @@ export const ProfilePage: React.FC = () => {
           .filter(Boolean),
         social_links: socialFields
           .map(({ key }) => (social[key] ? { label: key, url: social[key] } : null))
-          .filter(Boolean),
+          .filter((link): link is SocialLink => Boolean(link)),
       };
       const updated = await api.updateProfile(payload);
       setProfile(updated);

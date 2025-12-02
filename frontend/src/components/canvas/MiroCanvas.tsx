@@ -20,7 +20,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/Button';
-import { brand, colors, shapeColors, canvasColors } from '@/constants/design';
+import { colors, shapeColors, canvasColors } from '@/constants/design';
 import {
   Square,
   Circle,
@@ -846,7 +846,6 @@ const MiroCanvasInner: React.FC<MiroCanvasProps> = ({
     const shapeDef = shapeLibrary.find(s => s.id === shapeId);
     if (!shapeDef) return;
 
-    const _viewport = reactFlowInstance.getViewport();
     const position = reactFlowInstance.screenToFlowPosition({
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,

@@ -4,6 +4,7 @@ import type {
   RegisterRequest,
   UserProfileUpdatePayload,
   WorkspaceInvite,
+  ChangeLogEntry,
   Project,
   Requirement,
   Task,
@@ -151,6 +152,35 @@ class ApiClient {
     await this.client.delete(`/users/invites/${inviteId}`);
   }
 
+  async getChangeLog(projectId: string): Promise<ChangeLogEntry[]> {
+    const response = await this.client.get(`/projects/${projectId}/changelog/`);
+    return response.data;
+  }
+
+  async createChangeLog(
+    projectId: string,
+    payload: { description: string; files: string[]; task_ids: string[]; requirement_ids: string[]; entry_type?: string; generate_diagram?: boolean }
+  ): Promise<ChangeLogEntry> {
+    const response = await this.client.post(`/projects/${projectId}/changelog/`, payload);
+    return response.data;
+  }
+
+  async uploadChangeLog(
+    projectId: string,
+    data: { file: File; description?: string; task_ids?: string[]; requirement_ids?: string[]; generate_diagram?: boolean }
+  ): Promise<ChangeLogEntry> {
+    const formData = new FormData();
+    formData.append('file', data.file);
+    if (data.description) formData.append('description', data.description);
+    formData.append('task_ids', (data.task_ids || []).join(','));
+    formData.append('requirement_ids', (data.requirement_ids || []).join(','));
+    if (data.generate_diagram) formData.append('generate_diagram', 'true');
+    const response = await this.client.post(`/projects/${projectId}/changelog/upload/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
   // Projects
   async getProjects(filters?: Record<string, any>): Promise<Project[]> {
     const response = await this.client.get('/projects/', { params: filters });
@@ -193,7 +223,7 @@ class ApiClient {
   }
 
   async updateProject(id: string, data: Partial<Project>): Promise<Project> {
-    const response = await this.client.patch(`/projects/${id}/`, data);
+    const response = await this.client.put(`/projects/${id}/`, data);
     return response.data;
   }
 

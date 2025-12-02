@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import os
 
 from database import init_db, close_db
-from routes import auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow, sandbox, users
+from routes import auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow, sandbox, users, change_log
 from config import settings
 
 
@@ -28,16 +28,21 @@ app = FastAPI(
 )
 
 # CORS middleware
-allowed_origins = {
-    settings.frontend_origin,
+default_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
-}
+    "http://127.0.0.1:5173",
+]
+if settings.frontend_origin:
+    default_origins.append(settings.frontend_origin)
+
+allowed_origins = [origin for origin in default_origins if origin]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin for origin in allowed_origins if origin],
-    allow_origin_regex=r"http://localhost:\d+",
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"http://127\.0\.0\.1:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +60,7 @@ app.include_router(ux_flow.router, prefix="/api", tags=["UX Flow"])
 app.include_router(phase_flow.router, prefix="/api", tags=["Phases"])
 app.include_router(sandbox.router, prefix="/api/sandbox", tags=["Sandbox"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
+app.include_router(change_log.router, prefix="/api", tags=["ChangeLog"])
 
 
 @app.get("/api/health")

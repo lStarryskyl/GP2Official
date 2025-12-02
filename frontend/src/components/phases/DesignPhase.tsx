@@ -15,7 +15,6 @@ import {
   ChevronUp,
   Send,
   Bot,
-  Wand2,
   ZoomIn,
   ZoomOut,
   Maximize2,

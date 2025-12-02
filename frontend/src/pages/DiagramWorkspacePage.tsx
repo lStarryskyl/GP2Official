@@ -329,7 +329,7 @@ export const DiagramWorkspacePage: React.FC = () => {
   const [frames, setFrames] = useState<{ id: string; timestamp: string; nodes: DiagramNode[]; edges?: DiagramEdge[] }[]>([]);
   const [playbackIndex, setPlaybackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const playbackTimer = useRef<NodeJS.Timeout | null>(null);
+  const playbackTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -353,7 +353,6 @@ export const DiagramWorkspacePage: React.FC = () => {
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   const [canvasTheme, setCanvasTheme] = useState<'light' | 'dark'>('light');
   const [focusMode, setFocusMode] = useState(false);
-  const autosaveTimer = useRef<NodeJS.Timeout | null>(null);
   const [autosaveState, setAutosaveState] = useState<'idle' | 'saving' | 'saved' | 'offline'>('idle');
   const [snapshotHistory, setSnapshotHistory] = useState<
     { id: string; timestamp: string; nodes: Node[]; edges: Edge[] }[]
@@ -465,6 +464,20 @@ export const DiagramWorkspacePage: React.FC = () => {
     window.addEventListener('resize', handleViewportResize);
     return () => window.removeEventListener('resize', handleViewportResize);
   }, []);
+
+  const applyFrameToCanvas = useCallback(
+    (index: number) => {
+      const frame = frames[index];
+      if (!frame) return;
+      if (frame.nodes?.length) {
+        setNodes(toReactFlowNodes(frame.nodes));
+      }
+      if (frame.edges?.length) {
+        setEdges(toReactFlowEdges(frame.edges));
+      }
+    },
+    [frames, setNodes, setEdges]
+  );
 
   useEffect(() => {
     if (!isPlaying || frames.length === 0) {
@@ -1084,20 +1097,6 @@ export const DiagramWorkspacePage: React.FC = () => {
       throw err;
     }
   };
-
-  const applyFrameToCanvas = useCallback(
-    (index: number) => {
-      const frame = frames[index];
-      if (!frame) return;
-      if (frame.nodes?.length) {
-        setNodes(toReactFlowNodes(frame.nodes));
-      }
-      if (frame.edges?.length) {
-        setEdges(toReactFlowEdges(frame.edges));
-      }
-    },
-    [frames, setNodes, setEdges]
-  );
 
   const handleFrameJump = (index: number) => {
     setIsPlaying(false);

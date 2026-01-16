@@ -239,5 +239,11 @@ async def close_db():
 
 
 def get_db():
-    """Get database instance."""
+    """Get database instance. Falls back to in-memory if not initialized."""
+    global db, client
+    if db is None:
+        # Ensure we always have a working database
+        logger.warning("Database not initialized, using in-memory fallback")
+        client = MemoryClient()
+        db = client[settings.database_name]
     return db

@@ -49,8 +49,14 @@ class UserRepository:
 class _SupabaseUserRepository:
     """Supabase PostgreSQL implementation."""
     
-    async def create(self, user_data: UserCreate) -> User:
+    def _get_pool(self):
         from database_supabase import pool
+        if pool is None:
+            raise Exception("Supabase database pool not initialized. Check SUPABASE_URL and USE_SUPABASE environment variables.")
+        return pool
+    
+    async def create(self, user_data: UserCreate) -> User:
+        pool = self._get_pool()
         
         role_key, _ = resolve_role(user_data.role)
         password_bytes = user_data.password.encode("utf-8")
@@ -80,7 +86,7 @@ class _SupabaseUserRepository:
         )
     
     async def get_by_email(self, email: str) -> Optional[User]:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow('SELECT * FROM users WHERE email = $1', email.lower())
         if row:
@@ -88,7 +94,7 @@ class _SupabaseUserRepository:
         return None
     
     async def get_by_id(self, user_id: str) -> Optional[User]:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow('SELECT * FROM users WHERE id = $1', user_id)
         if row:
@@ -98,7 +104,7 @@ class _SupabaseUserRepository:
     async def update_profile(self, user_id: str, updates: Dict[str, Any]) -> Optional[User]:
         if not updates:
             return await self.get_by_id(user_id)
-        from database_supabase import pool
+        pool = self._get_pool()
         updates["updated_at"] = datetime.utcnow()
         set_clause = ", ".join([f"{k} = ${i+2}" for i, k in enumerate(updates.keys())])
         query = f"UPDATE users SET {set_clause} WHERE id = $1 RETURNING *"

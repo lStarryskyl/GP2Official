@@ -40,9 +40,15 @@ class WorkspaceInviteRepository:
 
 class _SupabaseWorkspaceInviteRepository:
     """Supabase PostgreSQL implementation."""
+    
+    def _get_pool(self):
+        from database_supabase import pool
+        if pool is None:
+            raise Exception("Supabase database pool not initialized.")
+        return pool
 
     async def create_invite(self, organization: str, email: str, role: str, invited_by: str, message: str | None = None) -> WorkspaceInvite:
-        from database_supabase import pool
+        pool = self._get_pool()
         token = secrets.token_urlsafe(24)
         invite_id = str(uuid.uuid4())
         now = datetime.utcnow()
@@ -58,13 +64,13 @@ class _SupabaseWorkspaceInviteRepository:
                               created_at=now, accepted_at=None, accepted_by=None)
 
     async def list_org_invites(self, organization: str) -> List[WorkspaceInvite]:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch('SELECT * FROM workspace_invites WHERE organization = $1 ORDER BY created_at DESC', organization)
         return [WorkspaceInvite(**dict(row)) for row in rows]
 
     async def find_pending_for_email(self, email: str) -> Optional[WorkspaceInvite]:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow('SELECT * FROM workspace_invites WHERE email = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1', email.lower(), "pending")
         if row:
@@ -72,13 +78,13 @@ class _SupabaseWorkspaceInviteRepository:
         return None
 
     async def mark_accepted(self, invite_id: str, user_id: str) -> None:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             await conn.execute('UPDATE workspace_invites SET status = $2, accepted_at = $3, accepted_by = $4 WHERE id = $1',
                               invite_id, "accepted", datetime.utcnow(), user_id)
 
     async def revoke_invite(self, invite_id: str, organization: str) -> bool:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             result = await conn.execute('DELETE FROM workspace_invites WHERE id = $1 AND organization = $2', invite_id, organization)
         return "DELETE 1" in result

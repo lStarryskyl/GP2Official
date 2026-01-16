@@ -44,10 +44,16 @@ class RefreshTokenRepository:
 
 class _SupabaseRefreshTokenRepository:
     """Supabase PostgreSQL implementation."""
+    
+    def _get_pool(self):
+        from database_supabase import pool
+        if pool is None:
+            raise Exception("Supabase database pool not initialized.")
+        return pool
 
     async def create_token(self, *, user_id: str, token_hash: str, expires_at: datetime,
                           user_agent: Optional[str], ip_address: Optional[str]) -> RefreshToken:
-        from database_supabase import pool
+        pool = self._get_pool()
         now = datetime.utcnow()
         token_id = str(uuid.uuid4())
         
@@ -62,7 +68,7 @@ class _SupabaseRefreshTokenRepository:
                            created_at=now, expires_at=expires_at, revoked=False, revoked_at=None)
 
     async def get_active_token(self, token_hash: str) -> Optional[RefreshToken]:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow('''
                 SELECT * FROM refresh_tokens 
@@ -73,14 +79,14 @@ class _SupabaseRefreshTokenRepository:
         return None
 
     async def revoke_token(self, token_id: str) -> None:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             await conn.execute('''
                 UPDATE refresh_tokens SET revoked = true, revoked_at = $2 WHERE id = $1
             ''', token_id, datetime.utcnow())
 
     async def revoke_by_hash(self, token_hash: str) -> None:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             await conn.execute('''
                 UPDATE refresh_tokens SET revoked = true, revoked_at = $2 
@@ -88,7 +94,7 @@ class _SupabaseRefreshTokenRepository:
             ''', token_hash, datetime.utcnow())
 
     async def revoke_user_tokens(self, user_id: str) -> None:
-        from database_supabase import pool
+        pool = self._get_pool()
         async with pool.acquire() as conn:
             await conn.execute('''
                 UPDATE refresh_tokens SET revoked = true, revoked_at = $2 

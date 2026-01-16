@@ -181,9 +181,11 @@ async def init_db():
             return
         except Exception as e:
             logger.error(f"Supabase initialization failed: {e}")
-            if settings.environment == "production":
-                raise
-            logger.warning("Falling back to MongoDB/in-memory")
+            logger.warning("Falling back to in-memory database")
+            client = MemoryClient()
+            db = client[settings.database_name]
+            logger.warning("Using in-memory database fallback. Data will not persist between restarts.")
+            return
     
     # Check for in-memory mode
     use_memory = os.environ.get("USE_IN_MEMORY_DB", "").lower() == "true"

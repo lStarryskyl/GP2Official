@@ -1,0 +1,88 @@
+services:
+  # Backend FastAPI service
+  - type: web
+    name: gp2official-backend
+    runtime: python3
+    plan: starter  # Can upgrade to standard/pro as needed
+    region: oregon  # Choose closest region
+    buildCommand: |
+      cd backend
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    
+    envVars:
+      # App Configuration
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      
+      # Database Configuration - Supabase (Project: qscbybwxuybptijwdyvc)
+      - key: USE_SUPABASE
+        value: true
+      - key: SUPABASE_URL
+        value: postgresql://postgres:[YOUR-PASSWORD]@db.qscbybwxuybptijwdyvc.supabase.co:5432/postgres
+      - key: SUPABASE_SERVICE_KEY
+        sync: false  # Get from Supabase Dashboard → Settings → API → service_role key
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzY2J5Ynd4dXlicHRpandkeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0NzIwOTEsImV4cCI6MjA1MzA0ODA5MX0.sb_publishable_chtjIdb6HNQWEwk4IdkpDQ_-Li47eY8
+      
+      # Fallback MongoDB (optional)
+      - key: USE_IN_MEMORY_DB
+        value: false
+      - key: MONGO_URL
+        sync: false  # Optional fallback
+      - key: DATABASE_NAME
+        value: architect_ai
+      
+      # Database Pool Settings
+      - key: DB_MIN_CONNECTIONS
+        value: 2
+      - key: DB_MAX_CONNECTIONS
+        value: 20
+      - key: DB_CONNECT_TIMEOUT
+        value: 30
+      - key: DB_RETRY_ATTEMPTS
+        value: 3
+      
+      # Cache Configuration
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: gp2official-redis
+          property: connectionString
+      - key: CACHE_TTL
+        value: 3600
+      
+      # CORS Configuration
+      - key: FRONTEND_ORIGIN
+        value: https://gp2official-frontend.netlify.app  # Update with your Netlify URL
+      
+      # AI Configuration (Optional)
+      - key: LLM_PROVIDER
+        value: stub  # Change to gemini/huggingface when ready
+      - key: GEMINI_API_KEY
+        sync: false  # Set manually if using Gemini
+      - key: HUGGINGFACE_API_KEY
+        sync: false  # Set manually if using HuggingFace
+      - key: LLM_MODEL_NAME
+        value: gemini-pro
+      
+      # PlantUML Configuration (Optional)
+      - key: PLANTUML_API_HOST
+        sync: false
+      - key: PLANTUML_API_KEY
+        sync: false
+
+  # Redis Cache
+  - type: redis
+    name: gp2official-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru

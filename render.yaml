@@ -1,0 +1,63 @@
+services:
+  # Backend API service
+  - type: web
+    name: gp2-backend
+    env: python
+    plan: starter
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGO_URL
+        fromDatabase:
+          name: gp2-mongodb
+          property: connectionString
+      - key: DATABASE_NAME
+        value: architect_ai
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: gp2-redis
+          property: connectionString
+      - key: FRONTEND_ORIGIN
+        fromService:
+          type: web
+          name: gp2-frontend
+          property: url
+      - key: LLM_PROVIDER
+        value: stub
+    healthCheckPath: /api/health
+
+  # Frontend static site
+  - type: static
+    name: gp2-frontend
+    buildCommand: |
+      cd frontend
+      npm ci
+      npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: gp2-backend
+          property: url
+
+  # Redis cache
+  - type: redis
+    name: gp2-redis
+    plan: starter
+
+databases:
+  # MongoDB database
+  - name: gp2-mongodb
+    plan: starter

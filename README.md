@@ -125,9 +125,27 @@ npm run dev -- --host 0.0.0.0 --port 5173
 3. Create your first project
 4. Start working through the 8 phases!
 
-## Quick Start (No Database Required)
+## Quick Start (Automated Setup)
 
-For the fastest setup without MongoDB:
+### Option 1: Automated Setup Script (Recommended)
+
+Run the setup script to automatically configure your development environment:
+
+```bash
+# Run the setup script
+python3 scripts/setup.py
+```
+
+This will:
+- Check prerequisites (Python 3.11+, Node.js 18+)
+- Create virtual environment and install dependencies
+- Generate secure environment configuration
+- Create startup scripts
+- Verify the installation
+
+### Option 2: Manual Setup (No Database Required)
+
+For manual setup without MongoDB:
 
 ```bash
 # Terminal 1 - Backend
@@ -148,6 +166,21 @@ uvicorn main:app --reload --port 8000
 cd frontend
 npm install
 npm run dev
+```
+
+### Option 3: Quick Start Scripts
+
+After running the setup script, use these convenience scripts:
+
+```bash
+# Start both servers (Unix/Linux/macOS)
+./scripts/start-dev.sh
+
+# Start both servers (Windows)
+scripts\start-dev.bat
+
+# Run tests
+./scripts/test.sh  # Unix/Linux/macOS
 ```
 
 Note: In-memory mode means data is lost when the server restarts.

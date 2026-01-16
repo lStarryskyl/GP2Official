@@ -71,7 +71,8 @@ class ChangeLogService:
             }
         )
 
-        # TODO: hook into diagram generation / timeline updates
+        # Hook into diagram generation and timeline updates
+        await self._trigger_diagram_updates(project_id, change_type, task_ids)
         return self._as_response(entry)
 
     async def _filter_valid_tasks(self, project_id: str, task_ids: List[str]) -> List[str]:
@@ -312,3 +313,26 @@ class ChangeLogService:
                 }
             )
         return merged
+    
+    async def _trigger_diagram_updates(self, project_id: str, change_type: str, task_ids: List[str]) -> None:
+        """Trigger diagram generation and timeline updates based on change log entries."""
+        try:
+            from services.diagram_service import DiagramService
+            from services.phase_flow_service import PhaseFlowService
+            
+            diagram_service = DiagramService()
+            phase_service = PhaseFlowService()
+            
+            # Update timeline diagrams if tasks were modified
+            if task_ids and change_type in ["task_completed", "task_created", "task_updated"]:
+                # Generate or update Gantt chart diagram
+                await diagram_service.auto_update_gantt_diagram(project_id, task_ids)
+                
+            # Update phase flow diagrams for major changes
+            if change_type in ["phase_completed", "milestone_reached", "project_updated"]:
+                await phase_service.update_phase_timeline(project_id)
+                
+        except Exception as e:
+            # Log error but don't fail the change log creation
+            logger.warning(f"Failed to trigger diagram updates for project {project_id}: {e}")
+            pass

@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from config import settings
 import logging
 import os
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -167,21 +168,61 @@ class MemoryClient:
 async def init_db():
     """Initialize database connection with automatic in-memory fallback."""
     global client, db
+    
+    # Debug: Log which database settings are active
+    logger.info(f"Database config: use_supabase={settings.use_supabase}, supabase_url={'set' if settings.supabase_url else 'not set'}")
+    
+    # Check if using Supabase
+    if settings.use_supabase and settings.supabase_url:
+        try:
+            from database_supabase import init_supabase_db
+            await init_supabase_db()
+            logger.info("Using Supabase PostgreSQL database")
+            return
+        except Exception as e:
+            logger.error(f"Supabase initialization failed: {e}")
+            if settings.environment == "production":
+                raise
+            logger.warning("Falling back to MongoDB/in-memory")
+    
+    # Check for in-memory mode
     use_memory = os.environ.get("USE_IN_MEMORY_DB", "").lower() == "true"
-
-    if use_memory:
+    if use_memory or settings.use_in_memory_db:
         client = MemoryClient()
         db = client[settings.database_name]
         logger.warning("Using in-memory database (USE_IN_MEMORY_DB=true)")
         return
 
     try:
-        client = AsyncIOMotorClient(settings.mongo_url)
+        # Configure connection with pooling and retry logic
+        client = AsyncIOMotorClient(
+            settings.mongo_url,
+            maxPoolSize=settings.db_max_connections,
+            minPoolSize=settings.db_min_connections,
+            serverSelectionTimeoutMS=settings.db_connect_timeout * 1000,
+            connectTimeoutMS=settings.db_connect_timeout * 1000,
+            socketTimeoutMS=settings.db_connect_timeout * 1000,
+            retryWrites=True,
+            retryReads=True,
+        )
+        
         db = client[settings.database_name]
-        await client.admin.command("ping")
-        logger.info(f"Connected to MongoDB: {settings.database_name}")
+        
+        # Test connection with retry logic
+        for attempt in range(settings.db_retry_attempts):
+            try:
+                await client.admin.command("ping")
+                logger.info(f"Connected to MongoDB: {settings.database_name} (attempt {attempt + 1})")
+                break
+            except Exception as retry_error:
+                if attempt < settings.db_retry_attempts - 1:
+                    logger.warning(f"MongoDB connection attempt {attempt + 1} failed, retrying... Error: {retry_error}")
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                else:
+                    raise retry_error
+                    
     except Exception as e:
-        logger.error(f"Failed to connect to MongoDB, falling back to in-memory store: {e}")
+        logger.error(f"Failed to connect to MongoDB after {settings.db_retry_attempts} attempts, falling back to in-memory store: {e}")
         client = MemoryClient()
         db = client[settings.database_name]
         logger.warning("Using in-memory database fallback. Data will not persist between restarts.")

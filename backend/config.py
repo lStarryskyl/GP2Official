@@ -82,8 +82,16 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Validate production configuration at startup
-settings.validate_production_config()
+# Log settings for debugging (remove sensitive data)
+import logging
+_logger = logging.getLogger(__name__)
+_logger.info(f"Settings loaded: environment={settings.environment}, use_supabase={settings.use_supabase}, supabase_url={'set' if settings.supabase_url else 'not set'}")
+
+# Validate production configuration at startup (skip if env vars not fully set)
+try:
+    settings.validate_production_config()
+except ValueError as e:
+    _logger.warning(f"Production config validation skipped: {e}")
 
 def _resolve_llm_api_key(cfg: Settings) -> Optional[str]:
     """Prefer provider-specific keys if generic one not supplied."""

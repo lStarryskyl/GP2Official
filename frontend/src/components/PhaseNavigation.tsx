@@ -202,7 +202,7 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
         {phaseConfigs.map((phase) => {
           const colors = phaseColors[phase.color];
           const isActive = currentPhaseId === phase.id;
-          const isCompleted = false; // TODO: Get from project status
+          const isCompleted = project?.phase_status?.[phase.id] === 'completed';
 
           return (
             <button

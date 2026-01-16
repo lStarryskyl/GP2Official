@@ -1,0 +1,100 @@
+[build]
+  base = "frontend"
+  publish = "frontend/dist"
+  command = "npm ci && npm run build"
+  
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+  # Will be set via Netlify dashboard
+  VITE_API_URL = ""
+  NODE_ENV = "production"
+
+# API proxy redirects to backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://gp2official-backend.onrender.com/api/:splat"
+  status = 200
+  force = true
+  
+# WebSocket proxy for real-time collaboration
+[[redirects]]
+  from = "/ws/*"
+  to = "https://gp2official-backend.onrender.com/ws/:splat"
+  status = 200
+  force = true
+
+# SPA routing - catch all
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Production environment
+[context.production.environment]
+  VITE_API_URL = "https://gp2official-backend.onrender.com"
+  VITE_SUPABASE_URL = "https://qscbybwxuybptijwdyvc.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzY2J5Ynd4dXlicHRpandkeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0NzIwOTEsImV4cCI6MjA1MzA0ODA5MX0.sb_publishable_chtjIdb6HNQWEwk4IdkpDQ_-Li47eY8"
+  NODE_ENV = "production"
+
+# Deploy preview environment (for testing)
+[context.deploy-preview.environment]
+  VITE_API_URL = "https://gp2official-backend.onrender.com"
+  VITE_SUPABASE_URL = "https://qscbybwxuybptijwdyvc.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzY2J5Ynd4dXlicHRpandkeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0NzIwOTEsImV4cCI6MjA1MzA0ODA5MX0.sb_publishable_chtjIdb6HNQWEwk4IdkpDQ_-Li47eY8"
+  NODE_ENV = "development"
+
+# Branch deploys (for feature branches)  
+[context.branch-deploy.environment]
+  VITE_API_URL = "https://gp2official-backend.onrender.com"
+  VITE_SUPABASE_URL = "https://qscbybwxuybptijwdyvc.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzY2J5Ynd4dXlicHRpandkeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0NzIwOTEsImV4cCI6MjA1MzA0ODA5MX0.sb_publishable_chtjIdb6HNQWEwk4IdkpDQ_-Li47eY8"
+  NODE_ENV = "development"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https://gp2official-backend.onrender.com wss://gp2official-backend.onrender.com; media-src 'self' blob:; object-src 'none'; child-src 'self';"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+# Static asset caching
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Images and fonts caching
+[[headers]]
+  for = "*.@(jpg|jpeg|png|gif|ico|svg|webp|avif|woff|woff2|ttf|eot)"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# JavaScript and CSS caching
+[[headers]]
+  for = "*.@(js|css)"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# HTML files - no cache for dynamic content
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Service Worker - no cache
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# API endpoints via proxy - no cache
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

@@ -79,7 +79,7 @@ class ApiClient {
             const refreshToken = localStorage.getItem('refresh_token');
             if (refreshToken) {
               const response = await axios.post(
-                `${API_URL}/api/auth/token/refresh/`,
+                `${API_URL}/api/auth/token/refresh`,
                 { refresh_token: refreshToken }
               );
               const { access_token, refresh_token: newRefreshToken } = response.data;
@@ -110,21 +110,21 @@ class ApiClient {
 
   // Auth
   async register(data: RegisterRequest): Promise<any> {
-    const response = await this.client.post('/auth/register/', data);
+    const response = await this.client.post('/auth/register', data);
     return response.data;
   }
 
   async login(email: string, password: string): Promise<any> {
-    const response = await this.client.post('/auth/login/', { email, password });
+    const response = await this.client.post('/auth/login', { email, password });
     return response.data;
   }
 
   async logout(refreshToken: string): Promise<void> {
-    await this.client.post('/auth/logout/', { refresh_token: refreshToken });
+    await this.client.post('/auth/logout', { refresh_token: refreshToken });
   }
 
   async getMe(): Promise<User> {
-    const response = await this.client.get('/auth/me/');
+    const response = await this.client.get('/auth/me');
     return response.data;
   }
   

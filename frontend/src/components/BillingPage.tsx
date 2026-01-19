@@ -16,7 +16,7 @@ interface BillingPageProps {
 }
 
 export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
-  const [plans, setPlans] = useState<Record<string, PricingPlan>>({});
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
   const fetchPlans = async () => {
     try {
       const data = await api.getBillingPlans();
-      setPlans(data);
+      setPlans(data as PricingPlan[]);
     } catch (error) {
       console.error('Failed to fetch plans:', error);
     } finally {
@@ -88,13 +88,13 @@ export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
 
       {/* Pricing Cards */}
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {Object.entries(plans).map(([planName, plan]) => {
-          const Icon = getPlanIcon(planName);
-          const featured = isFeatured(planName);
+        {plans.map((plan) => {
+          const Icon = getPlanIcon(plan.name);
+          const featured = isFeatured(plan.name);
           
           return (
             <div
-              key={planName}
+              key={plan.name}
               className={`relative bg-white rounded-3xl p-8 transition-all ${
                 featured
                   ? 'border-4 border-orange-400 shadow-2xl scale-105 z-10'
@@ -108,10 +108,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
               )}
 
               <div className="text-center mb-6">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${getPlanColor(planName)} mb-4`}>
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${getPlanColor(plan.name)} mb-4`}>
                   <Icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 capitalize mb-2">{planName}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 capitalize mb-2">{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
                   {plan.price > 0 && <span className="text-gray-600">/month</span>}
@@ -128,22 +128,22 @@ export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
               </ul>
 
               <Button
-                onClick={() => handleSubscribe(planName)}
-                disabled={subscribing === planName}
+                onClick={() => handleSubscribe(plan.name)}
+                disabled={subscribing === plan.name}
                 className={`w-full py-3 font-semibold ${
                   featured
                     ? 'bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600 text-white shadow-lg'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
                 }`}
               >
-                {subscribing === planName ? (
+                {subscribing === plan.name ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing...
                   </>
                 ) : (
                   <>
-                    {planName === 'free' ? 'Get Started' : 'Subscribe Now'}
+                    {plan.name === 'free' ? 'Get Started' : 'Subscribe Now'}
                   </>
                 )}
               </Button>

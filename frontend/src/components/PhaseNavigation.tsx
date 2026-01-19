@@ -116,7 +116,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
     return (
       <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
         {phaseConfigs.map((phase) => {
-          const colors = phaseColors[phase.color];
           const isActive = currentPhaseId === phase.id;
           return (
             <button
@@ -124,15 +123,15 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
               onClick={() => handlePhaseClick(phase)}
               className={`group relative flex items-center justify-center w-12 h-12 rounded-xl shadow-lg transition-all hover:scale-110 ${
                 isActive
-                  ? `bg-gradient-to-r ${colors.gradient} text-white`
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 shadow-gold-500/30'
+                  : 'bg-navy-900 border border-navy-800 text-gray-400 hover:bg-navy-800 hover:text-gold-500 hover:border-gold-500/50'
               }`}
               title={phase.title}
             >
               <span className="text-xl">
                 {getPhaseIcon(phase.id)}
               </span>
-              <span className="absolute right-full mr-2 px-2 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <span className="absolute right-full mr-2 px-3 py-1.5 rounded-lg bg-navy-800 border border-navy-700 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {phase.title}
               </span>
             </button>

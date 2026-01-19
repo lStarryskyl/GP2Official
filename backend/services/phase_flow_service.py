@@ -3,9 +3,9 @@
 from typing import Dict, Tuple, Optional
 import logging
 import time
+import openai
 
 from config import settings
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from repositories.project_repository import ProjectRepository
 from models.project import default_phase_status
 from repositories.artifact_repository import ArtifactRepository

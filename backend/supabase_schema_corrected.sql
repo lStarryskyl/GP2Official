@@ -1,8 +1,20 @@
--- Supabase Schema for GP2Official
--- Run this in the Supabase SQL Editor to create the required tables
+-- CORRECTED Supabase Schema for GP2Official
+-- Drop existing tables and recreate with correct structure
+-- Run this in Supabase SQL Editor
+
+-- Drop existing tables (cascade to handle references)
+DROP TABLE IF EXISTS refresh_tokens CASCADE;
+DROP TABLE IF EXISTS workspace_invites CASCADE;
+DROP TABLE IF EXISTS requirements CASCADE;
+DROP TABLE IF EXISTS tasks CASCADE;
+DROP TABLE IF EXISTS artifacts CASCADE;
+DROP TABLE IF EXISTS ai_runs CASCADE;
+DROP TABLE IF EXISTS activity_logs CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
 -- Users table
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
@@ -28,7 +40,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Projects table
-CREATE TABLE IF NOT EXISTS projects (
+CREATE TABLE projects (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
@@ -56,7 +68,7 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 -- Refresh tokens table
-CREATE TABLE IF NOT EXISTS refresh_tokens (
+CREATE TABLE refresh_tokens (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     token_hash TEXT UNIQUE NOT NULL,
@@ -68,8 +80,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     revoked_at TIMESTAMPTZ
 );
 
--- Workspace invites table
-CREATE TABLE IF NOT EXISTS workspace_invites (
+-- Workspace invites table  
+CREATE TABLE workspace_invites (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     organization TEXT NOT NULL,
@@ -84,7 +96,7 @@ CREATE TABLE IF NOT EXISTS workspace_invites (
 );
 
 -- Requirements table
-CREATE TABLE IF NOT EXISTS requirements (
+CREATE TABLE requirements (
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     type TEXT,
@@ -98,7 +110,7 @@ CREATE TABLE IF NOT EXISTS requirements (
 );
 
 -- Tasks table
-CREATE TABLE IF NOT EXISTS tasks (
+CREATE TABLE tasks (
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     requirement_id TEXT,
@@ -118,7 +130,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 -- Artifacts table
-CREATE TABLE IF NOT EXISTS artifacts (
+CREATE TABLE artifacts (
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     type TEXT NOT NULL,
@@ -132,7 +144,7 @@ CREATE TABLE IF NOT EXISTS artifacts (
 );
 
 -- AI Runs table
-CREATE TABLE IF NOT EXISTS ai_runs (
+CREATE TABLE ai_runs (
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL,
     user_id TEXT,
@@ -151,8 +163,8 @@ CREATE TABLE IF NOT EXISTS ai_runs (
 );
 
 -- Activity logs table
-CREATE TABLE IF NOT EXISTS activity_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE TABLE activity_logs (
+    id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL,
     user_id TEXT,
     action TEXT NOT NULL,
@@ -163,11 +175,12 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 );
 
 -- Indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_projects_organization ON projects(organization);
-CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
-CREATE INDEX IF NOT EXISTS idx_requirements_project ON requirements(project_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
-CREATE INDEX IF NOT EXISTS idx_artifacts_project ON artifacts(project_id);
-CREATE INDEX IF NOT EXISTS idx_ai_runs_project ON ai_runs(project_id);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_projects_organization ON projects(organization);
+CREATE INDEX idx_projects_owner ON projects(owner_id);
+CREATE INDEX idx_requirements_project ON requirements(project_id);
+CREATE INDEX idx_tasks_project ON tasks(project_id);
+CREATE INDEX idx_artifacts_project ON artifacts(project_id);
+CREATE INDEX idx_ai_runs_project ON ai_runs(project_id);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX idx_workspace_invites_email ON workspace_invites(email);

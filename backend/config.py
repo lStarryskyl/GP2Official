@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 14
     
     # AI / LLM Configuration
-    llm_provider: str = "gemini"
+    llm_provider: str = "openai"
     llm_api_key: Optional[str] = None
     llm_model_name: str = "gpt-4"
     openai_api_key: Optional[str] = None

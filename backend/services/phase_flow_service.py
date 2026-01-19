@@ -52,6 +52,11 @@ class PhaseFlowService:
         self.artifact_repo = ArtifactRepository()
         self.ai_run_repo = AiRunRepository()
         self.markdown_formatter = MarkdownFormatter()
+        
+        # Debug service initialization
+        logger.info(f"PhaseFlowService initialized - Provider: {self.provider}, Model: {self.model}")
+        logger.info(f"API key configured: {'Yes' if self.api_key else 'No'}")
+        logger.info(f"API key length: {len(self.api_key) if self.api_key else 0} characters")
 
     async def get_status(self, project_id: str, organization: str) -> Dict[str, str]:
         project = await self.project_repo.get_by_id(project_id, organization)
@@ -124,15 +129,19 @@ class PhaseFlowService:
         status[phase] = "in_progress"
         await self.project_repo.update_phase_status(project_id, organization, status)
 
+        logger.info(f"Starting content generation for phase {phase}, project {project_id}")
         raw_content = await self._run_phase_prompt(project.id, project.name, phase, prompt, user_id)
         
         # Debug logging to track content generation
         logger.info(f"Generated content for phase {phase}: {len(raw_content)} characters")
+        logger.info(f"Raw content preview: {raw_content[:200]}...")
+        
         if not raw_content or raw_content.strip() == "":
             logger.error(f"Empty content generated for phase {phase}")
             raw_content = f"# {PHASE_TITLES[phase]}\n\nError: No content was generated for this phase."
             
         formatted_content = self.markdown_formatter.format(raw_content, artifact_type=f"phase:{phase}")
+        logger.info(f"Formatted content length: {len(formatted_content)} characters")
 
         artifact_type = f"PHASE_{phase.upper()}"
         metadata = {"phase": phase}
@@ -140,6 +149,11 @@ class PhaseFlowService:
             "markdown": formatted_content,
             "raw_markdown": raw_content,
         }
+        
+        logger.info(f"Creating artifact with type: {artifact_type}")
+        logger.info(f"Payload keys: {list(payload.keys())}")
+        logger.info(f"Payload markdown length: {len(payload.get('markdown', ''))}")
+        
         artifact = await self.artifact_repo.upsert_artifact(
             project_id,
             artifact_type,
@@ -147,6 +161,9 @@ class PhaseFlowService:
             payload,
             metadata=metadata,
         )
+        
+        logger.info(f"Created artifact with ID: {artifact.id}")
+        logger.info(f"Artifact content_json keys: {list(artifact.content_json.keys()) if artifact.content_json else 'None'}")
 
         status[phase] = "completed"
         next_index = PHASE_ORDER.index(phase) + 1
@@ -177,7 +194,10 @@ class PhaseFlowService:
         # Always use placeholder content if no API key is configured
         if not self.api_key or self.api_key == "":
             logger.info(f"No API key configured, using placeholder content for phase {phase}")
+            logger.info(f"API key value: {self.api_key}")
             placeholder = await self._generate_placeholder_content(phase, user_prompt)
+            logger.info(f"Generated placeholder content length: {len(placeholder)} characters")
+            logger.info(f"Placeholder content preview: {placeholder[:200]}...")
             return placeholder
             
         system_message = (
@@ -320,6 +340,9 @@ class PhaseFlowService:
 
     async def _generate_placeholder_content(self, phase: str, user_prompt: str) -> str:
         """Generate useful placeholder content when LLM is not available."""
+        logger.info(f"Generating placeholder content for phase: {phase}")
+        logger.info(f"User prompt: {user_prompt[:100] if user_prompt else 'None'}...")
+        
         phase_templates = {
             "planning": """# Planning Brief
 
@@ -641,4 +664,7 @@ This phase requires detailed analysis and planning.
 
 *Note: This is placeholder content. Configure LLM API keys for AI-generated analysis.*""")
         
-        return template.format(user_prompt=user_prompt[:200] if user_prompt else "No specific prompt provided")
+        result = template.format(user_prompt=user_prompt[:200] if user_prompt else "No specific prompt provided")
+        logger.info(f"Placeholder template result length: {len(result)} characters")
+        logger.info(f"Using template for phase: {phase}, found: {phase in phase_templates}")
+        return result

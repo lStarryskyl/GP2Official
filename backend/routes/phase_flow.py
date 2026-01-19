@@ -64,12 +64,23 @@ async def generate_phase_output(
 
     raw_markdown = artifact.get("raw_markdown")
     formatted_markdown = artifact.get("formatted_markdown")
-    return PhaseGenerateResponse(
+    
+    # Debug the response being sent
+    logger.info(f"API Response - Phase: {phase}, Project: {project_id}")
+    logger.info(f"Artifact keys: {list(artifact.keys())}")
+    logger.info(f"Raw markdown length: {len(raw_markdown) if raw_markdown else 0}")
+    logger.info(f"Formatted markdown length: {len(formatted_markdown) if formatted_markdown else 0}")
+    logger.info(f"Raw markdown preview: {raw_markdown[:200] if raw_markdown else 'None'}...")
+    
+    response = PhaseGenerateResponse(
         phase_status=phase_status,
         content=artifact,
         raw_markdown=raw_markdown,
         formatted_markdown=formatted_markdown,
     )
+    
+    logger.info(f"Final response content length: {len(str(response.content)) if response.content else 0}")
+    return response
 
 
 @router.post("/projects/{project_id}/phases/unlock-all/")

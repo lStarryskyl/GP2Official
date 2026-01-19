@@ -104,6 +104,24 @@ class AIModelPipeline:
                 quality_score=0.75,
                 specialties=[TaskType.REQUIREMENTS_EXTRACTION, TaskType.SRS_GENERATION]
             )
+        
+        # Add OpenAI GPT if configured
+        if settings.openai_api_key or settings.llm_api_key:
+            models["gpt-4"] = ModelConfig(
+                provider=ModelProvider.GPT,
+                model_name=settings.llm_model_name or "gpt-4",
+                api_key=settings.openai_api_key or settings.llm_api_key,
+                cost_per_token=0.00003,
+                quality_score=0.95,
+                specialties=[
+                    TaskType.REQUIREMENTS_EXTRACTION,
+                    TaskType.SRS_GENERATION,
+                    TaskType.RISK_ANALYSIS,
+                    TaskType.CODE_GENERATION,
+                    TaskType.DIAGRAM_GENERATION,
+                    TaskType.COST_ESTIMATION
+                ]
+            )
             
         return models
     

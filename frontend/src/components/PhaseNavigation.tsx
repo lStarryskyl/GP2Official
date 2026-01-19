@@ -72,19 +72,18 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
 
   if (variant === 'horizontal') {
     return (
-      <div className="w-full bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
+      <div className="w-full bg-navy-900/95 backdrop-blur-xl border-b border-navy-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-thin">
             <button
               onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-all whitespace-nowrap"
+              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:bg-navy-800 hover:text-gold-500 transition-all whitespace-nowrap"
             >
               <Home className="h-4 w-4" />
               Overview
             </button>
-            <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            <ChevronRight className="h-4 w-4 text-navy-700 flex-shrink-0" />
             {phaseConfigs.map((phase, idx) => {
-              const colors = phaseColors[phase.color];
               const isActive = currentPhaseId === phase.id;
               return (
                 <React.Fragment key={phase.id}>
@@ -92,17 +91,17 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                     onClick={() => handlePhaseClick(phase)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                       isActive
-                        ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg scale-105`
-                        : `${colors.bg} ${colors.text} hover:scale-105`
+                        ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 shadow-lg shadow-gold-500/30 scale-105'
+                        : 'bg-navy-800 text-gray-400 hover:bg-navy-700 hover:text-white hover:scale-105'
                     }`}
                   >
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white/10">
+                    <span className={`flex items-center justify-center w-5 h-5 rounded-full ${isActive ? 'bg-navy-950/20' : 'bg-navy-700'}`}>
                       {getPhaseIcon(phase.id)}
                     </span>
                     <span>{phase.shortTitle}</span>
                   </button>
                   {idx < phaseConfigs.length - 1 && (
-                    <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 text-navy-700 flex-shrink-0" />
                   )}
                 </React.Fragment>
               );

@@ -278,76 +278,87 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Overall Score Card */}
-      <Card className="overflow-hidden">
-        <div className={`bg-gradient-to-r ${getScoreGradient(overallScore)} p-6`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1">Feasibility Score</h2>
-              <p className="text-white/80 text-sm">Overall project viability assessment</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-white">{overallScore}</div>
-                <div className="text-white/80 text-sm">out of 100</div>
+      {/* Overall Score Card - Modern Design */}
+      <div className="relative overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-black/5">
+        <div className={`bg-gradient-to-br ${getScoreGradient(overallScore)} p-8`}>
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <BarChart3 className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-white/80 text-sm font-medium uppercase tracking-wider">Viability Assessment</span>
               </div>
-              <div className="w-24 h-24 relative">
-                <svg className="w-24 h-24 transform -rotate-90">
-                  <circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="8" fill="none" />
+              <h2 className="text-3xl font-bold text-white">Feasibility Score</h2>
+              <p className="text-white/70 text-sm max-w-sm">Comprehensive analysis of project viability across market, technical, economic, operational, and legal dimensions</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="w-32 h-32 relative">
+                <svg className="w-32 h-32 transform -rotate-90">
+                  <circle cx="64" cy="64" r="56" stroke="rgba(255,255,255,0.15)" strokeWidth="10" fill="none" />
                   <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
+                    cx="64"
+                    cy="64"
+                    r="56"
                     stroke="white"
-                    strokeWidth="8"
+                    strokeWidth="10"
                     fill="none"
-                    strokeDasharray={`${(overallScore / 100) * 251.2} 251.2`}
+                    strokeDasharray={`${(overallScore / 100) * 351.86} 351.86`}
                     strokeLinecap="round"
+                    className="drop-shadow-lg"
                   />
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Zap className="h-8 w-8 text-white" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-4xl font-bold text-white">{overallScore}</div>
+                  <div className="text-white/70 text-xs">/ 100</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-5 gap-4">
+        <div className="p-5 bg-gradient-to-b from-slate-50 to-white">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {sections.map((section) => {
               const colors = sectionColors[section.color];
               return (
-                <div key={section.id} className={`p-3 rounded-lg ${colors.bg} text-center`}>
+                <button
+                  key={section.id}
+                  onClick={() => toggleSection(section.id)}
+                  className={`p-4 rounded-2xl ${colors.bg} text-center transition-all hover:scale-105 hover:shadow-md cursor-pointer border-2 border-transparent hover:border-current ${colors.border}`}
+                >
                   <div className={`text-2xl font-bold ${colors.icon}`}>{section.score}%</div>
-                  <div className="text-xs text-gray-600 mt-1">{section.title.split(' ')[0]}</div>
-                </div>
+                  <div className="text-xs text-gray-600 mt-1 font-medium">{section.title.split(' ')[0]}</div>
+                </button>
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Project Context */}
-      <Card className="border-blue-100 bg-blue-50/60">
-        <CardContent className="p-4 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase text-gray-500">Project</p>
-              <h3 className="text-lg font-semibold text-gray-900">{projectName || 'Current Initiative'}</h3>
+      {/* Project Context - Modern Card */}
+      <div className="rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-100/50 p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white rounded-2xl shadow-sm">
+              <FileText className="h-6 w-6 text-blue-600" />
             </div>
-            {projectId && (
-              <Badge variant="secondary" className="font-mono">{projectId}</Badge>
-            )}
+            <div>
+              <p className="text-xs uppercase text-slate-500 font-semibold tracking-wider">Project Context</p>
+              <h3 className="text-lg font-bold text-slate-900">{projectName || 'Current Initiative'}</h3>
+            </div>
           </div>
-          {content && (
-            <p className="text-sm text-gray-600">
-              {content.slice(0, 240)}{content.length > 240 ? '…' : ''}
-            </p>
+          {projectId && (
+            <Badge variant="secondary" className="font-mono bg-white/80 text-slate-600">{projectId}</Badge>
           )}
-        </CardContent>
-      </Card>
+        </div>
+        {content && (
+          <p className="text-sm text-slate-600 mt-3 pl-16">
+            {content.slice(0, 240)}{content.length > 240 ? '…' : ''}
+          </p>
+        )}
+      </div>
 
-      {/* Feasibility Sections */}
+      {/* Feasibility Sections - Modern Accordion */}
       <div className="space-y-4">
         {sections.map((section) => {
           const colors = sectionColors[section.color];
@@ -356,31 +367,34 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
           const progress = Math.round((completedItems / section.items.length) * 100);
 
           return (
-            <Card key={section.id} className={`border-l-4 ${colors.border} overflow-hidden`}>
+            <div key={section.id} className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden transition-all hover:shadow-md">
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full p-5 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${colors.bg}`}>
-                    <span className={colors.icon}>{section.icon}</span>
+                  <div className={`p-3 rounded-2xl bg-gradient-to-br ${colors.gradient} shadow-lg`}>
+                    <span className="text-white">{section.icon}</span>
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">{section.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      {completedItems} of {section.items.length} items documented
-                    </p>
+                    <h3 className="font-bold text-slate-900">{section.title}</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <p className="text-sm text-slate-500">
+                        {completedItems} of {section.items.length} documented
+                      </p>
+                      <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={`h-full bg-gradient-to-r ${colors.gradient} transition-all`} style={{ width: `${progress}%` }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(section.score || 0)}`}>
+                  <div className={`px-4 py-1.5 rounded-full text-sm font-bold ${getScoreColor(section.score || 0)} shadow-sm`}>
                     {section.score}%
                   </div>
-                  {isExpanded ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
-                  )}
+                  <div className={`p-2 rounded-xl transition-all ${isExpanded ? 'bg-slate-100 rotate-180' : 'bg-slate-50'}`}>
+                    <ChevronDown className="h-5 w-5 text-slate-400" />
+                  </div>
                 </div>
               </button>
 

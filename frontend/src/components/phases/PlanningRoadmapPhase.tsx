@@ -17,6 +17,8 @@ import {
   Link2,
   Milestone,
   ArrowRight,
+  Plus,
+  AlertTriangle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
@@ -259,19 +261,25 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Roadmap Builder</span>
-            <Badge variant={savingRoadmap ? 'warning' : 'secondary'}>
-              {savingRoadmap ? 'Saving...' : 'Autosaved'}
-            </Badge>
-          </CardTitle>
-          <CardDescription>
-            Create and maintain your roadmap milestones. Changes save automatically to the backend.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Roadmap Builder - Modern Card */}
+      <div className="rounded-3xl bg-white shadow-xl ring-1 ring-black/5 overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                <Milestone className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Roadmap Builder</h2>
+                <p className="text-white/80 text-sm">Create and manage project milestones</p>
+              </div>
+            </div>
+            <div className={`px-4 py-2 rounded-full text-sm font-semibold ${savingRoadmap ? 'bg-amber-100 text-amber-700' : 'bg-white/20 text-white backdrop-blur-sm'}`}>
+              {savingRoadmap ? '⏳ Saving...' : '✓ Autosaved'}
+            </div>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Milestone Name</label>
@@ -371,99 +379,135 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
               </select>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Choose start/end as month indexes (0 = Jan). Use dependencies to enforce ordering.
-            </div>
-            <Button onClick={handleAddMilestone} disabled={!draftMilestone.name.trim()}>
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+            <p className="text-sm text-slate-500">
+              💡 Start/end are month indexes (0 = Jan). Use dependencies to define task ordering.
+            </p>
+            <Button 
+              onClick={handleAddMilestone} 
+              disabled={!draftMilestone.name.trim()}
+              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg"
+            >
+              <Plus className="mr-2 h-4 w-4" />
               Add Milestone
             </Button>
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Strategic Plan Highlights</CardTitle>
-          <CardDescription>Concise bullet points derived from your milestone roadmap.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {planBullets.length === 0 ? (
-            <p className="text-sm text-gray-500">Add milestones above to generate a planning brief.</p>
-          ) : (
-            <ul className="space-y-3">
-              {planBullets.map((bullet) => (
-                <li key={bullet.id} className="flex items-start gap-3">
-                  {getStatusIcon(bullet.status)}
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{bullet.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {bullet.phase} · {bullet.window} · {bullet.progress}% complete
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          {error && (
+            <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-600 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              {error}
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Controls */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'quarterly' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('quarterly')}
-              >
-                Quarterly
-              </Button>
-              <Button
-                variant={viewMode === 'monthly' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('monthly')}
-              >
-                Monthly
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
-                  disabled={zoomLevel <= 50}
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium w-12 text-center">{zoomLevel}%</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setZoomLevel((z) => Math.min(200, z + 25))}
-                  disabled={zoomLevel >= 200}
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-1 text-sm text-gray-500">
-              <Calendar className="h-4 w-4 text-gray-400" />
-              2024
-            </div>
-            </div>
-
-            <Button onClick={() => onGenerate('Generate project roadmap with milestones and dependencies')} disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              AI Generate
-            </Button>
+      {/* Strategic Plan Highlights - Modern Design */}
+      <div className="rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200/60 p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 bg-white rounded-xl shadow-sm">
+            <Target className="h-5 w-5 text-amber-600" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h3 className="font-bold text-slate-900">Strategic Plan Highlights</h3>
+            <p className="text-sm text-slate-500">Key milestones from your roadmap</p>
+          </div>
+        </div>
+        {planBullets.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+              <Flag className="h-8 w-8 text-slate-300" />
+            </div>
+            <p className="text-slate-500">Add milestones above to see your planning brief</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {planBullets.map((bullet, idx) => (
+              <div key={bullet.id} className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-100 hover:shadow-md transition-shadow">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                  bullet.status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
+                  bullet.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
+                  'bg-slate-100 text-slate-400'
+                }`}>
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-900">{bullet.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-xs px-2 py-0.5 bg-slate-100 rounded-full text-slate-600">{bullet.phase}</span>
+                    <span className="text-xs text-slate-400">·</span>
+                    <span className="text-xs text-slate-500">{bullet.window}</span>
+                    <span className="text-xs text-slate-400">·</span>
+                    <span className={`text-xs font-medium ${
+                      bullet.progress >= 80 ? 'text-emerald-600' :
+                      bullet.progress >= 40 ? 'text-amber-600' :
+                      'text-slate-500'
+                    }`}>{bullet.progress}% complete</span>
+                  </div>
+                </div>
+                {getStatusIcon(bullet.status)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Controls - Modern Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-2xl shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center gap-2">
+          <div className="flex bg-slate-100 rounded-xl p-1">
+            <button
+              onClick={() => setViewMode('quarterly')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'quarterly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Quarterly
+            </button>
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'monthly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Monthly
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+            <button
+              onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
+              disabled={zoomLevel <= 50}
+              className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all disabled:opacity-40"
+            >
+              <ZoomOut className="h-4 w-4 text-slate-600" />
+            </button>
+            <span className="text-sm font-semibold w-12 text-center text-slate-700">{zoomLevel}%</span>
+            <button
+              onClick={() => setZoomLevel((z) => Math.min(200, z + 25))}
+              disabled={zoomLevel >= 200}
+              className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all disabled:opacity-40"
+            >
+              <ZoomIn className="h-4 w-4 text-slate-600" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl">
+            <Calendar className="h-4 w-4 text-slate-400" />
+            <span className="text-sm font-medium text-slate-600">2024</span>
+          </div>
+        </div>
+
+        <Button 
+          onClick={() => onGenerate('Generate project roadmap with milestones and dependencies')} 
+          disabled={isGenerating}
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
+        >
+          {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+          AI Generate
+        </Button>
+      </div>
 
       {/* Timeline Legend */}
       <div className="flex items-center gap-6 flex-wrap">
@@ -485,15 +529,19 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
         </div>
       </div>
 
-      {/* Roadmap Timeline */}
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-amber-600" />
-            Project Roadmap Timeline
-          </CardTitle>
-          <CardDescription>Visual representation of project phases and milestones</CardDescription>
-        </CardHeader>
+      {/* Roadmap Timeline - Modern Card */}
+      <div className="rounded-3xl bg-white shadow-xl ring-1 ring-black/5 overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+              <Calendar className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Project Timeline</h2>
+              <p className="text-white/80 text-sm">Visual representation of milestones and dependencies</p>
+            </div>
+          </div>
+        </div>
         <CardContent className="p-0">
           {loadingRoadmap ? (
             <div className="p-8 text-center text-gray-500">Loading roadmap...</div>

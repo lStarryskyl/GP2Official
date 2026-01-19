@@ -1348,61 +1348,84 @@ export const PhaseDetailPage: React.FC = () => {
                   <PhaseNavigation projectId={id} variant="horizontal" />
                 </div>
 
-                <div className="rounded-3xl bg-white/90 backdrop-blur-sm p-6 shadow-md ring-1 ring-black/5 space-y-6">
+                <div className="space-y-6">
                   {!canTriggerAi && (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3 text-sm text-amber-800 flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      <span>
-                        You currently have reviewer access ({user?.role_label || 'Limited'}). A Program Manager must re-run AI for this phase.
-                      </span>
+                    <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm text-amber-800 flex items-center gap-3 shadow-sm">
+                      <div className="p-2 bg-amber-100 rounded-xl">
+                        <Shield className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Limited Access</p>
+                        <p className="text-amber-700">You have {user?.role_label || 'reviewer'} access. A Program Manager must trigger AI generation.</p>
+                      </div>
                     </div>
                   )}
-                  {/* Phase Header */}
-                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  {/* Phase Header - Modern Card */}
+                  <div className="relative overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-black/5">
                     {/* Gradient accent bar */}
-                    <div className="h-1.5 bg-gradient-to-r from-amber-500 to-orange-600" />
-                    <div className="p-4 sm:p-5">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">
-                            Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
-                          </p>
-                          <h1 className="mt-1 text-xl sm:text-2xl font-bold text-slate-900">
-                            Step {phaseConfig.stepNumber}: {phaseConfig.title}
-                          </h1>
-                          <p className="text-sm text-slate-500 mt-1">{project?.name}</p>
+                    <div className="h-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
+                    <div className="p-6 sm:p-8">
+                      <div className="flex flex-wrap items-start justify-between gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold text-lg shadow-lg">
+                              {phaseConfig.stepNumber}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">
+                                Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
+                              </p>
+                              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                                {phaseConfig.title}
+                              </h1>
+                            </div>
+                          </div>
+                          <p className="text-slate-500 max-w-md">{phaseConfig.description || project?.name}</p>
                         </div>
-                        <div className="flex flex-col items-end gap-2 sm:gap-3">
-                          <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)} className="text-xs sm:text-sm">
-                            <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Back to </span>Project
+                        <div className="flex flex-col items-end gap-3">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => navigate(`/projects/${id}`)} 
+                            className="border-slate-200 hover:bg-slate-50 text-slate-700"
+                          >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Project
                           </Button>
-                          <Badge className={`${status === 'completed' ? 'bg-emerald-600' : status === 'locked' ? 'bg-slate-400' : 'bg-amber-500'} text-white font-medium`}>
-                            {status === 'locked' ? 'Locked' : status === 'completed' ? 'Completed' : 'In Progress'}
-                          </Badge>
+                          <div className={`px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
+                            status === 'completed' 
+                              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' 
+                              : status === 'locked' 
+                              ? 'bg-slate-200 text-slate-600' 
+                              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                          }`}>
+                            {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● In Progress'}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {nextPhase && (
-                    <Card className={`border bg-white`}>
-                      <CardContent className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-wider text-gray-500">Next Phase</p>
-                          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
-                            Step {nextPhase.stepNumber}: {nextPhase.title}
-                          </h3>
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-[2px] shadow-lg">
+                      <div className="bg-white rounded-[14px] p-5 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 font-bold">
+                            {nextPhase.stepNumber}
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Continue to Next</p>
+                            <h3 className="text-lg font-bold text-slate-900">{nextPhase.title}</h3>
+                          </div>
                         </div>
                         <Button
-                          className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all"
                           onClick={() => navigate(`/projects/${id}/phases/${nextPhase.id}`)}
                         >
-                          Continue to {nextPhase.shortTitle}
+                          Continue
                           <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
                         </Button>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   )}
 
                   {error && (
@@ -1413,48 +1436,80 @@ export const PhaseDetailPage: React.FC = () => {
                   )}
 
                   {phaseId !== 'validation' && (
-                    <Card className="bg-slate-50 border border-slate-200">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <Sparkles className="h-4 w-4 text-indigo-500" />
-                          Prompt for this phase
-                        </CardTitle>
-                        <CardDescription>
-                          Custom prompt will re-run the active phase using the latest project context.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <textarea
-                          ref={unifiedPromptRef}
-                          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent bg-white"
-                          rows={3}
-                          placeholder="E.g., 'Generate the validation checklist with stakeholder signoff steps'"
-                        />
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              if (unifiedPromptRef.current) {
-                                unifiedPromptRef.current.value = '';
-                              }
-                            }}
-                            disabled={isGenerating}
-                          >
-                            Clear
-                          </Button>
-                          <Button
-                            disabled={isGenerating}
-                            onClick={() => {
-                              const prompt = unifiedPromptRef.current?.value || '';
-                              if (!prompt.trim()) return;
-                              handleGenerate(prompt);
-                            }}
-                          >
-                            {isGenerating ? 'Generating…' : 'Run prompt for this phase'}
-                          </Button>
+                    <div className="rounded-3xl bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200/60 shadow-sm overflow-hidden">
+                      <div className="p-6">
+                        <div className="flex items-start gap-4 mb-5">
+                          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+                            <Sparkles className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">AI Assistant</h3>
+                            <p className="text-sm text-slate-500">Enter a custom prompt to generate or refine content for this phase</p>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="space-y-4">
+                          <div className="relative">
+                            <textarea
+                              ref={unifiedPromptRef}
+                              className="w-full border-2 border-slate-200 rounded-2xl px-4 py-4 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 bg-white transition-all resize-none"
+                              rows={3}
+                              placeholder="E.g., 'Generate detailed requirements with acceptance criteria' or 'Create a risk assessment matrix'"
+                            />
+                            {isGenerating && (
+                              <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center">
+                                <div className="flex items-center gap-3 text-indigo-600">
+                                  <Loader2 className="h-5 w-5 animate-spin" />
+                                  <span className="font-medium">Generating content...</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Generate comprehensive analysis'; }}
+                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 rounded-full hover:bg-slate-50 text-slate-600 transition-colors"
+                              >
+                                📊 Analysis
+                              </button>
+                              <button
+                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Create detailed requirements list'; }}
+                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 rounded-full hover:bg-slate-50 text-slate-600 transition-colors"
+                              >
+                                📋 Requirements
+                              </button>
+                              <button
+                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Generate risk assessment'; }}
+                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 rounded-full hover:bg-slate-50 text-slate-600 transition-colors"
+                              >
+                                ⚠️ Risks
+                              </button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = ''; }}
+                                disabled={isGenerating}
+                                className="border-slate-200"
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                disabled={isGenerating}
+                                onClick={() => {
+                                  const prompt = unifiedPromptRef.current?.value || '';
+                                  if (!prompt.trim()) return;
+                                  handleGenerate(prompt);
+                                }}
+                                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
+                              >
+                                {isGenerating ? 'Generating…' : 'Generate with AI'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   {/* Phase Content */}

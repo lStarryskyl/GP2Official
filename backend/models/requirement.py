@@ -61,3 +61,13 @@ class RequirementUpdate(BaseModel):
     description: Optional[str] = None
     priority: Optional[str] = None
     status: Optional[str] = None
+
+
+class RequirementCreate(BaseModel):
+    """Requirement creation payload."""
+    type: RequirementType = RequirementType.FUNCTIONAL
+    title: str
+    description: str
+    priority: RequirementPriority = RequirementPriority.MEDIUM
+    status: str = "proposed"
+    confidence_score: Optional[float] = None

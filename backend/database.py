@@ -176,22 +176,29 @@ async def init_db():
     """Initialize database connection with automatic in-memory fallback."""
     global client, db
     
+    # Clean the supabase_url (remove quotes if present)
+    raw_supabase_url = (settings.supabase_url or "").strip().strip('"').strip("'")
+    
     # Debug: Print to ensure visibility in Render logs
-    print(f"[DB INIT] use_supabase={settings.use_supabase}, supabase_url={'SET' if settings.supabase_url else 'NOT SET'}, service_key={'SET' if settings.supabase_service_key else 'NOT SET'}")
-    logger.info(f"Database config: use_supabase={settings.use_supabase}, supabase_url={'set' if settings.supabase_url else 'not set'}")
+    print(f"[DB INIT] use_supabase={settings.use_supabase}, supabase_url={'SET' if raw_supabase_url else 'NOT SET'}, service_key={'SET' if settings.supabase_service_key else 'NOT SET'}")
+    logger.info(f"Database config: use_supabase={settings.use_supabase}, supabase_url={'set' if raw_supabase_url else 'not set'}")
     
     # Check if using Supabase
-    if settings.use_supabase and settings.supabase_url:
+    if settings.use_supabase and raw_supabase_url:
         try:
             from database_supabase import init_supabase_db
             await init_supabase_db()
+            print("[DB INIT] ✅ Supabase PostgreSQL database connected successfully!")
             logger.info("Using Supabase PostgreSQL database")
             return
         except Exception as e:
+            print(f"[DB INIT] ❌ Supabase initialization failed: {e}")
             logger.error(f"Supabase initialization failed: {e}")
+            print("[DB INIT] Falling back to in-memory database")
             logger.warning("Falling back to in-memory database")
             client = MemoryClient()
             db = client[settings.database_name]
+            print("[DB INIT] ⚠️ Using in-memory database fallback. Data will not persist between restarts.")
             logger.warning("Using in-memory database fallback. Data will not persist between restarts.")
             return
     

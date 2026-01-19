@@ -1,14 +1,12 @@
 [build]
   base = "frontend"
-  publish = "frontend/dist"
+  publish = "dist"
   command = "npm ci && npm run build"
   
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  NODE_VERSION = "20"
   # Will be set via Netlify dashboard
   VITE_API_URL = ""
-  NODE_ENV = "production"
 
 # API proxy redirects to backend
 [[redirects]]
@@ -35,7 +33,6 @@
   VITE_API_URL = "https://gp2official-backend.onrender.com"
   VITE_SUPABASE_URL = "https://qscbybwxuybptijwdyvc.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzY2J5Ynd4dXlicHRpandkeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0NzIwOTEsImV4cCI6MjA1MzA0ODA5MX0.sb_publishable_chtjIdb6HNQWEwk4IdkpDQ_-Li47eY8"
-  NODE_ENV = "production"
 
 # Deploy preview environment (for testing)
 [context.deploy-preview.environment]

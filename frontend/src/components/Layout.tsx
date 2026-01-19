@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from './ui/Button';
 import { LogOut, MessageCircle, UserCircle2 } from 'lucide-react';
 import { ConversationalDock } from '@/components/ConversationalDock';
+import { AcornLogo } from '@/components/AcornLogo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,16 +35,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <header className="bg-white/70 backdrop-blur-sm border-b border-amber-200/50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/projects" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
-                <img 
-                  src="https://images.unsplash.com/photo-1569977562541-024dd41514fc?w=100&h=100&fit=crop" 
-                  alt="Acorn" 
-                  className="relative w-10 h-10 rounded-full object-cover ring-2 ring-amber-400 group-hover:scale-110 transition-transform"
-                />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-amber-700 to-orange-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform">Acorn</span>
+            <Link to="/projects" className="hover:scale-105 transition-transform">
+              <AcornLogo size={40} />
             </Link>
 
             {user && (

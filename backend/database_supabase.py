@@ -261,15 +261,17 @@ async def ensure_tables_exist():
             )
         ''')
         
-        # Create indexes
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_projects_organization ON projects(organization)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_artifacts_project ON artifacts(project_id)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_artifacts_project_type ON artifacts(project_id, type)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_requirements_project ON requirements(project_id)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_ai_runs_project ON ai_runs(project_id)')
+        # Create indexes only if tables were just created
+        if not tables_ok:
+            print("[SUPABASE] Creating indexes...")
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_projects_organization ON projects(organization)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_artifacts_project ON artifacts(project_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_artifacts_project_type ON artifacts(project_id, type)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_requirements_project ON requirements(project_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_ai_runs_project ON ai_runs(project_id)')
         
     print("[SUPABASE] ✅ Database tables verified/created successfully!")
 

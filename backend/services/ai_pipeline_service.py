@@ -7,8 +7,8 @@ from enum import Enum
 import logging
 from dataclasses import dataclass
 from datetime import datetime
+import openai
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from config import settings
 from utils.cache import cached, get_cached, set_cached
 

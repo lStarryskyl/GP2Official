@@ -5,7 +5,7 @@ import { Button } from './Button';
 
 interface ThemeToggleProps {
   variant?: 'default' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'default' | 'sm' | 'lg';
   className?: string;
 }
 

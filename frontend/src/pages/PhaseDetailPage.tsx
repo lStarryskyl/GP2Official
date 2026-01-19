@@ -1338,7 +1338,7 @@ export const PhaseDetailPage: React.FC = () => {
               {/* Phase Navigation Sidebar */}
               {showSidebar && (
                 <aside className="hidden xl:block">
-                  <div className="sticky top-6 rounded-2xl border border-navy-800 bg-navy-900/90 backdrop-blur-xl shadow-lg shadow-navy-950/50">
+                  <div className="sticky top-6 rounded-2xl shadow-lg shadow-[#0a0f1a]/50" style={{ backgroundColor: '#0d1525', border: '1px solid #1e3a5f' }}>
                     <PhaseNavigation projectId={id} variant="sidebar" />
                   </div>
                 </aside>

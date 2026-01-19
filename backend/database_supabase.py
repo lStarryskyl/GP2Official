@@ -83,7 +83,7 @@ async def init_supabase_db():
 
 
 async def ensure_tables_exist():
-    """Create tables if they don't exist."""
+    """Create tables if they don't exist or fix column types."""
     global pool
     if not pool:
         return
@@ -91,7 +91,20 @@ async def ensure_tables_exist():
     print("[SUPABASE] Checking/creating database tables...")
     
     async with pool.acquire() as conn:
-        # Create users table
+        # Check if we need to recreate tables (if project_id is UUID instead of TEXT)
+        try:
+            # Try a simple query - if it fails with UUID error, we need to recreate
+            await conn.fetch("SELECT id FROM projects WHERE id = 'test' LIMIT 1")
+            tables_ok = True
+        except Exception as e:
+            if 'UUID' in str(e) or 'invalid input' in str(e):
+                print("[SUPABASE] Detected UUID column issue - recreating tables with TEXT columns...")
+                tables_ok = False
+            else:
+                # Table doesn't exist
+                tables_ok = False
+        
+        # Create users table (this one should be fine with TEXT)
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -118,6 +131,8 @@ async def ensure_tables_exist():
                 updated_at TIMESTAMPTZ DEFAULT NOW()
             )
         ''')
+        
+        if not tables_ok:
         
         # Create projects table - drop and recreate to fix UUID column type
         await conn.execute('DROP TABLE IF EXISTS artifacts CASCADE')

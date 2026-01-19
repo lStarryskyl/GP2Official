@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from './ui/Button';
+import { ThemeToggle } from './ui/ThemeToggle';
 import { 
   LogOut, 
   MessageCircle, 
@@ -55,7 +56,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       {/* Sidebar - Desktop */}
       <aside className={`hidden lg:flex flex-col bg-acorn-blue-600 text-white transition-all duration-300 ${
         sidebarOpen ? 'w-64' : 'w-20'
@@ -133,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4 lg:px-6">
             {/* Left - Mobile Menu & Search */}
             <div className="flex items-center gap-4">
@@ -157,8 +158,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Right - User Actions */}
             {user && (
               <div className="flex items-center gap-3">
-                <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                  <Bell className="w-5 h-5 text-gray-600" />
+                <ThemeToggle variant="ghost" size="sm" />
+                
+                <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg relative">
+                  <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-acorn-orange-500 rounded-full"></span>
                 </button>
 

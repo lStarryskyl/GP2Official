@@ -290,6 +290,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="fixed bottom-6 right-6 z-50 w-96 max-h-[600px] card-glass rounded-2xl overflow-hidden shadow-2xl animate-slide-in-up">
               <ConversationalDock
                 projectId={activeProjectId}
+                open={assistantOpen}
                 onClose={() => setAssistantOpen(false)}
               />
             </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
+import { ExportButtons } from '@/components/ExportButtons';
 import { api } from '@/lib/api';
 import type { Artifact, Project, Requirement, Task } from '@/types';
 import { phaseConfigs } from '@/constants/phases';
@@ -300,12 +301,11 @@ export const ProjectDetailPage: React.FC = () => {
                 Back to Projects
               </div>
               <div className="flex items-center gap-3">
-                <ExportButtons projectId={project.project_id || project.id} projectName={project.name} />
                 <Button variant="outline" onClick={() => goToDraft('overview')}>
                   Open Draft
                 </Button>
                 <Button
-                  className="bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600 text-white"
+                  className="bg-[#4F46E5] hover:bg-[#4338CA] text-white"
                   onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phaseConfigs[0]?.id}`)}
                 >
                   Continue Planning

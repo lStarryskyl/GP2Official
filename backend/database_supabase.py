@@ -227,7 +227,7 @@ async def ensure_tables_exist():
         
         # Create ai_runs table
         await conn.execute('''
-            CREATE TABLE IF NOT EXISTS ai_runs (
+            CREATE TABLE ai_runs (
                 id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
                 user_id TEXT,

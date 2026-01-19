@@ -1,6 +1,6 @@
 """FastAPI main application."""
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
@@ -63,7 +63,7 @@ app.include_router(websocket.router, prefix="/api/ws", tags=["WebSocket"])
 app.include_router(ai_pipeline.router, prefix="/api/ai", tags=["AI Pipeline"])
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     """Root endpoint with API information."""
     return {
@@ -77,12 +77,6 @@ async def root():
             "api": "/api"
         }
     }
-
-
-@app.head("/")
-async def root_head():
-    """Root endpoint for health probes that use HEAD requests."""
-    return Response(status_code=200)
 
 
 @app.get("/api")
@@ -101,7 +95,7 @@ async def api_info():
     }
 
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "Acorn Backend", "message": "Growing strong! 🌰"}

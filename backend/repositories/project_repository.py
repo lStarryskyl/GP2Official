@@ -10,9 +10,16 @@ from config import settings
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings."""
+    """Get the appropriate repository based on settings and actual pool availability."""
     if settings.use_supabase:
-        return _SupabaseProjectRepository()
+        # Check if Supabase pool is actually initialized
+        try:
+            from database_supabase import pool
+            if pool is not None:
+                return _SupabaseProjectRepository()
+        except ImportError:
+            pass
+        # Fall through to MongoDB if Supabase pool not available
     return _MongoProjectRepository()
 
 

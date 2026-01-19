@@ -11,8 +11,14 @@ from models.invite import WorkspaceInvite
 
 
 def _get_repository():
+    """Get the appropriate repository based on settings and actual pool availability."""
     if settings.use_supabase:
-        return _SupabaseWorkspaceInviteRepository()
+        try:
+            from database_supabase import pool
+            if pool is not None:
+                return _SupabaseWorkspaceInviteRepository()
+        except ImportError:
+            pass
     return _MongoWorkspaceInviteRepository()
 
 

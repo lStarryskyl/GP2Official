@@ -11,9 +11,14 @@ from models.user import User, UserCreate, resolve_role
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings."""
+    """Get the appropriate repository based on settings and actual pool availability."""
     if settings.use_supabase:
-        return _SupabaseUserRepository()
+        try:
+            from database_supabase import pool
+            if pool is not None:
+                return _SupabaseUserRepository()
+        except ImportError:
+            pass
     return _MongoUserRepository()
 
 

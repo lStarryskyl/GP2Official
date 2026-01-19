@@ -184,6 +184,7 @@ async def branch_diff(
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
+@router.put("/{project_id}/", response_model=ProjectResponse, include_in_schema=False)
 async def update_project(
     project_id: str,
     update_data: ProjectUpdate,

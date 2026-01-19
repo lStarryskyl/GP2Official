@@ -3,7 +3,6 @@
 from typing import List, Dict, Any
 import logging
 import json
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from config import settings
 from services.ai_pipeline_service import ai_pipeline, TaskType
 

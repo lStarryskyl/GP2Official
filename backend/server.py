@@ -6,7 +6,10 @@ from contextlib import asynccontextmanager
 import os
 
 from database import init_db, close_db
-from routes import auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow, sandbox, users, change_log, websocket, ai_pipeline
+from routes import (
+    auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow, 
+    sandbox, users, change_log, websocket, ai_pipeline, personas, srs_audit, billing, export
+)
 from config import settings
 
 
@@ -61,6 +64,10 @@ app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(change_log.router, prefix="/api", tags=["ChangeLog"])
 app.include_router(websocket.router, prefix="/api/ws", tags=["WebSocket"])
 app.include_router(ai_pipeline.router, prefix="/api/ai", tags=["AI Pipeline"])
+app.include_router(personas.router, prefix="/api", tags=["Personas"])
+app.include_router(srs_audit.router, prefix="/api", tags=["SRS Audit"])
+app.include_router(billing.router, prefix="/api", tags=["Billing"])
+app.include_router(export.router, prefix="/api", tags=["Export"])
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

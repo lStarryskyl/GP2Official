@@ -26,12 +26,17 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 14
     
     # AI / LLM Configuration
-    llm_provider: str = "openai"
+    llm_provider: str = "gemini"
     llm_api_key: Optional[str] = None
     llm_model_name: str = "gpt-4"
     openai_api_key: Optional[str] = None
     huggingface_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    claude_api_key: Optional[str] = None
+    ollama_base_url: str = "http://localhost:11434"
+    
+    # Logo and Branding
+    logo_path: str = "../frontend/public/logo.png"
     
     # PlantUML / external services
     plantuml_api_host: Optional[str] = None

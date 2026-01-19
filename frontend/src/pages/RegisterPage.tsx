@@ -110,7 +110,7 @@ export const RegisterPage: React.FC = () => {
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
           <div className="max-w-md text-center animate-fade-in-up">
             <div className="mb-8">
-              <AcornLogo size={80} />
+              <AcornLogo size="xl" />
             </div>
             <h1 className="text-4xl font-bold mb-6">Join Acorn Today</h1>
             <p className="text-xl text-white/80 mb-8">

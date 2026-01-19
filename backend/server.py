@@ -8,7 +8,8 @@ import os
 from database import init_db, close_db
 from routes import (
     auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow, 
-    sandbox, users, change_log, websocket, ai_pipeline, personas, srs_audit, billing, export
+    sandbox, users, change_log, websocket, ai_pipeline, personas, srs_audit, billing, export,
+    negotiation, payment, version, notifications, traceability, templates, explainability
 )
 from config import settings
 
@@ -84,6 +85,13 @@ app.include_router(personas.router, prefix="/api", tags=["Personas"])
 app.include_router(srs_audit.router, prefix="/api", tags=["SRS Audit"])
 app.include_router(billing.router, prefix="/api", tags=["Billing"])
 app.include_router(export.router, prefix="/api", tags=["Export"])
+app.include_router(negotiation.router, prefix="/api", tags=["Negotiation"])
+app.include_router(payment.router, prefix="/api", tags=["Payment"])
+app.include_router(version.router, prefix="/api", tags=["Version History"])
+app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
+app.include_router(traceability.router, prefix="/api", tags=["Traceability"])
+app.include_router(templates.router, prefix="/api", tags=["Templates"])
+app.include_router(explainability.router, prefix="/api", tags=["AI Explainability"])
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

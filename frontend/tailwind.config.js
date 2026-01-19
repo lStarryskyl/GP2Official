@@ -8,42 +8,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Acorn Brand Colors
-        orange: {
-          50: '#FFF5E6',
-          100: '#FFE8CC',
-          200: '#FFD199',
-          300: '#FFB84D',
-          400: '#F5A623',
-          500: '#E69500',
-          600: '#CC7A00',
-          700: '#995C00',
-          800: '#663D00',
-          900: '#331F00',
+        // New Acorn Brand Colors (2024 Design System)
+        'acorn-blue': {
+          50: '#E6EDF4',
+          100: '#CCDBE9',
+          200: '#99B7D3',
+          300: '#6693BD',
+          400: '#336FA7',
+          500: '#0D3B66', // Primary Blue
+          600: '#0A2F52',
+          700: '#08233D',
+          800: '#051829',
+          900: '#030C14',
         },
-        blue: {
-          50: '#E8F1F8',
-          100: '#D1E3F1',
-          200: '#A3C7E3',
-          300: '#6B9FD1',
-          400: '#4A7BA7',
-          500: '#2E5090',
-          600: '#234073',
-          700: '#1A3056',
-          800: '#112039',
-          900: '#09101D',
+        'acorn-orange': {
+          50: '#FEF0EB',
+          100: '#FDE1D7',
+          200: '#FBC3AF',
+          300: '#F9A587',
+          400: '#F7875F',
+          500: '#F26C4F', // Accent Orange
+          600: '#C2563F',
+          700: '#91412F',
+          800: '#612B20',
+          900: '#301610',
         },
-        navy: {
-          50: '#E6E9EC',
-          100: '#CCD3D9',
-          200: '#99A7B3',
-          300: '#667B8D',
-          400: '#334F67',
-          500: '#1B2D45',
-          600: '#162437',
-          700: '#0F1A2E',
-          800: '#0B1220',
-          900: '#060910',
+        'acorn-gray': {
+          50: '#F8F9FA',
+          100: '#F1F3F5',
+          200: '#E9ECEF',
+          300: '#DEE2E6',
+          400: '#CED4DA',
+          500: '#ADB5BD',
+          600: '#6C757D',
+          700: '#495057',
+          800: '#343A40',
+          900: '#212529',
         },
         // Semantic colors
         success: '#28A745',
@@ -86,14 +86,15 @@ export default {
         },
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #F5A623 0%, #4A7BA7 50%, #2E5090 100%)',
-        'gradient-orange': 'linear-gradient(135deg, #F5A623 0%, #FFB84D 100%)',
-        'gradient-blue': 'linear-gradient(135deg, #4A7BA7 0%, #2E5090 100%)',
-        'gradient-navy': 'linear-gradient(135deg, #1B2D45 0%, #0F1A2E 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #0D3B66 0%, #F26C4F 100%)',
+        'gradient-orange': 'linear-gradient(135deg, #F26C4F 0%, #F9A587 100%)',
+        'gradient-blue': 'linear-gradient(135deg, #0D3B66 0%, #336FA7 100%)',
+        'gradient-hero': 'linear-gradient(135deg, #0D3B66 0%, #0A2F52 50%, #F26C4F 100%)',
       },
       boxShadow: {
-        'acorn': '0 10px 30px rgba(245, 166, 35, 0.3)',
-        'arrow': '0 10px 30px rgba(74, 123, 167, 0.3)',
+        'acorn': '0 10px 30px rgba(242, 108, 79, 0.2)',
+        'acorn-blue': '0 10px 30px rgba(13, 59, 102, 0.2)',
+        'acorn-lg': '0 20px 60px rgba(242, 108, 79, 0.15)',
       },
       borderRadius: {
         lg: 'var(--radius)',

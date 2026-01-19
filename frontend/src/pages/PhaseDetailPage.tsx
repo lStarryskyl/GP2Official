@@ -1358,31 +1358,29 @@ export const PhaseDetailPage: React.FC = () => {
                     </div>
                   )}
                   {/* Phase Header */}
-                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5">
-                    <div
-                      className="absolute inset-0 opacity-40"
-                      style={{
-                        background: `radial-gradient(circle at top left, rgba(99,102,241,0.2), transparent 55%)`,
-                      }}
-                    />
-                    <div className="relative flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs uppercase text-gray-500 tracking-wider">
-                          Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
-                        </p>
-                        <h1 className={`mt-1 text-3xl font-semibold bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>
-                          Step {phaseConfig.stepNumber}: {phaseConfig.title}
-                        </h1>
-                        <p className="text-sm text-gray-500">{project?.name}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-3">
-                        <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)}>
-                          <ArrowLeft className="mr-2 h-4 w-4" />
-                          Back to Project
-                        </Button>
-                        <Badge className="bg-slate-900 text-white">
-                          {status === 'locked' ? 'Locked' : status === 'completed' ? 'Completed' : 'Active'}
-                        </Badge>
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    {/* Gradient accent bar */}
+                    <div className="h-1.5 bg-gradient-to-r from-amber-500 to-orange-600" />
+                    <div className="p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">
+                            Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
+                          </p>
+                          <h1 className="mt-1 text-2xl font-bold text-slate-900">
+                            Step {phaseConfig.stepNumber}: {phaseConfig.title}
+                          </h1>
+                          <p className="text-sm text-slate-500 mt-1">{project?.name}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-3">
+                          <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Project
+                          </Button>
+                          <Badge className={`${status === 'completed' ? 'bg-emerald-600' : status === 'locked' ? 'bg-slate-400' : 'bg-amber-500'} text-white font-medium`}>
+                            {status === 'locked' ? 'Locked' : status === 'completed' ? 'Completed' : 'In Progress'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>

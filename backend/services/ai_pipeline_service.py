@@ -105,13 +105,12 @@ class AIModelPipeline:
                 specialties=[TaskType.REQUIREMENTS_EXTRACTION, TaskType.SRS_GENERATION]
             )
         
-        # Add OpenAI GPT if configured (using Emergent key or OpenAI key)
-        if settings.openai_api_key or settings.llm_api_key or settings.emergent_llm_key:
-            api_key = settings.emergent_llm_key or settings.openai_api_key or settings.llm_api_key
-            models["gpt-5.2"] = ModelConfig(
+        # Add OpenAI GPT if configured with a real API key
+        if settings.llm_api_key:  # Only add if we have a valid key (not placeholder)
+            models["gpt-4"] = ModelConfig(
                 provider=ModelProvider.GPT,
-                model_name=settings.llm_model_name or "gpt-5.2",
-                api_key=api_key,
+                model_name=settings.llm_model_name or "gpt-4",
+                api_key=settings.llm_api_key,
                 cost_per_token=0.00003,
                 quality_score=0.95,
                 specialties=[
@@ -123,6 +122,7 @@ class AIModelPipeline:
                     TaskType.COST_ESTIMATION
                 ]
             )
+            logger.info(f"OpenAI GPT model configured: {settings.llm_model_name or 'gpt-4'}")
             
         return models
     

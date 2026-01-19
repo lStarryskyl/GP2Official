@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { phaseConfigs, phaseColors } from '@/constants/phases';
+import { phaseConfigs } from '@/constants/phases';
 import {
   ChevronRight,
   ChevronLeft,

@@ -310,16 +310,24 @@ class PhaseFlowService:
             )
             return placeholder
 
-        chat = LlmChat(
-            api_key=self.api_key,
-            session_id=f"phase_{phase}",
-            system_message=system_message,
-        ).with_model(self.provider, self.model)
-
+        # Use official OpenAI SDK
+        client = openai.AsyncOpenAI(api_key=self.api_key)
+        
         started_at = time.perf_counter()
         try:
-            response = await chat.send_message(UserMessage(text=prompt))
+            logger.info(f"Calling OpenAI API with model: {self.model}")
+            completion = await client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=4000,
+                temperature=0.7,
+            )
+            response = completion.choices[0].message.content
             duration = int((time.perf_counter() - started_at) * 1000)
+            logger.info(f"OpenAI response received: {len(response)} characters in {duration}ms")
             await self.ai_run_repo.complete_run(
                 run_entry.id,
                 status="completed",

@@ -26,8 +26,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
 
   const fetchPlans = async () => {
     try {
-      const response = await api.get('/billing/plans');
-      setPlans(response.data.plans);
+      const data = await api.getBillingPlans();
+      setPlans(data);
     } catch (error) {
       console.error('Failed to fetch plans:', error);
     } finally {
@@ -38,10 +38,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
   const handleSubscribe = async (planName: string) => {
     setSubscribing(planName);
     try {
-      await api.post('/billing/subscribe', {
-        user_id: userId,
-        plan: planName
-      });
+      await api.subscribeToPlan(planName);
       alert(`Successfully subscribed to ${planName} plan!`);
     } catch (error) {
       console.error('Failed to subscribe:', error);

@@ -12,27 +12,22 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ projectId, project
   const [exportingPDF, setExportingPDF] = useState(false);
   const [exportingDOCX, setExportingDOCX] = useState(false);
 
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   const handleExportPDF = async () => {
     setExportingPDF(true);
     try {
-      const response = await fetch(`${api.defaults.baseURL}/projects/${projectId}/export/pdf`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${projectName}-export.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const blob = await api.exportProjectPdf(projectId);
+      downloadBlob(blob, `${projectName}-export.pdf`);
     } catch (error) {
       console.error('Failed to export PDF:', error);
       alert('Failed to export PDF. Please try again.');
@@ -44,24 +39,8 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ projectId, project
   const handleExportDOCX = async () => {
     setExportingDOCX(true);
     try {
-      const response = await fetch(`${api.defaults.baseURL}/projects/${projectId}/export/docx`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${projectName}-export.docx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const blob = await api.exportProjectDocx(projectId);
+      downloadBlob(blob, `${projectName}-export.docx`);
     } catch (error) {
       console.error('Failed to export DOCX:', error);
       alert('Failed to export DOCX. Please try again.');

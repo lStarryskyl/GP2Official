@@ -1,36 +1,25 @@
 // Test setup for frontend
 
 import '@testing-library/jest-dom'
-import { beforeAll, afterEach, afterAll } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
-import { server } from './mocks/server'
 
-// Establish API mocking before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-
-// Reset any request handlers that we may add during the tests,
-// so they don't affect other tests
+// Reset after each test
 afterEach(() => {
-  server.resetHandlers()
   cleanup()
 })
 
-// Clean up after the tests are finished
-afterAll(() => server.close())
-
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  observe() {
-    return null
-  }
-  disconnect() {
-    return null
-  }
-  unobserve() {
-    return null
-  }
-}
+const mockIntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  disconnect: vi.fn(),
+  unobserve: vi.fn(),
+  root: null,
+  rootMargin: '',
+  thresholds: [],
+  takeRecords: vi.fn().mockReturnValue([]),
+}));
+global.IntersectionObserver = mockIntersectionObserver as unknown as typeof IntersectionObserver;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {

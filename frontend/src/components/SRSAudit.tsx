@@ -28,15 +28,14 @@ export const SRSAudit: React.FC<SRSAuditProps> = ({ projectId }) => {
   const [isAuditing, setIsAuditing] = useState(false);
   const [report, setReport] = useState<AuditReport | null>(null);
 
-  const handleAudit = async () => {
+  const handleRunAudit = async () => {
     setIsAuditing(true);
     try {
-      const response = await api.post(`/projects/${projectId}/srs-audit`, {
-        provider: 'gemini'
-      });
-      setReport(response.data);
+      const data = await api.runSrsAudit(projectId);
+      setReport(data);
     } catch (error) {
-      console.error('Failed to run SRS audit:', error);
+      console.error('Failed to run audit:', error);
+      alert('Failed to run SRS audit. Please try again.');
     } finally {
       setIsAuditing(false);
     }
@@ -79,7 +78,7 @@ export const SRSAudit: React.FC<SRSAuditProps> = ({ projectId }) => {
         </div>
         
         <Button
-          onClick={handleAudit}
+          onClick={handleRunAudit}
           disabled={isAuditing}
           className="bg-gradient-to-r from-blue-500 to-navy-600 hover:from-blue-600 hover:to-navy-700 text-white shadow-lg"
         >
@@ -199,7 +198,7 @@ export const SRSAudit: React.FC<SRSAuditProps> = ({ projectId }) => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Audit Report Yet</h3>
           <p className="text-gray-600 mb-4">Run a comprehensive SRS audit to identify issues and improvements</p>
           <Button
-            onClick={handleAudit}
+            onClick={handleRunAudit}
             className="bg-gradient-to-r from-blue-500 to-navy-600 text-white"
           >
             <ShieldCheck className="w-4 h-4 mr-2" />

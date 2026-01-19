@@ -500,6 +500,44 @@ class ApiClient {
     const response = await this.client.post(`/projects/${projectId}/uml/${type}/chat/`, { message });
     return response.data;
   }
+
+  // Billing
+  async getBillingPlans(): Promise<any[]> {
+    const response = await this.client.get('/billing/plans');
+    return response.data;
+  }
+
+  async subscribeToPlan(planId: string, paymentMethodId?: string): Promise<any> {
+    const response = await this.client.post('/billing/subscribe', { plan_id: planId, payment_method_id: paymentMethodId });
+    return response.data;
+  }
+
+  // Personas
+  async generatePersonas(projectId: string, count: number = 3): Promise<any[]> {
+    const response = await this.client.post(`/projects/${projectId}/personas/generate`, { count });
+    return response.data;
+  }
+
+  // SRS Audit
+  async runSrsAudit(projectId: string): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/srs-audit`);
+    return response.data;
+  }
+
+  // Export
+  async exportProjectPdf(projectId: string): Promise<Blob> {
+    const response = await this.client.get(`/projects/${projectId}/export/pdf`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
+
+  async exportProjectDocx(projectId: string): Promise<Blob> {
+    const response = await this.client.get(`/projects/${projectId}/export/docx`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();

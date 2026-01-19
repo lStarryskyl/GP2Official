@@ -25,14 +25,12 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const response = await api.post(`/projects/${projectId}/personas/generate`, {
-        count,
-        provider: 'gemini'
-      });
-      setPersonas(response.data.personas || []);
+      const data = await api.generatePersonas(projectId, count);
+      setPersonas(data);
       onGenerated?.();
     } catch (error) {
       console.error('Failed to generate personas:', error);
+      alert('Failed to generate personas. Please try again.');
     } finally {
       setIsGenerating(false);
     }

@@ -91,33 +91,38 @@ async def ensure_tables_exist():
     print("[SUPABASE] Checking/creating database tables...")
     
     async with pool.acquire() as conn:
-        # Check if tables have correct column types by checking the actual column data type
-        tables_ok = True
-        try:
-            # Check if project_id column in tasks table is TEXT or UUID
-            result = await conn.fetchrow("""
-                SELECT data_type 
-                FROM information_schema.columns 
-                WHERE table_name = 'tasks' AND column_name = 'project_id'
-            """)
-            
-            if result:
-                data_type = result['data_type'].lower()
-                print(f"[SUPABASE] tasks.project_id column type: {data_type}")
-                if data_type == 'uuid':
-                    print("[SUPABASE] Detected UUID column type - need to recreate tables with TEXT columns")
-                    tables_ok = False
-                elif data_type == 'text' or data_type == 'character varying':
-                    print("[SUPABASE] Column types are correct (TEXT)")
-                    tables_ok = True
-            else:
-                # Table doesn't exist
-                print("[SUPABASE] Tasks table doesn't exist - will create")
-                tables_ok = False
-                
-        except Exception as e:
-            print(f"[SUPABASE] Error checking column types: {e}")
+        # Check if we should force recreate tables
+        if settings.force_recreate_tables:
+            print("[SUPABASE] FORCE_RECREATE_TABLES=True - dropping and recreating all tables")
             tables_ok = False
+        else:
+            # Check if tables have correct column types by checking the actual column data type
+            tables_ok = True
+            try:
+                # Check if project_id column in tasks table is TEXT or UUID
+                result = await conn.fetchrow("""
+                    SELECT data_type 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'tasks' AND column_name = 'project_id'
+                """)
+                
+                if result:
+                    data_type = result['data_type'].lower()
+                    print(f"[SUPABASE] tasks.project_id column type: {data_type}")
+                    if data_type == 'uuid':
+                        print("[SUPABASE] Detected UUID column type - need to recreate tables with TEXT columns")
+                        tables_ok = False
+                    elif data_type == 'text' or data_type == 'character varying':
+                        print("[SUPABASE] Column types are correct (TEXT)")
+                        tables_ok = True
+                else:
+                    # Table doesn't exist
+                    print("[SUPABASE] Tasks table doesn't exist - will create")
+                    tables_ok = False
+                    
+            except Exception as e:
+                print(f"[SUPABASE] Error checking column types: {e}")
+                tables_ok = False
         
         # Create users table (this one should be fine with TEXT)
         await conn.execute('''

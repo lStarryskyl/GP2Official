@@ -499,7 +499,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                   </div>
                 </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>

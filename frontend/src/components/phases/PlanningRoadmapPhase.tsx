@@ -542,7 +542,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
             </div>
           </div>
         </div>
-        <CardContent className="p-0">
+        <div className="p-0">
           {loadingRoadmap ? (
             <div className="p-8 text-center text-gray-500">Loading roadmap...</div>
           ) : milestones.length === 0 ? (
@@ -718,8 +718,8 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
             </div>
           </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Selected Milestone Details */}
       {selectedMilestone && (

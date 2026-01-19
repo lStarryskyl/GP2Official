@@ -92,6 +92,7 @@ app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
 app.include_router(traceability.router, prefix="/api", tags=["Traceability"])
 app.include_router(templates.router, prefix="/api", tags=["Templates"])
 app.include_router(explainability.router, prefix="/api", tags=["AI Explainability"])
+app.include_router(utils.router, prefix="/api/utils", tags=["Utilities"])
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

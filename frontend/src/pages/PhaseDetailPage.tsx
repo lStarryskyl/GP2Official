@@ -1361,21 +1361,21 @@ export const PhaseDetailPage: React.FC = () => {
                   <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     {/* Gradient accent bar */}
                     <div className="h-1.5 bg-gradient-to-r from-amber-500 to-orange-600" />
-                    <div className="p-5">
+                    <div className="p-4 sm:p-5">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">
                             Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
                           </p>
-                          <h1 className="mt-1 text-2xl font-bold text-slate-900">
+                          <h1 className="mt-1 text-xl sm:text-2xl font-bold text-slate-900">
                             Step {phaseConfig.stepNumber}: {phaseConfig.title}
                           </h1>
                           <p className="text-sm text-slate-500 mt-1">{project?.name}</p>
                         </div>
-                        <div className="flex flex-col items-end gap-3">
-                          <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)}>
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Project
+                        <div className="flex flex-col items-end gap-2 sm:gap-3">
+                          <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)} className="text-xs sm:text-sm">
+                            <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Back to </span>Project
                           </Button>
                           <Badge className={`${status === 'completed' ? 'bg-emerald-600' : status === 'locked' ? 'bg-slate-400' : 'bg-amber-500'} text-white font-medium`}>
                             {status === 'locked' ? 'Locked' : status === 'completed' ? 'Completed' : 'In Progress'}
@@ -1390,7 +1390,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <CardContent className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-wider text-gray-500">Next Phase</p>
-                          <h3 className="text-xl font-semibold text-gray-900">
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                             Step {nextPhase.stepNumber}: {nextPhase.title}
                           </h3>
                         </div>

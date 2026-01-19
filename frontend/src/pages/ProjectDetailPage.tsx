@@ -287,7 +287,7 @@ export const ProjectDetailPage: React.FC = () => {
           {/* Header gradient bar */}
           <div className="h-2 bg-gradient-to-r from-amber-500 to-orange-600" />
           
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={() => navigate('/projects')}
@@ -296,22 +296,22 @@ export const ProjectDetailPage: React.FC = () => {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Projects
               </button>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={() => goToDraft('overview')}>
-                  Open Draft
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Button variant="outline" onClick={() => goToDraft('overview')} className="text-xs sm:text-sm px-2 sm:px-4">
+                  <span className="hidden sm:inline">Open </span>Draft
                 </Button>
                 <Button
-                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg"
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg text-xs sm:text-sm px-2 sm:px-4"
                   onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phaseConfigs[0]?.id}`)}
                 >
-                  Continue Planning
+                  <span className="hidden sm:inline">Continue </span>Planning
                 </Button>
               </div>
             </div>
             
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{project.name}</h1>
                 {project.description && (
                   <p className="text-slate-600 max-w-2xl">{project.description}</p>
                 )}
@@ -357,10 +357,10 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className={`grid gap-6 ${showSummaryPanel ? 'lg:grid-cols-[320px_minmax(0,1fr)]' : ''}`}>
+        <div className={`grid gap-4 sm:gap-6 ${showSummaryPanel ? 'lg:grid-cols-[280px_minmax(0,1fr)]' : ''}`}>
           {showSummaryPanel && (
             <aside className="space-y-6 side-summary">
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-6">
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Project Summary</h2>
                   <dl className="mt-4 space-y-3 text-sm text-slate-600">
@@ -448,12 +448,12 @@ export const ProjectDetailPage: React.FC = () => {
             </aside>
             )}
 
-            <div className="space-y-6">
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm phase-board">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm phase-board">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-900">Phases</h2>
-                    <p className="text-sm text-slate-500">Work through each phase sequentially and export deliverables whenever ready.</p>
+                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Phases</h2>
+                    <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">Work through each phase sequentially and export deliverables whenever ready.</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length}>
                     Export All
@@ -484,8 +484,8 @@ export const ProjectDetailPage: React.FC = () => {
                         }}
                         className={`w-full text-left ${phaseRowPadding} hover:bg-[#F9FAFB] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] rounded-xl`}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="w-9 h-9 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center text-sm font-semibold">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
                             {phase.stepNumber}
                           </div>
                           <div className="flex-1 min-w-0">

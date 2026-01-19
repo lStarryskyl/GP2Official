@@ -73,7 +73,7 @@ export const NewProjectPage: React.FC = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg transform hover:scale-110 transition-transform">
               <Rocket className="w-8 h-8 text-white animate-bounce" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 bg-clip-text text-transparent">
               Plant a New Project Seed
             </h1>
             <p className="text-gray-600">Let's grow your idea into reality with AI-powered planning</p>
@@ -81,10 +81,10 @@ export const NewProjectPage: React.FC = () => {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-4 py-8">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 py-6 sm:py-8">
           {[1, 2, 3].map((step) => (
             <div key={step} className="flex items-center gap-4">
-              <div className={`relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-500 ${
+              <div className={`relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 transition-all duration-500 ${
                 currentStep >= step
                   ? 'bg-gradient-to-br from-amber-500 to-orange-600 border-orange-600 shadow-lg scale-110'
                   : 'bg-white border-gray-300'
@@ -99,7 +99,7 @@ export const NewProjectPage: React.FC = () => {
                 )}
               </div>
               {step < 3 && (
-                <div className={`w-16 h-1 rounded-full transition-all duration-500 ${
+                <div className={`w-8 sm:w-16 h-1 rounded-full transition-all duration-500 ${
                   currentStep > step ? 'bg-gradient-to-r from-amber-500 to-orange-600' : 'bg-gray-200'
                 }`}></div>
               )}
@@ -109,13 +109,13 @@ export const NewProjectPage: React.FC = () => {
 
         {/* Form */}
         <Card className="bg-white/80 backdrop-blur-sm border-2 border-amber-100 shadow-2xl transform hover:shadow-3xl transition-shadow">
-          <form onSubmit={handleSubmit} className="p-8 space-y-8">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-6 sm:space-y-8">
             {/* Step 1: Basic Info */}
             <div className={`space-y-6 transition-all duration-500 ${
               currentStep === 1 ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform translate-x-10 hidden'
             }`}>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
                 <p className="text-gray-600">Give your project a name and description</p>
               </div>
 
@@ -164,7 +164,7 @@ export const NewProjectPage: React.FC = () => {
               currentStep === 2 ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform translate-x-10 hidden'
             }`}>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Type</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Project Type</h2>
                 <p className="text-gray-600">What type of software are you building?</p>
               </div>
 
@@ -232,7 +232,7 @@ export const NewProjectPage: React.FC = () => {
               currentStep === 3 ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform translate-x-10 hidden'
             }`}>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Brief</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Project Brief</h2>
                 <p className="text-gray-600">Describe your project vision and requirements</p>
               </div>
 

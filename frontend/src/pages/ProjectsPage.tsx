@@ -165,19 +165,19 @@ export const ProjectsPage: React.FC = () => {
             <button
               key={action.action}
               onClick={() => handleQuickAction(action.action)}
-              className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-transparent hover:shadow-xl transition-all duration-300 text-left group relative overflow-hidden"
+              className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-transparent hover:shadow-xl transition-all duration-300 text-left group relative overflow-hidden"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* Hover Gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
-              <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg`}>
-                <action.icon className="w-6 h-6 text-white" />
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg`}>
+                <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <p className="font-bold text-gray-900 group-hover:text-acorn-blue-600 transition-colors">{action.label}</p>
-              <p className="text-sm text-gray-500 mt-1">{action.description}</p>
+              <p className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-acorn-blue-600 transition-colors">{action.label}</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">{action.description}</p>
               
-              <ArrowRight className="absolute bottom-5 right-5 w-5 h-5 text-gray-300 group-hover:text-acorn-orange-500 group-hover:translate-x-1 transition-all duration-300" />
+              <ArrowRight className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-hover:text-acorn-orange-500 group-hover:translate-x-1 transition-all duration-300" />
             </button>
           ))}
         </div>

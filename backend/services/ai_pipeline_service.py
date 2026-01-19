@@ -20,8 +20,8 @@ class ModelProvider(str, Enum):
     STUB = "stub"
     GEMINI = "gemini"
     HUGGINGFACE = "huggingface"
-    GPT = "gpt"
-    CLAUDE = "claude"
+    GPT = "openai"  # Use "openai" for emergentintegrations compatibility
+    CLAUDE = "anthropic"  # Use "anthropic" for emergentintegrations compatibility
 
 
 class TaskType(str, Enum):

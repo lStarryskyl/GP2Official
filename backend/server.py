@@ -1,6 +1,6 @@
 """FastAPI main application."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
@@ -99,3 +99,9 @@ async def api_info():
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "Acorn Backend", "message": "Growing strong! 🌰"}
+
+
+@app.head("/api/health")
+async def health_check_head():
+    """Explicit HEAD handler for health probes."""
+    return Response(status_code=200)

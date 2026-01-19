@@ -1364,18 +1364,18 @@ export const PhaseDetailPage: React.FC = () => {
                     </div>
                   )}
                   {/* Phase Header - Corporate Navy Card */}
-                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-navy-900 to-navy-850 shadow-2xl border border-navy-800 animate-reveal-up" data-testid="phase-header">
+                  <div className="relative overflow-hidden rounded-3xl shadow-2xl animate-reveal-up" style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }} data-testid="phase-header">
                     {/* Gold accent bar */}
-                    <div className="h-1 bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400" />
+                    <div className="h-1" style={{ background: 'linear-gradient(to right, #b8962e, #d4af37, #e6c358)' }} />
                     <div className="p-6 sm:p-8">
                       <div className="flex flex-wrap items-start justify-between gap-6">
                         <div className="space-y-3">
                           <div className="flex items-center gap-4">
-                            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 text-navy-950 font-bold text-xl shadow-lg shadow-gold-500/20 animate-glow">
+                            <div className="flex items-center justify-center w-14 h-14 rounded-2xl font-bold text-xl shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)', color: '#0a0f1a', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.2)' }}>
                               {phaseConfig.stepNumber}
                             </div>
                             <div>
-                              <p className="text-xs font-semibold uppercase text-gold-500/80 tracking-wider">
+                              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(212, 175, 55, 0.8)' }}>
                                 Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
                               </p>
                               <h1 className="text-2xl sm:text-3xl font-bold text-white">
@@ -1389,18 +1389,25 @@ export const PhaseDetailPage: React.FC = () => {
                           <Button 
                             variant="outline" 
                             onClick={() => navigate(`/projects/${id}`)} 
-                            className="border-navy-700 hover:bg-navy-800 text-gray-300 hover:text-white hover:border-gold-500/50 transition-all"
+                            className="text-gray-300 hover:text-white transition-all"
+                            style={{ borderColor: '#1e3a5f' }}
                           >
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Project
                           </Button>
-                          <div className={`px-4 py-2 rounded-full text-sm font-semibold shadow-lg ${
-                            status === 'completed' 
-                              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30' 
-                              : status === 'locked' 
-                              ? 'bg-navy-800 text-gray-500 border border-navy-700' 
-                              : 'bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 shadow-gold-500/30'
-                          }`}>
+                          <div 
+                            className="px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
+                            style={{
+                              background: status === 'completed' 
+                                ? 'linear-gradient(to right, #10b981, #14b8a6)' 
+                                : status === 'locked' 
+                                ? '#152238' 
+                                : 'linear-gradient(to right, #d4af37, #b8962e)',
+                              color: status === 'locked' ? '#9ca3af' : (status === 'completed' ? '#fff' : '#0a0f1a'),
+                              border: status === 'locked' ? '1px solid #1e3a5f' : 'none',
+                              boxShadow: status === 'completed' ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' : (status !== 'locked' ? '0 10px 15px -3px rgba(212, 175, 55, 0.3)' : 'none')
+                            }}
+                          >
                             {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● In Progress'}
                           </div>
                         </div>

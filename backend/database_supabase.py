@@ -189,7 +189,7 @@ async def ensure_tables_exist():
         
         # Create tasks table
         await conn.execute('''
-            CREATE TABLE IF NOT EXISTS tasks (
+            CREATE TABLE tasks (
                 id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
                 requirement_id TEXT,

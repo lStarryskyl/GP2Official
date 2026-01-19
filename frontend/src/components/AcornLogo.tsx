@@ -1,99 +1,104 @@
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 
 interface AcornLogoProps {
-  className?: string;
-  size?: number;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
+  className?: string;
+  animated?: boolean;
 }
 
 export const AcornLogo: React.FC<AcornLogoProps> = ({ 
-  className = '', 
-  size = 48,
-  showText = true 
+  size = 'md', 
+  showText = true,
+  className = '',
+  animated = true
 }) => {
+  const sizeConfig = {
+    sm: { icon: 'w-8 h-8', iconInner: 'w-4 h-4', text: 'text-lg', blur: 'blur-sm' },
+    md: { icon: 'w-10 h-10', iconInner: 'w-5 h-5', text: 'text-xl', blur: 'blur-md' },
+    lg: { icon: 'w-12 h-12', iconInner: 'w-6 h-6', text: 'text-2xl', blur: 'blur-lg' },
+    xl: { icon: 'w-16 h-16', iconInner: 'w-8 h-8', text: 'text-3xl', blur: 'blur-xl' },
+  };
+
+  const config = sizeConfig[size];
+
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox="0 0 100 100" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        className="flex-shrink-0"
-      >
-        {/* Acorn body - orange gradient */}
-        <defs>
-          <linearGradient id="acornGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#F5A623" />
-            <stop offset="50%" stopColor="#D4915C" />
-            <stop offset="100%" stopColor="#4A7BA7" />
-          </linearGradient>
-          <linearGradient id="arrowGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#D4915C" />
-            <stop offset="50%" stopColor="#6B9DC4" />
-            <stop offset="100%" stopColor="#1B4D7A" />
-          </linearGradient>
-        </defs>
-        
-        {/* Acorn cap/top */}
-        <path 
-          d="M25 45 Q20 35 30 30 Q40 25 45 35" 
-          stroke="#F5A623" 
-          strokeWidth="3" 
-          fill="none"
-          strokeLinecap="round"
+    <div className={`flex items-center gap-3 group ${className}`}>
+      {/* Logo Icon */}
+      <div className="relative">
+        {/* Glow Effect */}
+        <div 
+          className={`absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl ${config.blur} opacity-40 ${
+            animated ? 'group-hover:opacity-60 transition-opacity duration-300' : ''
+          }`} 
         />
         
-        {/* Acorn body */}
-        <path 
-          d="M25 45 Q15 55 25 70 Q35 85 45 70 Q55 55 45 45" 
-          stroke="#F5A623" 
-          strokeWidth="3" 
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {/* Main Icon */}
+        <div 
+          className={`relative ${config.icon} bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/25 ${
+            animated ? 'group-hover:scale-105 transition-transform duration-300' : ''
+          }`}
+        >
+          {/* Acorn SVG Icon */}
+          <svg 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            className={config.iconInner}
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Acorn Cap */}
+            <path 
+              d="M7 9C7 9 7 6 12 6C17 6 17 9 17 9" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M5 10C5 10 5 7 12 7C19 7 19 10 19 10" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+              opacity="0.5"
+            />
+            
+            {/* Acorn Body */}
+            <path 
+              d="M8 10C8 10 6 12 6 15C6 18 9 21 12 21C15 21 18 18 18 15C18 12 16 10 16 10" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+            />
+            
+            {/* Stem */}
+            <path 
+              d="M12 6V3" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+            />
+            
+            {/* Sparkle */}
+            <circle cx="10" cy="14" r="1" fill="white" opacity="0.6" />
+          </svg>
+        </div>
         
-        {/* Growth stem/arrow base */}
-        <path 
-          d="M45 35 Q55 30 60 40 Q65 50 70 45" 
-          stroke="url(#acornGradient)" 
-          strokeWidth="3" 
-          fill="none"
-          strokeLinecap="round"
-        />
-        
-        {/* Arrow shaft going up */}
-        <path 
-          d="M70 45 Q75 35 78 25 L85 15" 
-          stroke="url(#arrowGradient)" 
-          strokeWidth="3" 
-          fill="none"
-          strokeLinecap="round"
-        />
-        
-        {/* Arrow head */}
-        <path 
-          d="M78 8 L85 15 L92 22" 
-          stroke="#1B4D7A" 
-          strokeWidth="3" 
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M85 15 L90 8" 
-          stroke="#1B4D7A" 
-          strokeWidth="3" 
-          fill="none"
-          strokeLinecap="round"
-        />
-      </svg>
-      
+        {/* Shine Effect */}
+        <div 
+          className={`absolute inset-0 ${config.icon} rounded-xl overflow-hidden ${
+            animated ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-300' : 'opacity-0'
+          }`}
+        >
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+        </div>
+      </div>
+
+      {/* Logo Text */}
       {showText && (
         <span 
-          className="font-bold text-[#1B2D45] tracking-tight"
-          style={{ fontSize: size * 0.5 }}
+          className={`font-bold ${config.text} bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent ${
+            animated ? 'group-hover:from-amber-300 group-hover:via-orange-300 group-hover:to-amber-400 transition-all duration-300' : ''
+          }`}
         >
           Acorn
         </span>
@@ -102,11 +107,46 @@ export const AcornLogo: React.FC<AcornLogoProps> = ({
   );
 };
 
-export const AcornIcon: React.FC<{ size?: number; className?: string }> = ({ 
-  size = 32, 
-  className = '' 
-}) => (
-  <AcornLogo size={size} showText={false} className={className} />
-);
+// Alternative Sparkle-based Logo
+export const AcornLogoSparkle: React.FC<AcornLogoProps> = ({ 
+  size = 'md', 
+  showText = true,
+  className = '',
+  animated = true
+}) => {
+  const sizeConfig = {
+    sm: { icon: 'w-8 h-8', iconInner: 'w-4 h-4', text: 'text-lg' },
+    md: { icon: 'w-10 h-10', iconInner: 'w-5 h-5', text: 'text-xl' },
+    lg: { icon: 'w-12 h-12', iconInner: 'w-6 h-6', text: 'text-2xl' },
+    xl: { icon: 'w-16 h-16', iconInner: 'w-8 h-8', text: 'text-3xl' },
+  };
+
+  const config = sizeConfig[size];
+
+  return (
+    <div className={`flex items-center gap-3 group ${className}`}>
+      <div className="relative">
+        <div 
+          className={`absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl blur-lg opacity-50 ${
+            animated ? 'group-hover:opacity-75 transition-opacity' : ''
+          }`}
+        />
+        <div 
+          className={`relative ${config.icon} bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg ${
+            animated ? 'group-hover:scale-105 transition-transform' : ''
+          }`}
+        >
+          <Sparkles className={`${config.iconInner} text-white`} />
+        </div>
+      </div>
+      
+      {showText && (
+        <span className={`font-bold ${config.text} bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent`}>
+          Acorn
+        </span>
+      )}
+    </div>
+  );
+};
 
 export default AcornLogo;

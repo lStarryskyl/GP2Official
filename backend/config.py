@@ -103,6 +103,10 @@ except ValueError as e:
 
 def _resolve_llm_api_key(cfg: Settings) -> Optional[str]:
     """Prefer provider-specific keys if generic one not supplied."""
+    # First check for Emergent universal key
+    if cfg.emergent_llm_key:
+        _logger.info("Using Emergent Universal LLM Key")
+        return cfg.emergent_llm_key
     if cfg.llm_api_key:
         return cfg.llm_api_key
     provider = (cfg.llm_provider or "").lower()

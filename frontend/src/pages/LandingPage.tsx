@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles,
@@ -12,7 +12,10 @@ import {
   Globe,
   Users,
   Star,
-  Quote
+  Quote,
+  Menu,
+  X,
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { AcornLogo } from '@/components/AcornLogo';
@@ -108,6 +111,14 @@ const logoMarquee = ['Trello', 'Linear', 'Jira', 'Notion', 'Slack'];
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const scrollToDemo = () => {
+    const demoSection = document.getElementById('demo-section');
+    if (demoSection) {
+      demoSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 overflow-hidden">
@@ -131,7 +142,9 @@ const LandingPage: React.FC = () => {
           <div className="cursor-pointer group-hover:scale-105 transition-transform" onClick={() => navigate('/') }>
             <AcornLogo size={48} />
           </div>
-          <div className="flex gap-3">
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex gap-3">
             <Button
               variant="ghost"
               onClick={() => navigate('/login')}
@@ -146,7 +159,41 @@ const LandingPage: React.FC = () => {
               Get Started
             </Button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden p-2 rounded-lg hover:bg-amber-100/50 transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6 text-amber-900" />
+            ) : (
+              <Menu className="w-6 h-6 text-amber-900" />
+            )}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg border-b border-amber-200/50 shadow-lg animate-slideDown">
+            <div className="flex flex-col p-4 gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}
+                className="w-full justify-center hover:bg-amber-100/50 text-amber-900 font-medium"
+              >
+                Sign In
+              </Button>
+              <Button
+                onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}
+                className="w-full justify-center bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium shadow-lg"
+              >
+                Get Started
+              </Button>
+            </div>
+          </div>
+        )}
       </nav>
 
       <section className="relative z-10 px-6 py-20 max-w-7xl mx-auto">
@@ -182,8 +229,10 @@ const LandingPage: React.FC = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-amber-500 text-amber-700 hover:bg-amber-50 px-8 py-6 text-lg font-semibold"
+                onClick={scrollToDemo}
+                className="border-2 border-amber-500 text-amber-700 hover:bg-amber-50 px-8 py-6 text-lg font-semibold group"
               >
+                <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
                 Watch Demo
               </Button>
             </div>
@@ -246,6 +295,54 @@ const LandingPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">{feature.title}</h3>
               <p className="text-gray-600">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Demo Section */}
+      <section id="demo-section" className="relative z-10 px-6 py-20 max-w-7xl mx-auto">
+        <div className="text-center mb-12 space-y-4">
+          <p className="text-sm font-semibold text-amber-600 uppercase tracking-widest">See It In Action</p>
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-800">Watch Acorn Transform Ideas Into Plans</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            From a simple project brief to comprehensive requirements, UML diagrams, and task breakdowns in minutes.
+          </p>
+        </div>
+
+        <div className="relative group max-w-4xl mx-auto">
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition"></div>
+          <div className="relative bg-gray-900 rounded-3xl overflow-hidden shadow-2xl aspect-video flex items-center justify-center">
+            {/* Video placeholder - replace with actual video embed */}
+            <div className="text-center p-8">
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-xl">
+                <Play className="w-12 h-12 text-white ml-1" />
+              </div>
+              <p className="text-white/80 text-lg mb-2">Product Demo</p>
+              <p className="text-white/50 text-sm">2:30 min · See how Acorn works</p>
+            </div>
+            {/* Uncomment to embed actual video:
+            <iframe 
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+              title="Acorn Demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+            */}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
+          {[
+            { title: 'Input Brief', desc: 'Describe your project in plain language', time: '0:00' },
+            { title: 'AI Generation', desc: 'Watch requirements & diagrams emerge', time: '0:45' },
+            { title: 'Export & Share', desc: 'Get stakeholder-ready documentation', time: '1:50' },
+          ].map((step, idx) => (
+            <div key={step.title} className="bg-white/70 backdrop-blur rounded-xl p-4 border border-amber-100 text-center">
+              <p className="text-xs text-amber-600 font-semibold mb-1">{step.time}</p>
+              <p className="font-bold text-gray-800">{step.title}</p>
+              <p className="text-sm text-gray-600">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -465,6 +562,11 @@ const LandingPage: React.FC = () => {
             width: max-content;
             animation: marquee 15s linear infinite;
           }
+          @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-slideDown { animation: slideDown 0.3s ease-out both; }
         `}
       </style>
     </div>

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Sparkles, CheckCircle, Code, Layers, Boxes, ArrowRight } from 'lucide-react';
+import { Sparkles, CheckCircle, Code, Layers, Boxes, ArrowRight, XCircle } from 'lucide-react';
 import { ROLE_OPTIONS } from '@/constants/roles';
 import { AcornLogo } from '@/components/AcornLogo';
 
@@ -18,8 +18,20 @@ export const RegisterPage: React.FC = () => {
     role: 'program_manager',
   });
 
+  const passwordChecks = useMemo(() => ({
+    length: formData.password.length >= 8,
+    uppercase: /[A-Z]/.test(formData.password),
+    lowercase: /[a-z]/.test(formData.password),
+    number: /[0-9]/.test(formData.password),
+  }), [formData.password]);
+
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPasswordValid) {
+      return;
+    }
     try {
       await register(formData);
       navigate('/projects');
@@ -200,11 +212,34 @@ export const RegisterPage: React.FC = () => {
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Min. 8 characters"
+                      placeholder="Create a strong password"
                       required
-                      className="border-2 border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all"
+                      className={`border-2 ${formData.password && !isPasswordValid ? 'border-red-300' : 'border-amber-200'} focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all`}
                     />
-                    <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-amber-500 to-orange-600 w-0 group-focus-within:w-full transition-all duration-500"></div>
+                    {formData.password && (
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-xs font-medium text-gray-600 mb-2">Password requirements:</p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {[
+                            { key: 'length', label: '8+ characters' },
+                            { key: 'uppercase', label: 'Uppercase letter' },
+                            { key: 'lowercase', label: 'Lowercase letter' },
+                            { key: 'number', label: 'Number' },
+                          ].map(({ key, label }) => (
+                            <div key={key} className="flex items-center gap-1">
+                              {passwordChecks[key as keyof typeof passwordChecks] ? (
+                                <CheckCircle className="w-3 h-3 text-green-500" />
+                              ) : (
+                                <XCircle className="w-3 h-3 text-gray-300" />
+                              )}
+                              <span className={`text-xs ${passwordChecks[key as keyof typeof passwordChecks] ? 'text-green-600' : 'text-gray-400'}`}>
+                                {label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <Button

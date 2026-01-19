@@ -76,11 +76,20 @@ class _SupabaseProjectRepository:
         
         team_members = []
         provided_team = getattr(project_data, "team_members", None) or []
+        
+        # Normalize any datetime objects in provided team data
+        normalized_provided = []
+        for member in provided_team:
+            normalized_member = dict(member)
+            if 'assigned_at' in normalized_member and isinstance(normalized_member['assigned_at'], datetime):
+                normalized_member['assigned_at'] = normalized_member['assigned_at'].isoformat()
+            normalized_provided.append(normalized_member)
+        
         if owner_member:
-            existing = [m for m in provided_team if m.get("user_id") != owner_member.get("user_id")]
+            existing = [m for m in normalized_provided if m.get("user_id") != owner_member.get("user_id")]
             team_members = [owner_member, *existing]
         else:
-            team_members = provided_team
+            team_members = normalized_provided
         
         async with pool.acquire() as conn:
             await conn.execute('''

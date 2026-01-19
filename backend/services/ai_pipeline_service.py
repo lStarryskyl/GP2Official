@@ -224,27 +224,32 @@ class AIModelPipeline:
                     quality_score=0.5
                 )
                 
-            # Handle real AI models
-            chat = LlmChat(
-                api_key=model_config.api_key,
-                session_id=f"{task_type}_{hash(prompt)}",
-                system_message=self._get_system_message(task_type)
-            ).with_model(model_config.provider.value, model_config.model_name)
-            
-            # Create user message with context
+            # Handle real AI models using OpenAI SDK
+            client = openai.AsyncOpenAI(api_key=model_config.api_key)
+            system_message = self._get_system_message(task_type)
             full_prompt = self._build_contextual_prompt(prompt, context, task_type)
-            user_message = UserMessage(text=full_prompt)
             
-            # Generate content
-            response = await chat.send_message(user_message)
+            logger.info(f"Calling OpenAI API: model={model_config.model_name}")
+            completion = await client.chat.completions.create(
+                model=model_config.model_name,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": full_prompt}
+                ],
+                max_tokens=model_config.max_tokens,
+                temperature=model_config.temperature,
+            )
+            response = completion.choices[0].message.content
             
             # Process response based on task type
             processed_content = await self._process_response(response, task_type)
             
             # Calculate metrics
-            tokens_used = len(full_prompt.split()) + len(response.split())
+            tokens_used = completion.usage.total_tokens if completion.usage else len(full_prompt.split()) + len(response.split())
             duration_ms = int((time.time() - start_time) * 1000)
             cost_usd = tokens_used * model_config.cost_per_token
+            
+            logger.info(f"OpenAI response: {len(response)} chars, {tokens_used} tokens, {duration_ms}ms")
             
             return GenerationResult(
                 provider=model_config.provider,
@@ -257,6 +262,7 @@ class AIModelPipeline:
             )
             
         except Exception as e:
+            logger.error(f"AI generation error: {e}")
             return GenerationResult(
                 provider=model_config.provider,
                 model_name=model_config.model_name,

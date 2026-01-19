@@ -1447,11 +1447,11 @@ export const PhaseDetailPage: React.FC = () => {
                   )}
 
                   {phaseId !== 'validation' && (
-                    <div className="rounded-3xl bg-gradient-to-br from-navy-900 to-navy-850 border border-navy-800 shadow-xl overflow-hidden animate-reveal-up delay-200" data-testid="ai-assistant-card">
+                    <div className="rounded-3xl shadow-xl overflow-hidden animate-reveal-up delay-200" style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }} data-testid="ai-assistant-card">
                       <div className="p-6">
                         <div className="flex items-start gap-4 mb-5">
-                          <div className="p-3 bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl shadow-lg shadow-gold-500/20">
-                            <Sparkles className="h-6 w-6 text-navy-950" />
+                          <div className="p-3 rounded-2xl shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.2)' }}>
+                            <Sparkles className="h-6 w-6" style={{ color: '#0a0f1a' }} />
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-white">AI Assistant</h3>
@@ -1462,13 +1462,14 @@ export const PhaseDetailPage: React.FC = () => {
                           <div className="relative">
                             <textarea
                               ref={unifiedPromptRef}
-                              className="w-full border border-navy-700 rounded-2xl px-4 py-4 text-sm bg-navy-900 text-white placeholder-gray-500 focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all resize-none"
+                              className="w-full rounded-2xl px-4 py-4 text-sm text-white placeholder-gray-500 transition-all resize-none"
+                              style={{ backgroundColor: '#0d1525', border: '1px solid #1e3a5f' }}
                               rows={3}
                               placeholder="E.g., 'Generate detailed requirements with acceptance criteria' or 'Create a risk assessment matrix'"
                             />
                             {isGenerating && (
-                              <div className="absolute inset-0 bg-navy-900/90 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                                <div className="flex items-center gap-3 text-gold-500">
+                              <div className="absolute inset-0 backdrop-blur-sm rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'rgba(13, 21, 37, 0.9)' }}>
+                                <div className="flex items-center gap-3" style={{ color: '#d4af37' }}>
                                   <Loader2 className="h-5 w-5 animate-spin" />
                                   <span className="font-medium">Generating content...</span>
                                 </div>
@@ -1479,19 +1480,22 @@ export const PhaseDetailPage: React.FC = () => {
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Generate comprehensive analysis'; }}
-                                className="px-3 py-1.5 text-xs font-medium bg-navy-800 border border-navy-700 rounded-full hover:bg-navy-700 hover:border-gold-500/50 text-gray-300 transition-all"
+                                className="px-3 py-1.5 text-xs font-medium rounded-full text-gray-300 transition-all"
+                                style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}
                               >
                                 📊 Analysis
                               </button>
                               <button
                                 onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Create detailed requirements list'; }}
-                                className="px-3 py-1.5 text-xs font-medium bg-navy-800 border border-navy-700 rounded-full hover:bg-navy-700 hover:border-gold-500/50 text-gray-300 transition-all"
+                                className="px-3 py-1.5 text-xs font-medium rounded-full text-gray-300 transition-all"
+                                style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}
                               >
                                 📋 Requirements
                               </button>
                               <button
                                 onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Generate risk assessment'; }}
-                                className="px-3 py-1.5 text-xs font-medium bg-navy-800 border border-navy-700 rounded-full hover:bg-navy-700 hover:border-gold-500/50 text-gray-300 transition-all"
+                                className="px-3 py-1.5 text-xs font-medium rounded-full text-gray-300 transition-all"
+                                style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}
                               >
                                 ⚠️ Risks
                               </button>
@@ -1501,7 +1505,8 @@ export const PhaseDetailPage: React.FC = () => {
                                 variant="outline"
                                 onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = ''; }}
                                 disabled={isGenerating}
-                                className="border-navy-700 text-gray-300 hover:bg-navy-800"
+                                className="text-gray-300"
+                                style={{ borderColor: '#1e3a5f' }}
                               >
                                 Clear
                               </Button>
@@ -1512,7 +1517,8 @@ export const PhaseDetailPage: React.FC = () => {
                                   if (!prompt.trim()) return;
                                   handleGenerate(prompt);
                                 }}
-                                className="bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-navy-950 font-semibold shadow-lg shadow-gold-500/30"
+                                className="font-semibold shadow-lg"
+                                style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.3)' }}
                               >
                                 {isGenerating ? 'Generating…' : 'Generate with AI'}
                               </Button>

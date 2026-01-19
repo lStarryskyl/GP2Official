@@ -300,11 +300,12 @@ export const ProjectDetailPage: React.FC = () => {
                 Back to Projects
               </div>
               <div className="flex items-center gap-3">
+                <ExportButtons projectId={project.project_id || project.id} projectName={project.name} />
                 <Button variant="outline" onClick={() => goToDraft('overview')}>
                   Open Draft
                 </Button>
                 <Button
-                  className="bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+                  className="bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600 text-white"
                   onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phaseConfigs[0]?.id}`)}
                 >
                   Continue Planning

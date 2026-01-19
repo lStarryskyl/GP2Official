@@ -16,6 +16,9 @@ import { GuidedWorkspaceBuilder } from './pages/GuidedWorkspaceBuilder';
 import ProfilePage from './pages/ProfilePage';
 import ProjectGovernancePage from './pages/ProjectGovernancePage';
 import DevelopmentUpdatesPage from './pages/DevelopmentUpdatesPage';
+import { PersonasPage } from './pages/PersonasPage';
+import { SRSAuditPage } from './pages/SRSAuditPage';
+import { BillingPageRoute } from './pages/BillingPageRoute';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -131,6 +134,30 @@ function App() {
           element={
             <PrivateRoute>
               <UmlDiagramEditorPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/personas"
+          element={
+            <PrivateRoute>
+              <PersonasPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/srs-audit"
+          element={
+            <PrivateRoute>
+              <SRSAuditPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/billing"
+          element={
+            <PrivateRoute>
+              <BillingPageRoute />
             </PrivateRoute>
           }
         />

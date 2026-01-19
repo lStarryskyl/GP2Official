@@ -1,6 +1,6 @@
 """Activity repository (minimal stub)."""
 
-from typing import List
+from typing import List, Optional
 from database import get_db
 from models.activity import ActivityLog
 from datetime import datetime
@@ -30,8 +30,8 @@ class ActivityRepository:
         self,
         project_id: str,
         event_type: str,
-        user_id: str | None = None,
-        details_json=None,
+        user_id: str = None,
+        details_json: Optional[dict] = None,
     ) -> ActivityLog:
         """Insert a new activity log."""
         db = get_db()

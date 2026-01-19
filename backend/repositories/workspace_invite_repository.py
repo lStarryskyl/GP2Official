@@ -22,7 +22,7 @@ class WorkspaceInviteRepository:
     def __init__(self):
         self._repo = _get_repository()
 
-    async def create_invite(self, organization: str, email: str, role: str, invited_by: str, message: str | None = None) -> WorkspaceInvite:
+    async def create_invite(self, organization: str, email: str, role: str, invited_by: str, message: Optional[str] = None) -> WorkspaceInvite:
         return await self._repo.create_invite(organization, email, role, invited_by, message)
 
     async def list_org_invites(self, organization: str) -> List[WorkspaceInvite]:
@@ -47,7 +47,7 @@ class _SupabaseWorkspaceInviteRepository:
             raise Exception("Supabase database pool not initialized.")
         return pool
 
-    async def create_invite(self, organization: str, email: str, role: str, invited_by: str, message: str | None = None) -> WorkspaceInvite:
+    async def create_invite(self, organization: str, email: str, role: str, invited_by: str, message: Optional[str] = None) -> WorkspaceInvite:
         pool = self._get_pool()
         token = secrets.token_urlsafe(24)
         invite_id = str(uuid.uuid4())
@@ -115,7 +115,7 @@ class _MongoWorkspaceInviteRepository:
         email: str,
         role: str,
         invited_by: str,
-        message: str | None = None,
+        message: Optional[str] = None,
     ) -> WorkspaceInvite:
         """Create and store a new invite."""
         db = get_db()

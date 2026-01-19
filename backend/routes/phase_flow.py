@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from typing import Optional
 
 from models.user import User
 from routes.auth import get_current_user
@@ -20,8 +21,8 @@ class PhaseGenerateRequest(BaseModel):
 class PhaseGenerateResponse(BaseModel):
     phase_status: dict
     content: dict
-    raw_markdown: str | None = None
-    formatted_markdown: str | None = None
+    raw_markdown: Optional[str] = None
+    formatted_markdown: Optional[str] = None
 
 
 @router.get("/projects/{project_id}/phases/")

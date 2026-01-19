@@ -1,7 +1,7 @@
 """Activity log models."""
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 
@@ -10,7 +10,7 @@ class ActivityLog(BaseModel):
 
     id: str = Field(..., alias="_id")
     project_id: str
-    user_id: str | None = None
+    user_id: Optional[str] = None
     event_type: str
     details_json: Dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -22,9 +22,9 @@ class ActivityLog(BaseModel):
 class ActivityLogResponse(BaseModel):
     """API response for activity log."""
 
-    log_id: str
+    id: str
     project_id: str
-    user_id: str | None
+    user_id: Optional[str]
     event_type: str
     details_json: Dict[str, Any]
     created_at: datetime

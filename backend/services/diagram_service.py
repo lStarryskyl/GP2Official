@@ -1,7 +1,7 @@
 """Diagram workspace service."""
 
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, Any, List, Optional
 
 from fastapi import HTTPException, status
 
@@ -210,7 +210,7 @@ class DiagramService:
         metadata = {"seeded_from": mode.lower()}  # Keep original mode for reference
         return await self.repo.upsert_stage(project_id, stage, nodes, edges, title, metadata)
 
-    def _next_metadata(self, existing: Dict[str, Any] | None, incoming: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    def _next_metadata(self, existing: Optional[Dict[str, Any]], incoming: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Blend metadata updates and bump version counters."""
         metadata: Dict[str, Any] = dict(existing or {})
         if incoming:

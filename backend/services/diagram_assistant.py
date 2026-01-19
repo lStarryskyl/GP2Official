@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional, Union
 from uuid import uuid4
 
 
@@ -75,14 +75,14 @@ class DiagramAssistant:
             "I can add, remove, rename, or connect nodes. Try something like 'add node Payment Processor'.",
         )
 
-    def _extract_label(self, pattern: re.Pattern, text: str) -> str | None:
+    def _extract_label(self, pattern: re.Pattern, text: str) -> Optional[str]:
         match = pattern.search(text)
         if not match:
             return None
         label = match.group("label").strip().strip("'\"")
         return label if label else None
 
-    def _extract_connection(self, pattern: re.Pattern, text: str) -> Tuple[str, str] | None:
+    def _extract_connection(self, pattern: re.Pattern, text: str) -> Optional[Tuple[str, str]]:
         match = pattern.search(text)
         if not match:
             return None
@@ -106,7 +106,7 @@ class DiagramAssistant:
         nodes: List[Dict[str, Any]],
         edges: List[Dict[str, Any]],
         label: str,
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], str | None]:
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Optional[str]]:
         label_lower = label.lower()
         remaining_nodes = []
         removed_id = None
@@ -176,7 +176,7 @@ class DiagramAssistant:
             return f"I could not find '{old_label}' to rename.", nodes
         return f"Renamed '{old_label}' to '{new_label}'.", updated_nodes
 
-    def _find_node_id(self, nodes: List[Dict[str, Any]], label: str) -> str | None:
+    def _find_node_id(self, nodes: List[Dict[str, Any]], label: str) -> Optional[str]:
         target = label.lower()
         for node in nodes:
             node_label = node.get("data", {}).get("label") or node.get("label") or ""

@@ -1,7 +1,7 @@
 """SDLC and UML diagram routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
+from typing import List, Optional
 
 from models.artifact import ArtifactResponse
 from models.diagram import DiagramChatRequest, DiagramChatResponse, DiagramStateResponse, DiagramUpdateRequest
@@ -211,7 +211,7 @@ def _artifact_to_response(artifact):
 async def get_uml_diagram(
     project_id: str,
     diagram_type: str,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user),
 ):
     """Fetch the generated UML diagram artifact (PlantUML)."""
     await project_service.get_project(project_id, current_user)
@@ -224,18 +224,18 @@ async def get_uml_diagram(
 from pydantic import BaseModel
 
 
-class UmlUpdatePayload(BaseModel):
+class PlantUMLUpdateRequest(BaseModel):
     """Payload for direct PlantUML edits."""
 
     plantuml: str
-    title: str | None = None
+    title: Optional[str] = None
 
 
 @router.put("/projects/{project_id}/uml/{diagram_type}/", response_model=ArtifactResponse)
 async def save_uml_diagram(
     project_id: str,
     diagram_type: str,
-    payload: UmlUpdatePayload,
+    payload: PlantUMLUpdateRequest,
     current_user: User = Depends(get_current_user),
 ):
     """Persist manual edits to a UML diagram."""

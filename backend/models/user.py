@@ -1,7 +1,7 @@
 """User models."""
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl
-from typing import Optional, Dict, List
+from pydantic import BaseModel, Field, EmailStr, HttpUrl
+from typing import Optional, Dict, List, Union
 from datetime import datetime
 
 ROLE_CATALOG: Dict[str, Dict[str, object]] = {
@@ -94,8 +94,8 @@ class UserResponse(BaseModel):
     role: str
     role_label: str
     role_authority: int
-    avatar_url: Optional[HttpUrl | str] = None
-    banner_url: Optional[HttpUrl | str] = None
+    avatar_url: Optional[Union[HttpUrl, str]] = None
+    banner_url: Optional[Union[HttpUrl, str]] = None
     bio: Optional[str] = None
     job_title: Optional[str] = None
     location: Optional[str] = None

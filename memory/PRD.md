@@ -112,5 +112,6 @@ To fix the UUID error on Render:
 5. Configure real LLM API key for AI content generation
 
 ## Notes
-- **AI Generation**: Currently uses MOCK responses when no OpenAI API key is configured
+- **AI Generation**: Uses OpenAI GPT-4 when `OPENAI_API_KEY` is configured (set on Render production). Falls back to placeholder content locally without a real key.
 - **Database**: Preview environment uses MongoDB in-memory; production needs Supabase config
+- **To push changes**: Use the "Save to Github" button in the Emergent platform chat input

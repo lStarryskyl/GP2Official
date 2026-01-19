@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     supabase_url: Optional[str] = None
     supabase_anon_key: Optional[str] = None
     supabase_service_key: Optional[str] = None
-    use_supabase: bool = False
+    use_supabase: bool = True
     
     # Redis Cache
     redis_url: Optional[str] = None

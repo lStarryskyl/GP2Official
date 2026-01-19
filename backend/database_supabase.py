@@ -173,7 +173,7 @@ async def ensure_tables_exist():
         
         # Create requirements table
         await conn.execute('''
-            CREATE TABLE IF NOT EXISTS requirements (
+            CREATE TABLE requirements (
                 id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
                 type TEXT,

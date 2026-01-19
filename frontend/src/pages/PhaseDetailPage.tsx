@@ -1416,19 +1416,20 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
 
                   {nextPhase && (
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 p-[2px] shadow-lg shadow-gold-500/20 animate-reveal-up delay-100" data-testid="next-phase-banner">
-                      <div className="bg-navy-900 rounded-[14px] p-5 flex flex-wrap items-center justify-between gap-4">
+                    <div className="relative overflow-hidden rounded-2xl p-[2px] shadow-lg animate-reveal-up delay-100" style={{ background: 'linear-gradient(to right, #b8962e, #d4af37, #e6c358)', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.2)' }} data-testid="next-phase-banner">
+                      <div className="rounded-[14px] p-5 flex flex-wrap items-center justify-between gap-4" style={{ backgroundColor: '#0d1525' }}>
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gold-500/20 to-gold-600/20 text-gold-500 font-bold border border-gold-500/30">
+                          <div className="flex items-center justify-center w-12 h-12 rounded-xl font-bold" style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)', color: '#d4af37', border: '1px solid rgba(212, 175, 55, 0.3)' }}>
                             {nextPhase.stepNumber}
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-wider text-gold-500/70 font-semibold">Continue to Next</p>
+                            <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: 'rgba(212, 175, 55, 0.7)' }}>Continue to Next</p>
                             <h3 className="text-lg font-bold text-white">{nextPhase.title}</h3>
                           </div>
                         </div>
                         <Button
-                          className="bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-navy-950 font-semibold shadow-lg shadow-gold-500/30 hover:shadow-gold-500/50 transition-all"
+                          className="font-semibold shadow-lg transition-all"
+                          style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.3)' }}
                           onClick={() => navigate(`/projects/${id}/phases/${nextPhase.id}`)}
                         >
                           Continue

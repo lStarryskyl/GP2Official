@@ -1332,7 +1332,7 @@ export const PhaseDetailPage: React.FC = () => {
       : '';
     return (
       <Layout>
-        <div className="min-h-[calc(100vh-4rem)] bg-navy-950">
+        <div className="min-h-[calc(100vh-4rem)]" style={{ backgroundColor: '#0a0f1a' }}>
           <div className="mx-auto max-w-[1400px] px-3 sm:px-4 lg:px-6 py-6">
             <div className={`grid gap-5 ${gridTemplate}`}>
               {/* Phase Navigation Sidebar */}

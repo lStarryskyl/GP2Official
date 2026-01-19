@@ -109,12 +109,12 @@ class _SupabaseArtifactRepository:
         if isinstance(data.get('content_json'), str):
             try:
                 data['content_json'] = json.loads(data['content_json'])
-            except:
+            except (json.JSONDecodeError, TypeError):
                 data['content_json'] = {}
         if isinstance(data.get('metadata'), str):
             try:
                 data['metadata'] = json.loads(data['metadata'])
-            except:
+            except (json.JSONDecodeError, TypeError):
                 data['metadata'] = {}
         return Artifact(**data)
 

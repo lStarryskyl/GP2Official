@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/Layout';
-import { Button } from '@/components/ui/Button';
 import { 
   Plus, 
   FolderOpen, 
@@ -18,46 +17,41 @@ import {
   Sparkles,
   ArrowRight,
   TrendingUp,
-  Zap
+  Zap,
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  Trash2,
+  Edit3,
+  ExternalLink,
+  BarChart3,
+  Users,
+  FileText
 } from 'lucide-react';
 import type { Project } from '@/types';
 
 const quickActions = [
-  { icon: Plus, label: 'New Project', description: 'Start from scratch', action: 'new', color: 'from-acorn-orange-500 to-acorn-orange-600' },
-  { icon: Upload, label: 'Import Document', description: 'Upload existing docs', action: 'import', color: 'from-acorn-blue-500 to-acorn-blue-600' },
-  { icon: Lightbulb, label: 'AI Insights', description: 'View suggestions', action: 'insights', color: 'from-purple-500 to-purple-600' },
-  { icon: HelpCircle, label: 'Documentation', description: 'Learn Acorn', action: 'docs', color: 'from-green-500 to-green-600' },
+  { icon: Plus, label: 'New Project', description: 'Start from scratch', action: 'new', gradient: 'from-amber-500 to-orange-600' },
+  { icon: Upload, label: 'Import', description: 'Upload docs', action: 'import', gradient: 'from-blue-500 to-cyan-500' },
+  { icon: Lightbulb, label: 'AI Ideas', description: 'Get suggestions', action: 'insights', gradient: 'from-purple-500 to-pink-500' },
+  { icon: HelpCircle, label: 'Learn', description: 'Documentation', action: 'docs', gradient: 'from-emerald-500 to-teal-500' },
 ];
 
 export const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
-  const observerRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [isVisible, setIsVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
+    setIsVisible(true);
   }, []);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible((prev) => ({ ...prev, [entry.target.id]: true }));
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    Object.values(observerRefs.current).forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
-
-    return () => observer.disconnect();
-  }, [projects]);
 
   const loadProjects = async () => {
     try {
@@ -70,13 +64,24 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
+  const deleteProject = async (projectId: string) => {
+    if (!window.confirm('Are you sure you want to delete this project?')) return;
+    try {
+      await api.deleteProject(projectId);
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+    setActiveMenu(null);
+  };
+
   const getStatusConfig = (status: string) => {
-    const configs: Record<string, { color: string; bgColor: string; icon: React.ElementType; label: string }> = {
-      draft: { color: 'text-gray-600', bgColor: 'bg-gray-100', icon: Clock, label: 'Draft' },
-      planning: { color: 'text-blue-600', bgColor: 'bg-blue-100', icon: Loader2, label: 'Planning' },
-      active: { color: 'text-green-600', bgColor: 'bg-green-100', icon: CheckCircle, label: 'Active' },
-      completed: { color: 'text-acorn-blue-600', bgColor: 'bg-acorn-blue-100', icon: CheckCircle, label: 'Completed' },
-      archived: { color: 'text-orange-600', bgColor: 'bg-orange-100', icon: AlertCircle, label: 'Archived' },
+    const configs: Record<string, { color: string; bgColor: string; borderColor: string; icon: React.ElementType; label: string }> = {
+      draft: { color: 'text-slate-400', bgColor: 'bg-slate-500/10', borderColor: 'border-slate-500/30', icon: Clock, label: 'Draft' },
+      planning: { color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', icon: Loader2, label: 'Planning' },
+      active: { color: 'text-green-400', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30', icon: CheckCircle, label: 'Active' },
+      completed: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', icon: CheckCircle, label: 'Completed' },
+      archived: { color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30', icon: AlertCircle, label: 'Archived' },
     };
     return configs[status] || configs.draft;
   };
@@ -95,18 +100,23 @@ export const ProjectsPage: React.FC = () => {
     });
   };
 
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-6">
-            <div className="relative w-24 h-24 mx-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-acorn-blue-500 to-acorn-orange-500 rounded-full animate-ping opacity-20" />
-              <div className="absolute inset-0 bg-gradient-to-r from-acorn-blue-500 to-acorn-orange-500 rounded-full animate-pulse flex items-center justify-center">
-                <Sparkles className="w-12 h-12 text-white animate-spin" />
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Sparkles className="w-8 h-8 text-white" />
               </div>
+              <div className="absolute inset-0 w-16 h-16 mx-auto rounded-2xl bg-amber-500/30 blur-xl animate-pulse" />
             </div>
-            <p className="text-xl text-gray-600 animate-pulse">Loading your projects...</p>
+            <p className="text-slate-400 text-lg">Loading your projects...</p>
           </div>
         </div>
       </Layout>
@@ -115,199 +125,297 @@ export const ProjectsPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="space-y-8 relative">
-        {/* Animated Background Elements */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute w-96 h-96 rounded-full bg-acorn-blue-100/30 blur-3xl -top-48 -right-48 animate-float" />
-          <div className="absolute w-72 h-72 rounded-full bg-acorn-orange-100/30 blur-3xl -bottom-36 -left-36 animate-float" style={{ animationDelay: '3s' }} />
-          <div className="absolute w-64 h-64 rounded-full bg-purple-100/30 blur-3xl top-1/2 right-1/4 animate-float" style={{ animationDelay: '6s' }} />
-        </div>
-
-        {/* Header */}
+      <div className="min-h-screen pb-12">
+        {/* Header Section */}
         <div 
-          id="header"
-          ref={(el) => (observerRefs.current['header'] = el)}
-          className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-700 ${
-            isVisible['header'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
+          className={`mb-10 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="bg-gradient-to-r from-acorn-blue-600 to-acorn-orange-500 bg-clip-text text-transparent">
-                Your Projects
-              </span>
-              <Zap className="w-8 h-8 text-acorn-orange-500 animate-pulse" />
-            </h1>
-            <p className="text-gray-500 mt-2 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              {projects.length} {projects.length === 1 ? 'project' : 'projects'} • Growing strong
-            </p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">
+                Projects
+              </h1>
+              <p className="text-slate-400 text-lg">
+                Manage and track all your AI-powered project plans
+              </p>
+            </div>
+            
+            <button
+              onClick={() => navigate('/projects/new')}
+              className="btn-premium group"
+              data-testid="new-project-btn"
+            >
+              <Plus className="w-5 h-5" />
+              New Project
+              <ArrowRight className="w-4 h-4 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+            </button>
           </div>
-          <Button
-            onClick={() => navigate('/projects/new')}
-            className="bg-gradient-to-r from-acorn-orange-500 to-acorn-orange-600 hover:from-acorn-orange-600 hover:to-acorn-orange-700 text-white font-bold shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
-          >
-            <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-            New Project
-          </Button>
         </div>
 
         {/* Quick Actions */}
         <div 
-          id="quick-actions"
-          ref={(el) => (observerRefs.current['quick-actions'] = el)}
-          className={`grid grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-700 ${
-            isVisible['quick-actions'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ transitionDelay: '100ms' }}
+          className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
-          {quickActions.map((action, index) => (
-            <button
-              key={action.action}
-              onClick={() => handleQuickAction(action.action)}
-              className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-transparent hover:shadow-xl transition-all duration-300 text-left group relative overflow-hidden"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {/* Hover Gradient */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-              
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg`}>
-                <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <p className="font-bold text-sm sm:text-base text-gray-900 group-hover:text-acorn-blue-600 transition-colors">{action.label}</p>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">{action.description}</p>
-              
-              <ArrowRight className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-hover:text-acorn-orange-500 group-hover:translate-x-1 transition-all duration-300" />
-            </button>
-          ))}
+          {quickActions.map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={index}
+                onClick={() => handleQuickAction(action.action)}
+                className="group relative p-5 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-amber-500/30 transition-all duration-300 text-left overflow-hidden"
+                style={{ transitionDelay: `${index * 50}ms` }}
+              >
+                {/* Gradient Glow on Hover */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-semibold text-white mb-1">{action.label}</h3>
+                <p className="text-sm text-slate-500">{action.description}</p>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Projects Grid */}
-        {projects.length === 0 ? (
-          <div 
-            id="empty-state"
-            ref={(el) => (observerRefs.current['empty-state'] = el)}
-            className={`bg-white rounded-3xl border border-gray-100 p-16 text-center relative overflow-hidden transition-all duration-700 ${
-              isVisible['empty-state'] ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-            }`}
-          >
-            {/* Background Animation */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute w-64 h-64 rounded-full bg-acorn-blue-100/50 blur-3xl -top-32 -left-32 animate-float" />
-              <div className="absolute w-48 h-48 rounded-full bg-acorn-orange-100/50 blur-3xl -bottom-24 -right-24 animate-float" style={{ animationDelay: '2s' }} />
-            </div>
-
-            <div className="relative z-10">
-              <div className="w-24 h-24 bg-gradient-to-br from-acorn-blue-100 to-acorn-orange-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce-gentle">
-                <FolderOpen className="w-12 h-12 text-acorn-blue-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">No projects yet</h3>
-              <p className="text-gray-500 mb-8 max-w-md mx-auto text-lg">
-                Create your first project to start generating AI-powered requirements and documentation.
-              </p>
-              <Button
-                onClick={() => navigate('/projects/new')}
-                className="bg-gradient-to-r from-acorn-orange-500 to-acorn-orange-600 hover:from-acorn-orange-600 hover:to-acorn-orange-700 text-white font-bold px-8 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
+        {/* Search & Filters */}
+        <div 
+          className={`flex flex-col md:flex-row gap-4 mb-8 transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-premium pl-12 w-full"
+              data-testid="search-projects-input"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button className="btn-ghost px-4 py-3">
+              <Filter className="w-5 h-5" />
+              <span className="hidden md:inline">Filters</span>
+            </button>
+            
+            <div className="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-700">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-white'}`}
               >
-                <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                Create Your First Project
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
             </div>
           </div>
+        </div>
+
+        {/* Projects Grid/List */}
+        {filteredProjects.length === 0 ? (
+          <div 
+            className={`text-center py-20 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          >
+            <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-6">
+              <FolderOpen className="w-10 h-10 text-slate-600" />
+            </div>
+            <h3 className="text-2xl font-semibold text-white mb-2">No projects yet</h3>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto">
+              Create your first project and let AI help you build comprehensive documentation
+            </p>
+            <button
+              onClick={() => navigate('/projects/new')}
+              className="btn-premium"
+            >
+              <Plus className="w-5 h-5" />
+              Create First Project
+            </button>
+          </div>
         ) : (
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {projects.map((project, index) => {
-              const statusConfig = getStatusConfig(project.status);
-              const StatusIcon = statusConfig.icon;
-
-              return (
-                <div
-                  key={project.id}
-                  id={`project-${index}`}
-                  ref={(el) => (observerRefs.current[`project-${index}`] = el)}
-                  onClick={() => navigate(`/projects/${project.id}`)}
-                  className={`bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-2xl hover:border-acorn-blue-200 transition-all duration-500 cursor-pointer group relative overflow-hidden ${
-                    isVisible[`project-${index}`] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                  }`}
-                  style={{ transitionDelay: `${index * 100}ms` }}
-                >
-                  {/* Hover Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-acorn-blue-500/5 to-acorn-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                  {/* Animated Border */}
-                  <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-acorn-blue-200 transition-colors duration-300" />
-
-                  <div className="relative z-10">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
+          <div 
+            className={`transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          >
+            {viewMode === 'grid' ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProjects.map((project, index) => {
+                  const statusConfig = getStatusConfig(project.status);
+                  const StatusIcon = statusConfig.icon;
+                  const isHovered = hoveredProject === project.id;
+                  
+                  return (
+                    <div
+                      key={project.id}
+                      className="group relative card-premium p-6 cursor-pointer"
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                      onMouseEnter={() => setHoveredProject(project.id)}
+                      onMouseLeave={() => setHoveredProject(null)}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                      data-testid={`project-card-${project.id}`}
+                    >
+                      {/* Status Badge */}
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor} mb-4`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {statusConfig.label}
+                      </div>
+                      
+                      {/* Project Info */}
+                      <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-amber-400 transition-colors line-clamp-1">
+                        {project.name}
+                      </h3>
+                      <p className="text-slate-400 text-sm mb-6 line-clamp-2">
+                        {project.description || 'No description provided'}
+                      </p>
+                      
+                      {/* Meta Info */}
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {formatDate(project.created_at)}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5" />
+                          {project.template_type || 'Custom'}
+                        </div>
+                      </div>
+                      
+                      {/* Hover Actions */}
+                      <div className={`absolute top-4 right-4 flex items-center gap-1 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/projects/${project.id}`);
+                          }}
+                          className="p-2 rounded-lg bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-white transition-all"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenu(activeMenu === project.id ? null : project.id);
+                          }}
+                          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {activeMenu === project.id && (
+                          <div 
+                            className="absolute top-full right-0 mt-2 w-40 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-10 animate-fade-in-down"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => navigate(`/projects/${project.id}`)}
+                              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteProject(project.id)}
+                              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredProjects.map((project, index) => {
+                  const statusConfig = getStatusConfig(project.status);
+                  const StatusIcon = statusConfig.icon;
+                  
+                  return (
+                    <div
+                      key={project.id}
+                      className="group flex items-center gap-6 p-5 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-amber-500/30 cursor-pointer transition-all duration-300"
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                      style={{ animationDelay: `${index * 30}ms` }}
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
+                        <FolderOpen className="w-6 h-6 text-amber-400" />
+                      </div>
+                      
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg text-gray-900 truncate group-hover:text-acorn-blue-600 transition-colors duration-300">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-amber-400 transition-colors truncate">
                           {project.name}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-sm text-slate-400 truncate">
                           {project.description || 'No description'}
                         </p>
                       </div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); }}
-                        className="p-2 hover:bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:rotate-90"
-                      >
-                        <MoreVertical className="w-5 h-5 text-gray-400" />
-                      </button>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color} group-hover:scale-105 transition-transform duration-300`}>
-                        <StatusIcon className="w-3.5 h-3.5" />
+                      
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor}`}>
+                        <StatusIcon className="w-3 h-3" />
                         {statusConfig.label}
-                      </span>
-                    </div>
-
-                    {/* Metrics */}
-                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
-                      {[
-                        { value: (project as any).requirements_count || 0, label: 'Requirements' },
-                        { value: (project as any).tasks_count || 0, label: 'Tasks' },
-                        { value: (project as any).diagrams_count || 0, label: 'Diagrams' },
-                      ].map((metric, i) => (
-                        <div key={i} className="text-center group-hover:scale-105 transition-transform duration-300" style={{ transitionDelay: `${i * 50}ms` }}>
-                          <p className="text-xl font-bold text-gray-900">{metric.value}</p>
-                          <p className="text-xs text-gray-500">{metric.label}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>{formatDate(project.created_at)}</span>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-acorn-orange-500 group-hover:translate-x-1 transition-all duration-300" />
+                      
+                      <div className="text-sm text-slate-500 hidden md:block">
+                        {formatDate(project.created_at)}
+                      </div>
+                      
+                      <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Stats Banner */}
+        {projects.length > 0 && (
+          <div 
+            className={`mt-12 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 transition-all duration-700 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-amber-400" />
                 </div>
-              );
-            })}
+                <div>
+                  <h4 className="text-lg font-semibold text-white">Your Progress</h4>
+                  <p className="text-sm text-slate-400">Keep building amazing things</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-8">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-amber-400">{projects.length}</div>
+                  <div className="text-xs text-slate-500">Total Projects</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-400">
+                    {projects.filter(p => p.status === 'active' || p.status === 'completed').length}
+                  </div>
+                  <div className="text-xs text-slate-500">Active</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-400">
+                    {projects.filter(p => p.status === 'draft').length}
+                  </div>
+                  <div className="text-xs text-slate-500">In Draft</div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(3deg); }
-        }
-        .animate-float { animation: float 8s ease-in-out infinite; }
-        
-        @keyframes bounce-gentle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
-      `}</style>
     </Layout>
   );
 };
+
+export default ProjectsPage;

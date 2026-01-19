@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     supabase_service_key: Optional[str] = None
     supabase_db_password: Optional[str] = None  # Database password (different from service key)
     use_supabase: bool = True
+    force_recreate_tables: bool = False  # Set to True to force drop/recreate all tables
     
     # Redis Cache
     redis_url: Optional[str] = None

@@ -48,7 +48,7 @@ export const SRSAudit: React.FC<SRSAuditProps> = ({ projectId, onAuditComplete }
   const handleRunAudit = async () => {
     setIsAuditing(true);
     try {
-      const data = await api.runSRSAudit(projectId);
+      const data = await api.runSrsAudit(projectId);
       setAuditResult(data);
       onAuditComplete?.();
     } catch (error) {

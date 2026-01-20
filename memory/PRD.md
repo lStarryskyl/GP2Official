@@ -43,7 +43,6 @@ Acorn is an enterprise-grade AI-powered project planning platform that transform
 - [ ] **Real Export Integration** - Backend PDF/DOCX generation
 
 ### Future Features (P2)
-- [ ] **Analytics Dashboard** - Project progress, AI stats, time tracking
 - [ ] **Team Collaboration** - Invite members, permissions, comments
 - [ ] **Kanban Board** - Visual task management with drag-and-drop
 - [ ] **Notifications System** - Real-time alerts for updates

@@ -1,0 +1,215 @@
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Layout } from '@/components/Layout';
+import { Button } from '@/components/ui/Button';
+import { 
+  Download, 
+  FileText, 
+  FileSpreadsheet, 
+  Presentation,
+  Loader2,
+  CheckCircle2,
+  FolderOpen,
+  Settings,
+  Sparkles
+} from 'lucide-react';
+
+interface ExportOption {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ElementType;
+  formats: string[];
+}
+
+const exportOptions: ExportOption[] = [
+  {
+    id: 'srs',
+    name: 'SRS Document',
+    description: 'Complete Software Requirements Specification',
+    icon: FileText,
+    formats: ['PDF', 'DOCX']
+  },
+  {
+    id: 'requirements',
+    name: 'Requirements List',
+    description: 'All project requirements in spreadsheet format',
+    icon: FileSpreadsheet,
+    formats: ['XLSX', 'CSV']
+  },
+  {
+    id: 'roadmap',
+    name: 'Project Roadmap',
+    description: 'Visual timeline with milestones',
+    icon: Presentation,
+    formats: ['PDF', 'PPTX']
+  },
+  {
+    id: 'feasibility',
+    name: 'Feasibility Report',
+    description: 'Technical and business feasibility analysis',
+    icon: FileText,
+    formats: ['PDF', 'DOCX']
+  }
+];
+
+export const ExportCenterPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exported, setExported] = useState<Set<string>>(new Set());
+  const [selectedFormats, setSelectedFormats] = useState<Record<string, string>>({
+    srs: 'PDF',
+    requirements: 'XLSX',
+    roadmap: 'PDF',
+    feasibility: 'PDF'
+  });
+
+  const handleExport = async (optionId: string) => {
+    setExporting(optionId);
+    // Simulate export delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setExported(prev => new Set(prev).add(optionId));
+    setExporting(null);
+    
+    // In a real app, this would trigger a download
+    alert(`${exportOptions.find(o => o.id === optionId)?.name} exported as ${selectedFormats[optionId]}!`);
+  };
+
+  const handleExportAll = async () => {
+    for (const option of exportOptions) {
+      await handleExport(option.id);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="min-h-[calc(100vh-4rem)]" style={{ backgroundColor: '#0a0f1a' }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)', boxShadow: '0 10px 25px -5px rgba(212,175,55,0.3)' }}>
+                <Download className="w-7 h-7" style={{ color: '#0a0f1a' }} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Export Center</h1>
+                <p className="text-gray-400">Download project documents in various formats</p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleExportAll}
+              disabled={!!exporting}
+              className="font-semibold shadow-lg"
+              style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a' }}
+              data-testid="export-all-btn"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Export All
+            </Button>
+          </div>
+
+          {/* Export Options Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {exportOptions.map((option) => {
+              const Icon = option.icon;
+              const isExporting = exporting === option.id;
+              const isExported = exported.has(option.id);
+
+              return (
+                <div
+                  key={option.id}
+                  className="rounded-2xl p-6 transition-all hover:scale-[1.02]"
+                  style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }}
+                  data-testid={`export-option-${option.id}`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                      <Icon className="w-6 h-6" style={{ color: '#d4af37' }} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-white">{option.name}</h3>
+                        {isExported && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                      </div>
+                      <p className="text-sm text-gray-400 mb-4">{option.description}</p>
+                      
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex gap-2">
+                          {option.formats.map((format) => (
+                            <button
+                              key={format}
+                              onClick={() => setSelectedFormats(prev => ({ ...prev, [option.id]: format }))}
+                              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                                selectedFormats[option.id] === format ? 'text-[#0a0f1a]' : 'text-gray-400'
+                              }`}
+                              style={{
+                                backgroundColor: selectedFormats[option.id] === format ? '#d4af37' : '#152238',
+                                border: '1px solid #1e3a5f'
+                              }}
+                            >
+                              {format}
+                            </button>
+                          ))}
+                        </div>
+
+                        <Button
+                          onClick={() => handleExport(option.id)}
+                          disabled={isExporting}
+                          size="sm"
+                          className="font-medium"
+                          style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f', color: '#fff' }}
+                        >
+                          {isExporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-1" />
+                              Export
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Export History */}
+          <div className="mt-8 rounded-2xl p-6" style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <FolderOpen className="w-5 h-5" style={{ color: '#d4af37' }} />
+              <h3 className="text-lg font-bold text-white">Recent Exports</h3>
+            </div>
+            
+            {exported.size > 0 ? (
+              <div className="space-y-2">
+                {Array.from(exported).map((optionId) => {
+                  const option = exportOptions.find(o => o.id === optionId);
+                  return (
+                    <div key={optionId} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#0d1525' }}>
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span className="text-gray-300">{option?.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#152238', color: '#d4af37' }}>
+                          {selectedFormats[optionId]}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500">Just now</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No exports yet. Choose a document to export above.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default ExportCenterPage;

@@ -19,6 +19,8 @@ import ProjectGovernancePage from './pages/ProjectGovernancePage';
 import DevelopmentUpdatesPage from './pages/DevelopmentUpdatesPage';
 import { PersonasPage } from './pages/PersonasPage';
 import { SRSAuditPage } from './pages/SRSAuditPage';
+import ExportCenterPage from './pages/ExportCenterPage';
+import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { BillingPageRoute } from './pages/BillingPageRoute';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

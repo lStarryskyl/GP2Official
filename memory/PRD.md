@@ -32,6 +32,11 @@ Acorn is an enterprise-grade AI-powered project planning platform that transform
 - [x] Phase Navigation with dark theme
 - [x] Roadmap Builder (Planning phase)
 - [x] Feasibility Study form with viability assessment
+- [x] **Persona Generation** - AI-generated user personas & user stories
+- [x] **SRS Audit** - Requirements quality analysis with scoring
+- [x] **Export Center** - PDF, DOCX, XLSX, PPTX export options
+- [x] **Analytics Dashboard** - Project metrics, progress tracking, AI insights
+- [x] **Register Page** - Redesigned with Navy & Gold theme
 
 ### Planned Features (P1)
 - [ ] **Persona Generation** - Create detailed user personas and stories

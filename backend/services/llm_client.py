@@ -17,6 +17,25 @@ class LLMClient:
         self.api_key = settings.llm_api_key
         self.model_name = settings.llm_model_name
     
+    async def generate(self, prompt: str, context: Dict[str, Any] = None) -> str:
+        """Generic text generation using AI pipeline."""
+        logger.info(f"Generating text with AI pipeline")
+        
+        result = await ai_pipeline.generate_with_best_model(
+            task_type=TaskType.GENERAL,
+            prompt=prompt,
+            context=context or {}
+        )
+        
+        if result.error:
+            logger.error(f"Text generation failed: {result.error}")
+            return "{}"
+        
+        # Return content as string
+        if isinstance(result.content, dict):
+            return json.dumps(result.content)
+        return str(result.content) if result.content else "{}"
+    
     async def extract_requirements(self, prompt: str, context: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """Extract requirements from project brief using AI pipeline."""
         logger.info(f"Extracting requirements with AI pipeline")

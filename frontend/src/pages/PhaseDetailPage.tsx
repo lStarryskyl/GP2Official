@@ -242,12 +242,12 @@ export const PhaseDetailPage: React.FC = () => {
           roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
         const blendedRate = totalRoleCount
           ? (
-              roleMix.junior * roleRates.junior +
-              roleMix.mid * roleRates.mid +
-              roleMix.senior * roleRates.senior +
-              roleMix.architect * roleRates.architect +
-              roleMix.pm * roleRates.pm
-            ) / totalRoleCount
+            roleMix.junior * roleRates.junior +
+            roleMix.mid * roleRates.mid +
+            roleMix.senior * roleRates.senior +
+            roleMix.architect * roleRates.architect +
+            roleMix.pm * roleRates.pm
+          ) / totalRoleCount
           : baseRate;
         const hourlyRate = blendedRate * teamSizeMultiplier;
 
@@ -517,12 +517,12 @@ export const PhaseDetailPage: React.FC = () => {
           roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
         const blendedBaseHourlyRate = totalRoleCount
           ? (
-              roleMix.junior * roleRates.junior +
-              roleMix.mid * roleRates.mid +
-              roleMix.senior * roleRates.senior +
-              roleMix.architect * roleRates.architect +
-              roleMix.pm * roleRates.pm
-            ) / totalRoleCount
+            roleMix.junior * roleRates.junior +
+            roleMix.mid * roleRates.mid +
+            roleMix.senior * roleRates.senior +
+            roleMix.architect * roleRates.architect +
+            roleMix.pm * roleRates.pm
+          ) / totalRoleCount
           : baseRate;
         const effectiveHourlyRate = blendedBaseHourlyRate * teamSizeMultiplier;
         const baseTotalCost = totalHours * effectiveHourlyRate;
@@ -536,8 +536,8 @@ export const PhaseDetailPage: React.FC = () => {
         }, {} as Record<string, number>);
         const roleUsageSummary = Object.keys(roleCounts).length
           ? Object.entries(roleCounts)
-              .map(([role, count]) => `${role}: ${count} tasks`)
-              .join(', ')
+            .map(([role, count]) => `${role}: ${count} tasks`)
+            .join(', ')
           : 'no explicit roles set on tasks (using blended role mix only)';
 
         const totalCustomCost = customCostItems.reduce((sum, item) => sum + item.cost, 0);
@@ -982,18 +982,18 @@ export const PhaseDetailPage: React.FC = () => {
 
               const items = parsedItems.length
                 ? parsedItems.map((item) => ({
-                    label: item.label,
-                    description: item.description,
-                    status: 'partial',
-                  }))
+                  label: item.label,
+                  description: item.description,
+                  status: 'partial',
+                }))
                 : existing.items || [];
 
               const base = defaultSections.find((s) => s.id === id)!;
               const score = parsedItems.length
                 ? Math.min(100, (parsedItems.length / 5) * 100)
                 : typeof existing.score === 'number'
-                ? existing.score
-                : 0;
+                  ? existing.score
+                  : 0;
 
               return {
                 id,
@@ -1267,10 +1267,10 @@ export const PhaseDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64 bg-navy-950">
+        <div className="flex items-center justify-center h-64 bg-slate-50">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-gold-500" />
-            <span className="text-gray-400 text-sm">Loading phase...</span>
+            <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
+            <span className="text-slate-400 text-sm">Loading phase...</span>
           </div>
         </div>
       </Layout>
@@ -1280,9 +1280,9 @@ export const PhaseDetailPage: React.FC = () => {
   if (!project || !phaseConfig) {
     return (
       <Layout>
-        <div className="text-center py-16 bg-navy-950">
-          <h2 className="text-2xl font-bold text-white mb-4">Phase not found</h2>
-          <Button onClick={() => navigate(`/projects/${id}`)} className="bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-semibold">Back to Project</Button>
+        <div className="text-center py-16 bg-slate-50">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Phase not found</h2>
+          <Button onClick={() => navigate(`/projects/${id}`)} className="bg-amber-500 hover:bg-amber-600 text-white font-semibold">Back to Project</Button>
         </div>
       </Layout>
     );
@@ -1299,268 +1299,183 @@ export const PhaseDetailPage: React.FC = () => {
 
   // Wrapper component for phase navigation
   const PhaseWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const quickActions = [
-      {
-        id: 'overview',
-        label: 'Project Overview',
-        icon: LayoutDashboard,
-        onClick: () => navigate(`/projects/${id}`),
-        disabled: false,
-      },
-      {
-        id: 'export',
-        label: 'Export Markdown',
-        icon: Download,
-        onClick: handleDownload,
-        disabled: !phaseMarkdown,
-      },
-      {
-        id: 'rerun',
-        label: 'Re-run AI',
-        icon: Sparkles,
-        onClick: () => handleGenerate(),
-        disabled: isGenerating || status === 'locked',
-      },
-    ];
-
-    const gridTemplate = showSidebar
-      ? showToolbar
-        ? 'xl:grid-cols-[260px,minmax(0,1fr),72px]'
-        : 'xl:grid-cols-[260px,minmax(0,1fr)]'
-      : showToolbar
-      ? 'xl:grid-cols-[minmax(0,1fr),72px]'
-      : '';
     return (
       <Layout>
-        <div className="min-h-[calc(100vh-4rem)]" style={{ backgroundColor: '#0a0f1a' }}>
-          <div className="mx-auto max-w-[1400px] px-3 sm:px-4 lg:px-6 py-6">
-            <div className={`grid gap-5 ${gridTemplate}`}>
-              {/* Phase Navigation Sidebar */}
-              {showSidebar && (
-                <aside className="hidden xl:block">
-                  <div className="sticky top-6 rounded-2xl shadow-lg shadow-[#0a0f1a]/50" style={{ backgroundColor: '#0d1525', border: '1px solid #1e3a5f' }}>
-                    <PhaseNavigation projectId={id} variant="sidebar" />
-                  </div>
-                </aside>
-              )}
+        <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
+          {/* Horizontal Navigation */}
+          <PhaseNavigation projectId={id} variant="horizontal" phaseStatus={phaseStatus} />
 
-              {/* Main Content */}
-              <div className="min-w-0">
-                {/* Horizontal Navigation for smaller screens */}
-                <div className="xl:hidden mb-4 -mx-2">
-                  <PhaseNavigation projectId={id} variant="horizontal" />
-                </div>
-
-                <div className="space-y-6">
-                  {!canTriggerAi && (
-                    <div className="rounded-2xl p-4 text-sm flex items-center gap-3 shadow-lg animate-reveal-up" style={{ backgroundColor: '#111b2e', border: '1px solid rgba(212, 175, 55, 0.3)' }}>
-                      <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)' }}>
-                        <Shield className="h-5 w-5" style={{ color: '#d4af37' }} />
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
+            <div className="space-y-5">
+              {/* Phase Header */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500" />
+                <div className="p-5 sm:p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500 text-white font-bold text-lg shadow-sm">
+                        {phaseConfig.stepNumber}
                       </div>
                       <div>
-                        <p className="font-medium" style={{ color: '#d4af37' }}>Limited Access</p>
-                        <p className="text-gray-400">You have {user?.role_label || 'reviewer'} access. A Program Manager must trigger AI generation.</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-0.5">
+                          Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
+                        </p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                          {phaseConfig.title}
+                        </h1>
                       </div>
                     </div>
-                  )}
-                  {/* Phase Header - Corporate Navy Card */}
-                  <div className="relative overflow-hidden rounded-3xl shadow-2xl animate-reveal-up" style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }} data-testid="phase-header">
-                    {/* Gold accent bar */}
-                    <div className="h-1" style={{ background: 'linear-gradient(to right, #b8962e, #d4af37, #e6c358)' }} />
-                    <div className="p-6 sm:p-8">
-                      <div className="flex flex-wrap items-start justify-between gap-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center justify-center w-14 h-14 rounded-2xl font-bold text-xl shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)', color: '#0a0f1a', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.2)' }}>
-                              {phaseConfig.stepNumber}
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(212, 175, 55, 0.8)' }}>
-                                Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
-                              </p>
-                              <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                                {phaseConfig.title}
-                              </h1>
-                            </div>
-                          </div>
-                          <p className="text-gray-400 max-w-md">{phaseConfig.description || project?.name}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-3">
-                          <Button 
-                            variant="outline" 
-                            onClick={() => navigate(`/projects/${id}`)} 
-                            className="text-gray-300 hover:text-white transition-all"
-                            style={{ borderColor: '#1e3a5f' }}
-                          >
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Project
-                          </Button>
-                          <div 
-                            className="px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
-                            style={{
-                              background: status === 'completed' 
-                                ? 'linear-gradient(to right, #10b981, #14b8a6)' 
-                                : status === 'locked' 
-                                ? '#152238' 
-                                : 'linear-gradient(to right, #d4af37, #b8962e)',
-                              color: status === 'locked' ? '#9ca3af' : (status === 'completed' ? '#fff' : '#0a0f1a'),
-                              border: status === 'locked' ? '1px solid #1e3a5f' : 'none',
-                              boxShadow: status === 'completed' ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' : (status !== 'locked' ? '0 10px 15px -3px rgba(212, 175, 55, 0.3)' : 'none')
-                            }}
-                          >
-                            {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● In Progress'}
-                          </div>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/projects/${id}`)}
+                        className="text-slate-600 border-slate-200 hover:bg-slate-50"
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                      </Button>
+                      {phaseMarkdown && (
+                        <Button
+                          variant="outline"
+                          onClick={handleDownload}
+                          className="text-slate-600 border-slate-200 hover:bg-slate-50"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Export
+                        </Button>
+                      )}
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${status === 'completed'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : status === 'locked'
+                          ? 'bg-slate-100 text-slate-500'
+                          : 'bg-amber-100 text-amber-700'
+                        }`}>
+                        {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● In Progress'}
+                      </span>
                     </div>
                   </div>
-
-                  {nextPhase && (
-                    <div className="relative overflow-hidden rounded-2xl p-[2px] shadow-lg animate-reveal-up delay-100" style={{ background: 'linear-gradient(to right, #b8962e, #d4af37, #e6c358)', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.2)' }} data-testid="next-phase-banner">
-                      <div className="rounded-[14px] p-5 flex flex-wrap items-center justify-between gap-4" style={{ backgroundColor: '#0d1525' }}>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-xl font-bold" style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)', color: '#d4af37', border: '1px solid rgba(212, 175, 55, 0.3)' }}>
-                            {nextPhase.stepNumber}
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: 'rgba(212, 175, 55, 0.7)' }}>Continue to Next</p>
-                            <h3 className="text-lg font-bold text-white">{nextPhase.title}</h3>
-                          </div>
-                        </div>
-                        <Button
-                          className="font-semibold shadow-lg transition-all"
-                          style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.3)' }}
-                          onClick={() => navigate(`/projects/${id}/phases/${nextPhase.id}`)}
-                        >
-                          Continue
-                          <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                        </Button>
-                      </div>
-                    </div>
+                  {phaseConfig.description && (
+                    <p className="mt-2 text-sm text-slate-500 max-w-2xl ml-16">{phaseConfig.description}</p>
                   )}
-
-                  {error && (
-                    <div className="px-4 py-3 rounded-xl flex items-center gap-2" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
-                      <AlertTriangle className="h-4 w-4" />
-                      {error}
-                    </div>
-                  )}
-
-                  {phaseId !== 'validation' && (
-                    <div className="rounded-3xl shadow-xl overflow-hidden animate-reveal-up delay-200" style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }} data-testid="ai-assistant-card">
-                      <div className="p-6">
-                        <div className="flex items-start gap-4 mb-5">
-                          <div className="p-3 rounded-2xl shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.2)' }}>
-                            <Sparkles className="h-6 w-6" style={{ color: '#0a0f1a' }} />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-white">AI Assistant</h3>
-                            <p className="text-sm text-gray-400">Enter a custom prompt to generate or refine content for this phase</p>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="relative">
-                            <textarea
-                              ref={unifiedPromptRef}
-                              className="w-full rounded-2xl px-4 py-4 text-sm text-white placeholder-gray-500 transition-all resize-none"
-                              style={{ backgroundColor: '#0d1525', border: '1px solid #1e3a5f' }}
-                              rows={3}
-                              placeholder="E.g., 'Generate detailed requirements with acceptance criteria' or 'Create a risk assessment matrix'"
-                            />
-                            {isGenerating && (
-                              <div className="absolute inset-0 backdrop-blur-sm rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'rgba(13, 21, 37, 0.9)' }}>
-                                <div className="flex items-center gap-3" style={{ color: '#d4af37' }}>
-                                  <Loader2 className="h-5 w-5 animate-spin" />
-                                  <span className="font-medium">Generating content...</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Generate comprehensive analysis'; }}
-                                className="px-3 py-1.5 text-xs font-medium rounded-full text-gray-300 transition-all"
-                                style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}
-                              >
-                                📊 Analysis
-                              </button>
-                              <button
-                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Create detailed requirements list'; }}
-                                className="px-3 py-1.5 text-xs font-medium rounded-full text-gray-300 transition-all"
-                                style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}
-                              >
-                                📋 Requirements
-                              </button>
-                              <button
-                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = 'Generate risk assessment'; }}
-                                className="px-3 py-1.5 text-xs font-medium rounded-full text-gray-300 transition-all"
-                                style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}
-                              >
-                                ⚠️ Risks
-                              </button>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = ''; }}
-                                disabled={isGenerating}
-                                className="text-gray-300"
-                                style={{ borderColor: '#1e3a5f' }}
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                disabled={isGenerating}
-                                onClick={() => {
-                                  const prompt = unifiedPromptRef.current?.value || '';
-                                  if (!prompt.trim()) return;
-                                  handleGenerate(prompt);
-                                }}
-                                className="font-semibold shadow-lg"
-                                style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a', boxShadow: '0 10px 15px -3px rgba(212, 175, 55, 0.3)' }}
-                              >
-                                {isGenerating ? 'Generating…' : 'Generate with AI'}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Phase Content */}
-                  {children}
                 </div>
               </div>
 
-              {/* Right toolbar */}
-              {showToolbar && (
-                <aside className="hidden xl:flex flex-col items-center gap-4">
-                  <div className="sticky top-6 flex flex-col gap-3">
-                    {quickActions.map((action) => {
-                      const Icon = action.icon;
-                      return (
-                        <button
-                          key={action.id}
-                          onClick={action.onClick}
-                          disabled={action.disabled}
-                          className={`group flex h-14 w-14 items-center justify-center rounded-2xl text-gray-400 shadow-lg transition ${
-                            action.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5 hover:text-amber-400'
-                          }`}
-                          style={{ backgroundColor: '#0d1525', border: '1px solid #1e3a5f' }}
-                          aria-label={action.label}
-                        >
-                          <Icon className="h-5 w-5" />
-                          <span className="absolute right-full mr-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs text-white opacity-0 transition group-hover:opacity-100" style={{ backgroundColor: '#152238', border: '1px solid #1e3a5f' }}>
-                            {action.label}
-                          </span>
-                        </button>
-                      );
-                    })}
+              {/* Limited Access Banner */}
+              {!canTriggerAi && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-amber-800 text-sm">Limited Access</p>
+                    <p className="text-amber-700 text-xs">You have {user?.role_label || 'reviewer'} access. A Program Manager must trigger AI generation.</p>
                   </div>
-                </aside>
+                </div>
               )}
+
+              {/* Next Phase Banner */}
+              {nextPhase && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 text-amber-700 font-bold text-sm">
+                      {nextPhase.stepNumber}
+                    </span>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-600">Continue to Next</p>
+                      <p className="font-semibold text-slate-900">{nextPhase.title}</p>
+                    </div>
+                  </div>
+                  <Button
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
+                    onClick={() => navigate(`/projects/${id}/phases/${nextPhase.id}`)}
+                  >
+                    Continue
+                    <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Error */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2 text-red-700 text-sm">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              {/* AI Assistant Card */}
+              {phaseId !== 'validation' && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-5 sm:p-6">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2.5 rounded-xl bg-amber-500 shadow-sm">
+                        <Sparkles className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900">AI Assistant</h3>
+                        <p className="text-sm text-slate-500">Enter a prompt to generate or refine content for this phase</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <textarea
+                          ref={unifiedPromptRef}
+                          className="w-full rounded-xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all resize-none"
+                          rows={3}
+                          placeholder="E.g., 'Generate detailed requirements with acceptance criteria' or 'Create a risk assessment matrix'"
+                        />
+                        {isGenerating && (
+                          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                            <div className="flex items-center gap-3 text-amber-600">
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                              <span className="font-medium text-sm">Generating content...</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { label: '📊 Analysis', prompt: 'Generate comprehensive analysis' },
+                            { label: '📋 Requirements', prompt: 'Create detailed requirements list' },
+                            { label: '⚠️ Risks', prompt: 'Generate risk assessment' },
+                          ].map((suggestion) => (
+                            <button
+                              key={suggestion.label}
+                              onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = suggestion.prompt; }}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-all border border-slate-200"
+                            >
+                              {suggestion.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = ''; }}
+                            disabled={isGenerating}
+                            className="text-slate-500 border-slate-200"
+                          >
+                            Clear
+                          </Button>
+                          <Button
+                            disabled={isGenerating}
+                            onClick={() => {
+                              const prompt = unifiedPromptRef.current?.value || '';
+                              if (!prompt.trim()) return;
+                              handleGenerate(prompt);
+                            }}
+                            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
+                          >
+                            {isGenerating ? 'Generating…' : 'Generate with AI'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phase Content */}
+              {children}
             </div>
           </div>
         </div>
@@ -2582,566 +2497,566 @@ export const PhaseDetailPage: React.FC = () => {
         <>
           <div className="space-y-6">
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <ListChecks className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
-                    <p className="text-xs text-gray-500">Total Tasks</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{completedCount}</p>
-                    <p className="text-xs text-gray-500">Completed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{totalHours}h</p>
-                    <p className="text-xs text-gray-500">Est. Hours</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{progressPct}%</p>
-                    <p className="text-xs text-gray-500">Progress</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Left Column - Task Management */}
-            <div className="lg:col-span-1 space-y-4">
-              {/* Add Task Card */}
-              <Card className="border-2 border-dashed border-purple-200 hover:border-purple-400 transition-colors">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-purple-500" />
-                    Add New Task
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <input
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                    placeholder="Task title..."
-                    value={newTask.title}
-                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  />
-                  <textarea
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
-                    placeholder="Description..."
-                    value={newTask.description}
-                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                    rows={2}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
-                      <input
-                        type="date"
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
-                        value={newTask.start_date}
-                        onChange={(e) => setNewTask({ ...newTask, start_date: e.target.value })}
-                      />
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <ListChecks className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Due Date</label>
-                      <input
-                        type="date"
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
-                        value={newTask.due_date}
-                        onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-                        min={newTask.start_date || undefined}
-                      />
+                      <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
+                      <p className="text-xs text-gray-500">Total Tasks</p>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
-                      value={newTask.priority}
-                      onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                    >
-                      <option value="low">🟢 Low</option>
-                      <option value="medium">🟡 Medium</option>
-                      <option value="high">🔴 High</option>
-                    </select>
-                    <select
-                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
-                      value={newTask.status}
-                      onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
-                    >
-                      <option value="planned">📋 Planned</option>
-                      <option value="in_progress">🔄 In Progress</option>
-                      <option value="completed">✅ Completed</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Dependencies (task titles or IDs, comma separated)</label>
-                    <input
-                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                      placeholder="e.g. Design UI, Implement API"
-                      value={newTask.dependencies}
-                      onChange={(e) => setNewTask({ ...newTask, dependencies: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-                      onClick={async () => {
-                        if (!id || !newTask.title.trim()) return;
-                        setCreatingTask(true);
-                        try {
-                          const dependencies = (newTask.dependencies || '')
-                            .split(',')
-                            .map((d) => d.trim())
-                            .filter(Boolean);
-
-                          const payload: any = {
-                            title: newTask.title,
-                            description: newTask.description,
-                            start_date: newTask.start_date || undefined,
-                            due_date: newTask.due_date || undefined,
-                            priority: newTask.priority,
-                            status: newTask.status,
-                            dependencies,
-                            tags: newTask.milestone ? ['milestone'] : [],
-                          };
-                          const created = await api.createTask(id, payload);
-                          setTasks((prev) => [created, ...prev]);
-                          setNewTask({
-                            title: '',
-                            description: '',
-                            start_date: '',
-                            due_date: '',
-                            priority: 'medium',
-                            status: 'planned',
-                            dependencies: '',
-                            milestone: false,
-                          });
-                        } catch (err) {
-                          console.error('Create task failed', err);
-                        } finally {
-                          setCreatingTask(false);
-                        }
-                      }}
-                      disabled={creatingTask || !newTask.title.trim()}
-                    >
-                      {creatingTask ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Task'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        if (!id) return;
-                        setAiAddingTasks(true);
-                        try {
-                          await api.generateProject(id, {
-                            detail_level: 'light',
-                            include_tasks: true,
-                            regenerate_requirements: false,
-                            generate_srs: false,
-                            generate_risks: false,
-                            generate_costs: false,
-                          });
-                          const refreshed = await api.getTasks(id);
-                          setTasks(refreshed);
-                        } catch (err) {
-                          console.error('AI task gen failed', err);
-                        } finally {
-                          setAiAddingTasks(false);
-                        }
-                      }}
-                      disabled={aiAddingTasks}
-                    >
-                      {aiAddingTasks ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Wand2 className="h-4 w-4 mr-1" /> AI
-                        </>
-                      )}
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Task List */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">Task List</CardTitle>
-                    <select
-                      className="text-xs border border-gray-200 rounded px-2 py-1"
-                      value={taskFilter}
-                      onChange={(e) => setTaskFilter(e.target.value as any)}
-                    >
-                      <option value="all">All</option>
-                      <option value="planned">Planned</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-                  <div className="mt-2">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all" style={{ width: `${progressPct}%` }} />
+              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{completedCount} of {tasks.length} completed</p>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{completedCount}</p>
+                      <p className="text-xs text-gray-500">Completed</p>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent className="max-h-[400px] overflow-y-auto space-y-2">
-                  {tasks.filter((task) => taskFilter === 'all' || (localTaskStatus[task.task_id] || task.status || '').toLowerCase() === taskFilter).map((task) => {
-                    const taskStatus = (localTaskStatus[task.task_id] || task.status || '').toLowerCase();
-                    const done = taskStatus === 'completed';
-                    const priorityColors: Record<string, string> = { high: 'border-l-red-500', medium: 'border-l-amber-500', low: 'border-l-emerald-500' };
-                    return (
-                      <div
-                        key={task.task_id}
-                        className={`p-3 rounded-lg border-l-4 ${priorityColors[task.priority] || 'border-l-gray-300'} bg-white border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${done ? 'opacity-60' : ''}`}
-                        onClick={() => setSelectedTask(task)}
-                      >
-                        <div className="flex items-start gap-2">
-                          <input
-                            type="checkbox"
-                            checked={done}
-                            onChange={(e) => { e.stopPropagation(); toggleLocalTaskStatus(task.task_id); }}
-                            className="mt-1 rounded"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium text-sm ${done ? 'line-through text-gray-400' : 'text-gray-900'}`}>{task.title}</p>
-                            <p className="text-xs text-gray-500 truncate">{task.description}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {task.due_date && (
-                                <span className="text-xs text-gray-400 flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(task.due_date).toLocaleDateString()}
-                                </span>
-                              )}
-                              {task.estimate_hours > 0 && (
-                                <span className="text-xs text-gray-400">{task.estimate_hours}h</span>
-                              )}
-                            </div>
-                          </div>
-                          <Edit3 className="h-4 w-4 text-gray-300 hover:text-gray-500" onClick={(e) => { e.stopPropagation(); setEditingTask(task.task_id); }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {!tasks.length && <p className="text-sm text-gray-500 text-center py-4">No tasks yet. Add one above!</p>}
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{totalHours}h</p>
+                      <p className="text-xs text-gray-500">Est. Hours</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{progressPct}%</p>
+                      <p className="text-xs text-gray-500">Progress</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Right Column - Gantt Chart & Matrix */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Enhanced Gantt Chart */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-purple-500" />
-                      <CardTitle>Project Timeline</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                        <button onClick={() => setGanttViewMode('chart')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'chart' ? 'bg-white shadow' : ''}`}>Chart</button>
-                        <button onClick={() => setGanttViewMode('list')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'list' ? 'bg-white shadow' : ''}`}>List</button>
-                        <button onClick={() => setGanttViewMode('board')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'board' ? 'bg-white shadow' : ''}`}>Board</button>
+            {/* Main Content Grid */}
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Left Column - Task Management */}
+              <div className="lg:col-span-1 space-y-4">
+                {/* Add Task Card */}
+                <Card className="border-2 border-dashed border-purple-200 hover:border-purple-400 transition-colors">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-purple-500" />
+                      Add New Task
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <input
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                      placeholder="Task title..."
+                      value={newTask.title}
+                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    />
+                    <textarea
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
+                      placeholder="Description..."
+                      value={newTask.description}
+                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                      rows={2}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
+                        <input
+                          type="date"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
+                          value={newTask.start_date}
+                          onChange={(e) => setNewTask({ ...newTask, start_date: e.target.value })}
+                        />
                       </div>
-                      <select className="text-xs border border-gray-200 rounded-lg px-2 py-1" value={ganttScale} onChange={(e) => setGanttScale(e.target.value as any)}>
-                        <option value="auto">Auto</option>
-                        <option value="2w">2 Weeks</option>
-                        <option value="1m">1 Month</option>
-                        <option value="3m">3 Months</option>
-                        <option value="6m">6 Months</option>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Due Date</label>
+                        <input
+                          type="date"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
+                          value={newTask.due_date}
+                          onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                          min={newTask.start_date || undefined}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                        value={newTask.priority}
+                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                      >
+                        <option value="low">🟢 Low</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="high">🔴 High</option>
                       </select>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => setGanttZoom(Math.max(50, ganttZoom - 25))} className="p-1 hover:bg-gray-100 rounded"><ZoomOut className="h-4 w-4" /></button>
-                        <span className="text-xs text-gray-500 w-10 text-center">{ganttZoom}%</span>
-                        <button onClick={() => setGanttZoom(Math.min(200, ganttZoom + 25))} className="p-1 hover:bg-gray-100 rounded"><ZoomIn className="h-4 w-4" /></button>
-                      </div>
+                      <select
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                        value={newTask.status}
+                        onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                      >
+                        <option value="planned">📋 Planned</option>
+                        <option value="in_progress">🔄 In Progress</option>
+                        <option value="completed">✅ Completed</option>
+                      </select>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {ganttViewMode === 'chart' && (
-                    <div className="relative border border-gray-200 rounded-xl bg-gradient-to-b from-gray-50 to-white p-4 overflow-x-auto" style={{ minHeight: Math.max(300, ganttData.height), transform: `scale(${ganttZoom / 100})`, transformOrigin: 'top left' }}>
-                      <div className="min-w-[800px]">
-                        {/* Timeline Header */}
-                        <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-2 border-b border-gray-200">
-                          {Array.from({ length: 7 }).map((_, idx) => {
-                            const date = new Date(ganttData.start.getTime() + ((ganttData.end.getTime() - ganttData.start.getTime()) * idx) / 6);
-                            return <span key={idx} className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>;
-                          })}
-                        </div>
-                        {/* Task Bars */}
-                        <div className="space-y-3">
-                          {ganttData.bars.map((bar, idx) => {
-                            const task = tasks.find(t => t.task_id === bar.id);
-                            return (
-                              <div key={bar.id} className="flex items-center gap-3">
-                                <div className="w-32 flex-shrink-0">
-                                  <p className="text-xs font-medium text-gray-700 truncate">{bar.title}</p>
-                                  <p className="text-[10px] text-gray-400">{task?.estimate_hours || 0}h</p>
-                                </div>
-                                <div className="flex-1 relative h-8 bg-gray-100 rounded-lg overflow-hidden">
-                                  <div
-                                    className="absolute h-full rounded-lg transition-all duration-300 cursor-pointer hover:opacity-80"
-                                    style={{ left: `${bar.x}%`, width: `${Math.max(8, bar.width)}%`, background: `linear-gradient(135deg, ${bar.color}, ${bar.color}dd)` }}
-                                    onClick={() => setSelectedTask(task || null)}
-                                  >
-                                    <div className="h-full flex items-center justify-center">
-                                      <span className="text-[10px] text-white font-medium truncate px-2">{bar.title}</span>
-                                    </div>
-                                  </div>
-                                  {bar.isMilestone && (
-                                    <div className="absolute top-1/2 -translate-y-1/2" style={{ left: `${bar.x + bar.width}%` }}>
-                                      <div className="w-3 h-3 bg-orange-500 rotate-45 transform"></div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {!ganttData.bars.length && (
-                          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                            <Calendar className="h-12 w-12 mb-2 opacity-50" />
-                            <p className="text-sm">No tasks with dates yet</p>
-                            <p className="text-xs">Add tasks with start/due dates to see the timeline</p>
-                          </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Dependencies (task titles or IDs, comma separated)</label>
+                      <input
+                        className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                        placeholder="e.g. Design UI, Implement API"
+                        value={newTask.dependencies}
+                        onChange={(e) => setNewTask({ ...newTask, dependencies: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+                        onClick={async () => {
+                          if (!id || !newTask.title.trim()) return;
+                          setCreatingTask(true);
+                          try {
+                            const dependencies = (newTask.dependencies || '')
+                              .split(',')
+                              .map((d) => d.trim())
+                              .filter(Boolean);
+
+                            const payload: any = {
+                              title: newTask.title,
+                              description: newTask.description,
+                              start_date: newTask.start_date || undefined,
+                              due_date: newTask.due_date || undefined,
+                              priority: newTask.priority,
+                              status: newTask.status,
+                              dependencies,
+                              tags: newTask.milestone ? ['milestone'] : [],
+                            };
+                            const created = await api.createTask(id, payload);
+                            setTasks((prev) => [created, ...prev]);
+                            setNewTask({
+                              title: '',
+                              description: '',
+                              start_date: '',
+                              due_date: '',
+                              priority: 'medium',
+                              status: 'planned',
+                              dependencies: '',
+                              milestone: false,
+                            });
+                          } catch (err) {
+                            console.error('Create task failed', err);
+                          } finally {
+                            setCreatingTask(false);
+                          }
+                        }}
+                        disabled={creatingTask || !newTask.title.trim()}
+                      >
+                        {creatingTask ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Task'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          if (!id) return;
+                          setAiAddingTasks(true);
+                          try {
+                            await api.generateProject(id, {
+                              detail_level: 'light',
+                              include_tasks: true,
+                              regenerate_requirements: false,
+                              generate_srs: false,
+                              generate_risks: false,
+                              generate_costs: false,
+                            });
+                            const refreshed = await api.getTasks(id);
+                            setTasks(refreshed);
+                          } catch (err) {
+                            console.error('AI task gen failed', err);
+                          } finally {
+                            setAiAddingTasks(false);
+                          }
+                        }}
+                        disabled={aiAddingTasks}
+                      >
+                        {aiAddingTasks ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Wand2 className="h-4 w-4 mr-1" /> AI
+                          </>
                         )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Task List */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm">Task List</CardTitle>
+                      <select
+                        className="text-xs border border-gray-200 rounded px-2 py-1"
+                        value={taskFilter}
+                        onChange={(e) => setTaskFilter(e.target.value as any)}
+                      >
+                        <option value="all">All</option>
+                        <option value="planned">Planned</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+                    <div className="mt-2">
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all" style={{ width: `${progressPct}%` }} />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">{completedCount} of {tasks.length} completed</p>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="max-h-[400px] overflow-y-auto space-y-2">
+                    {tasks.filter((task) => taskFilter === 'all' || (localTaskStatus[task.task_id] || task.status || '').toLowerCase() === taskFilter).map((task) => {
+                      const taskStatus = (localTaskStatus[task.task_id] || task.status || '').toLowerCase();
+                      const done = taskStatus === 'completed';
+                      const priorityColors: Record<string, string> = { high: 'border-l-red-500', medium: 'border-l-amber-500', low: 'border-l-emerald-500' };
+                      return (
+                        <div
+                          key={task.task_id}
+                          className={`p-3 rounded-lg border-l-4 ${priorityColors[task.priority] || 'border-l-gray-300'} bg-white border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${done ? 'opacity-60' : ''}`}
+                          onClick={() => setSelectedTask(task)}
+                        >
+                          <div className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              checked={done}
+                              onChange={(e) => { e.stopPropagation(); toggleLocalTaskStatus(task.task_id); }}
+                              className="mt-1 rounded"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-medium text-sm ${done ? 'line-through text-gray-400' : 'text-gray-900'}`}>{task.title}</p>
+                              <p className="text-xs text-gray-500 truncate">{task.description}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {task.due_date && (
+                                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(task.due_date).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {task.estimate_hours > 0 && (
+                                  <span className="text-xs text-gray-400">{task.estimate_hours}h</span>
+                                )}
+                              </div>
+                            </div>
+                            <Edit3 className="h-4 w-4 text-gray-300 hover:text-gray-500" onClick={(e) => { e.stopPropagation(); setEditingTask(task.task_id); }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!tasks.length && <p className="text-sm text-gray-500 text-center py-4">No tasks yet. Add one above!</p>}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column - Gantt Chart & Matrix */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Enhanced Gantt Chart */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-purple-500" />
+                        <CardTitle>Project Timeline</CardTitle>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                          <button onClick={() => setGanttViewMode('chart')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'chart' ? 'bg-white shadow' : ''}`}>Chart</button>
+                          <button onClick={() => setGanttViewMode('list')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'list' ? 'bg-white shadow' : ''}`}>List</button>
+                          <button onClick={() => setGanttViewMode('board')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'board' ? 'bg-white shadow' : ''}`}>Board</button>
+                        </div>
+                        <select className="text-xs border border-gray-200 rounded-lg px-2 py-1" value={ganttScale} onChange={(e) => setGanttScale(e.target.value as any)}>
+                          <option value="auto">Auto</option>
+                          <option value="2w">2 Weeks</option>
+                          <option value="1m">1 Month</option>
+                          <option value="3m">3 Months</option>
+                          <option value="6m">6 Months</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setGanttZoom(Math.max(50, ganttZoom - 25))} className="p-1 hover:bg-gray-100 rounded"><ZoomOut className="h-4 w-4" /></button>
+                          <span className="text-xs text-gray-500 w-10 text-center">{ganttZoom}%</span>
+                          <button onClick={() => setGanttZoom(Math.min(200, ganttZoom + 25))} className="p-1 hover:bg-gray-100 rounded"><ZoomIn className="h-4 w-4" /></button>
+                        </div>
                       </div>
                     </div>
-                  )}
-                  {ganttViewMode === 'board' && (
-                    <div className="grid grid-cols-3 gap-4">
-                      {['planned', 'in_progress', 'completed'].map((status) => (
-                        <div key={status} className="bg-gray-50 rounded-xl p-3">
-                          <h4 className="font-medium text-sm text-gray-700 mb-3 capitalize">{status.replace('_', ' ')}</h4>
-                          <div className="space-y-2">
-                            {tasks.filter(t => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === status).map(task => (
-                              <div key={task.task_id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                                <p className="text-sm font-medium">{task.title}</p>
-                                <p className="text-xs text-gray-500 truncate">{task.description}</p>
-                              </div>
+                  </CardHeader>
+                  <CardContent>
+                    {ganttViewMode === 'chart' && (
+                      <div className="relative border border-gray-200 rounded-xl bg-gradient-to-b from-gray-50 to-white p-4 overflow-x-auto" style={{ minHeight: Math.max(300, ganttData.height), transform: `scale(${ganttZoom / 100})`, transformOrigin: 'top left' }}>
+                        <div className="min-w-[800px]">
+                          {/* Timeline Header */}
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-2 border-b border-gray-200">
+                            {Array.from({ length: 7 }).map((_, idx) => {
+                              const date = new Date(ganttData.start.getTime() + ((ganttData.end.getTime() - ganttData.start.getTime()) * idx) / 6);
+                              return <span key={idx} className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>;
+                            })}
+                          </div>
+                          {/* Task Bars */}
+                          <div className="space-y-3">
+                            {ganttData.bars.map((bar, idx) => {
+                              const task = tasks.find(t => t.task_id === bar.id);
+                              return (
+                                <div key={bar.id} className="flex items-center gap-3">
+                                  <div className="w-32 flex-shrink-0">
+                                    <p className="text-xs font-medium text-gray-700 truncate">{bar.title}</p>
+                                    <p className="text-[10px] text-gray-400">{task?.estimate_hours || 0}h</p>
+                                  </div>
+                                  <div className="flex-1 relative h-8 bg-gray-100 rounded-lg overflow-hidden">
+                                    <div
+                                      className="absolute h-full rounded-lg transition-all duration-300 cursor-pointer hover:opacity-80"
+                                      style={{ left: `${bar.x}%`, width: `${Math.max(8, bar.width)}%`, background: `linear-gradient(135deg, ${bar.color}, ${bar.color}dd)` }}
+                                      onClick={() => setSelectedTask(task || null)}
+                                    >
+                                      <div className="h-full flex items-center justify-center">
+                                        <span className="text-[10px] text-white font-medium truncate px-2">{bar.title}</span>
+                                      </div>
+                                    </div>
+                                    {bar.isMilestone && (
+                                      <div className="absolute top-1/2 -translate-y-1/2" style={{ left: `${bar.x + bar.width}%` }}>
+                                        <div className="w-3 h-3 bg-orange-500 rotate-45 transform"></div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {!ganttData.bars.length && (
+                            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                              <Calendar className="h-12 w-12 mb-2 opacity-50" />
+                              <p className="text-sm">No tasks with dates yet</p>
+                              <p className="text-xs">Add tasks with start/due dates to see the timeline</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {ganttViewMode === 'board' && (
+                      <div className="grid grid-cols-3 gap-4">
+                        {['planned', 'in_progress', 'completed'].map((status) => (
+                          <div key={status} className="bg-gray-50 rounded-xl p-3">
+                            <h4 className="font-medium text-sm text-gray-700 mb-3 capitalize">{status.replace('_', ' ')}</h4>
+                            <div className="space-y-2">
+                              {tasks.filter(t => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === status).map(task => (
+                                <div key={task.task_id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                  <p className="text-sm font-medium">{task.title}</p>
+                                  <p className="text-xs text-gray-500 truncate">{task.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {ganttViewMode === 'list' && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left p-2 font-medium text-gray-600">Task</th>
+                              <th className="text-left p-2 font-medium text-gray-600">Status</th>
+                              <th className="text-left p-2 font-medium text-gray-600">Priority</th>
+                              <th className="text-left p-2 font-medium text-gray-600">Start</th>
+                              <th className="text-left p-2 font-medium text-gray-600">Due</th>
+                              <th className="text-left p-2 font-medium text-gray-600">Hours</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tasks.map(task => (
+                              <tr key={task.task_id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="p-2">{task.title}</td>
+                                <td className="p-2"><Badge variant={task.status === 'completed' ? 'success' : task.status === 'in_progress' ? 'warning' : 'secondary'}>{task.status}</Badge></td>
+                                <td className="p-2 capitalize">{task.priority}</td>
+                                <td className="p-2 text-gray-500">{task.start_date ? new Date(task.start_date).toLocaleDateString() : '-'}</td>
+                                <td className="p-2 text-gray-500">{task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}</td>
+                                <td className="p-2 text-gray-500">{task.estimate_hours || 0}h</td>
+                              </tr>
                             ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Eisenhower Matrix */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Grid2X2 className="h-4 w-4 text-blue-500" />
+                      Priority Matrix
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: 'Do First', color: 'bg-red-50 border-red-200', tasks: matrixBuckets.urgentImportant, icon: '🔥' },
+                        { label: 'Schedule', color: 'bg-blue-50 border-blue-200', tasks: matrixBuckets.notUrgentImportant, icon: '📅' },
+                        { label: 'Delegate', color: 'bg-amber-50 border-amber-200', tasks: matrixBuckets.urgentNotImportant, icon: '👥' },
+                        { label: 'Eliminate', color: 'bg-gray-50 border-gray-200', tasks: matrixBuckets.notUrgentNotImportant, icon: '🗑️' },
+                      ].map(({ label, color, tasks: bucketTasks, icon }) => (
+                        <div key={label} className={`${color} border rounded-xl p-3`}>
+                          <p className="font-medium text-sm mb-2">{icon} {label}</p>
+                          <div className="space-y-1 max-h-24 overflow-y-auto">
+                            {bucketTasks.length ? bucketTasks.map(task => (
+                              <p key={task.task_id} className="text-xs text-gray-600 truncate">• {task.title}</p>
+                            )) : <p className="text-xs text-gray-400">No tasks</p>}
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                  {ganttViewMode === 'list' && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="text-left p-2 font-medium text-gray-600">Task</th>
-                            <th className="text-left p-2 font-medium text-gray-600">Status</th>
-                            <th className="text-left p-2 font-medium text-gray-600">Priority</th>
-                            <th className="text-left p-2 font-medium text-gray-600">Start</th>
-                            <th className="text-left p-2 font-medium text-gray-600">Due</th>
-                            <th className="text-left p-2 font-medium text-gray-600">Hours</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tasks.map(task => (
-                            <tr key={task.task_id} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="p-2">{task.title}</td>
-                              <td className="p-2"><Badge variant={task.status === 'completed' ? 'success' : task.status === 'in_progress' ? 'warning' : 'secondary'}>{task.status}</Badge></td>
-                              <td className="p-2 capitalize">{task.priority}</td>
-                              <td className="p-2 text-gray-500">{task.start_date ? new Date(task.start_date).toLocaleDateString() : '-'}</td>
-                              <td className="p-2 text-gray-500">{task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}</td>
-                              <td className="p-2 text-gray-500">{task.estimate_hours || 0}h</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  </CardContent>
+                </Card>
+
+                {/* AI Actions */}
+                <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      <span className="font-medium text-sm text-purple-900">AI Quick Actions</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" className="bg-white" onClick={() => {
+                        const updated = tasks.map((t, idx) => {
+                          const start = t.start_date ? new Date(t.start_date) : new Date(Date.now() + idx * 86400000);
+                          const end = t.due_date ? new Date(t.due_date) : new Date(start.getTime() + 86400000 * 2);
+                          return { ...t, start_date: start.toISOString(), due_date: end.toISOString() };
+                        });
+                        setTasks(updated as any);
+                      }}>
+                        <Calendar className="h-3 w-3 mr-1" /> Auto-fill Dates
+                      </Button>
+                      <Button size="sm" variant="outline" className="bg-white" onClick={() => {
+                        const sorted = [...tasks].sort((a, b) => {
+                          const order = { high: 0, medium: 1, low: 2 };
+                          return (order[a.priority as keyof typeof order] || 2) - (order[b.priority as keyof typeof order] || 2);
+                        });
+                        setTasks(sorted);
+                      }}>
+                        <TrendingUp className="h-3 w-3 mr-1" /> Sort by Priority
+                      </Button>
+                      <Button size="sm" variant="outline" className="bg-white" onClick={() => {
+                        const deduped: Record<string, Task> = {};
+                        tasks.forEach((t) => { deduped[t.task_id] = t; });
+                        setTasks(Object.values(deduped));
+                      }}>
+                        <Trash2 className="h-3 w-3 mr-1" /> Remove Duplicates
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base text-purple-900">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  AI Task Insights
+                </CardTitle>
+                <CardDescription className="text-sm text-purple-700">
+                  Ask the assistant to summarize execution risks, propose a new sprint, or refine dependencies.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <textarea
+                  className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent min-h-[90px] bg-white"
+                  placeholder="E.g., “Summarize task dependencies”, “Highlight schedule risks”, “Draft QA tasks for sprint 2”"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => handleGenerate()}
+                    disabled={isGenerating || status === 'locked'}
+                    className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Thinking...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" /> Generate Insight
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={handleDownload} disabled={!phaseMarkdown}>
+                    <Download className="mr-2 h-4 w-4" /> Export
+                  </Button>
+                </div>
+                <div className="border border-purple-100 rounded-xl bg-white/80 p-4 min-h-[160px]">
+                  {phaseMarkdown ? (
+                    <div className="prose prose-sm max-w-none text-gray-700">
+                      <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
+                      <RawMarkdownDisclosure />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-sm text-gray-500 gap-1 py-6">
+                      <Sparkles className="h-6 w-6 text-purple-400" />
+                      <p>No AI output yet for this phase.</p>
+                      <p className="text-xs">Describe what you need above to generate a summary.</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Eisenhower Matrix */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Grid2X2 className="h-4 w-4 text-blue-500" />
-                    Priority Matrix
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'Do First', color: 'bg-red-50 border-red-200', tasks: matrixBuckets.urgentImportant, icon: '🔥' },
-                      { label: 'Schedule', color: 'bg-blue-50 border-blue-200', tasks: matrixBuckets.notUrgentImportant, icon: '📅' },
-                      { label: 'Delegate', color: 'bg-amber-50 border-amber-200', tasks: matrixBuckets.urgentNotImportant, icon: '👥' },
-                      { label: 'Eliminate', color: 'bg-gray-50 border-gray-200', tasks: matrixBuckets.notUrgentNotImportant, icon: '🗑️' },
-                    ].map(({ label, color, tasks: bucketTasks, icon }) => (
-                      <div key={label} className={`${color} border rounded-xl p-3`}>
-                        <p className="font-medium text-sm mb-2">{icon} {label}</p>
-                        <div className="space-y-1 max-h-24 overflow-y-auto">
-                          {bucketTasks.length ? bucketTasks.map(task => (
-                            <p key={task.task_id} className="text-xs text-gray-600 truncate">• {task.title}</p>
-                          )) : <p className="text-xs text-gray-400">No tasks</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* AI Actions */}
-              <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span className="font-medium text-sm text-purple-900">AI Quick Actions</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" className="bg-white" onClick={() => {
-                      const updated = tasks.map((t, idx) => {
-                        const start = t.start_date ? new Date(t.start_date) : new Date(Date.now() + idx * 86400000);
-                        const end = t.due_date ? new Date(t.due_date) : new Date(start.getTime() + 86400000 * 2);
-                        return { ...t, start_date: start.toISOString(), due_date: end.toISOString() };
-                      });
-                      setTasks(updated as any);
-                    }}>
-                      <Calendar className="h-3 w-3 mr-1" /> Auto-fill Dates
-                    </Button>
-                    <Button size="sm" variant="outline" className="bg-white" onClick={() => {
-                      const sorted = [...tasks].sort((a, b) => {
-                        const order = { high: 0, medium: 1, low: 2 };
-                        return (order[a.priority as keyof typeof order] || 2) - (order[b.priority as keyof typeof order] || 2);
-                      });
-                      setTasks(sorted);
-                    }}>
-                      <TrendingUp className="h-3 w-3 mr-1" /> Sort by Priority
-                    </Button>
-                    <Button size="sm" variant="outline" className="bg-white" onClick={() => {
-                      const deduped: Record<string, Task> = {};
-                      tasks.forEach((t) => { deduped[t.task_id] = t; });
-                      setTasks(Object.values(deduped));
-                    }}>
-                      <Trash2 className="h-3 w-3 mr-1" /> Remove Duplicates
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Task Detail Modal */}
+            {selectedTask && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedTask(null)}>
+                <Card className="w-full max-w-lg m-4" onClick={(e) => e.stopPropagation()}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{selectedTask.title}</CardTitle>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedTask(null)}>
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">{selectedTask.description || 'No description'}</p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><span className="text-gray-500">Status:</span> <Badge>{selectedTask.status}</Badge></div>
+                      <div><span className="text-gray-500">Priority:</span> <span className="capitalize">{selectedTask.priority}</span></div>
+                      <div><span className="text-gray-500">Start:</span> {selectedTask.start_date ? new Date(selectedTask.start_date).toLocaleDateString() : 'Not set'}</div>
+                      <div><span className="text-gray-500">Due:</span> {selectedTask.due_date ? new Date(selectedTask.due_date).toLocaleDateString() : 'Not set'}</div>
+                      <div><span className="text-gray-500">Estimate:</span> {selectedTask.estimate_hours || 0} hours</div>
+                      <div><span className="text-gray-500">Actual:</span> {selectedTask.actual_hours || 0} hours</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-
-          <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base text-purple-900">
-                <Sparkles className="h-4 w-4 text-purple-500" />
-                AI Task Insights
-              </CardTitle>
-              <CardDescription className="text-sm text-purple-700">
-                Ask the assistant to summarize execution risks, propose a new sprint, or refine dependencies.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <textarea
-                className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent min-h-[90px] bg-white"
-                placeholder="E.g., “Summarize task dependencies”, “Highlight schedule risks”, “Draft QA tasks for sprint 2”"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={() => handleGenerate()}
-                  disabled={isGenerating || status === 'locked'}
-                  className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Thinking...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" /> Generate Insight
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={handleDownload} disabled={!phaseMarkdown}>
-                  <Download className="mr-2 h-4 w-4" /> Export
-                </Button>
-              </div>
-              <div className="border border-purple-100 rounded-xl bg-white/80 p-4 min-h-[160px]">
-                {phaseMarkdown ? (
-                  <div className="prose prose-sm max-w-none text-gray-700">
-                    <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                    <RawMarkdownDisclosure />
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-sm text-gray-500 gap-1 py-6">
-                    <Sparkles className="h-6 w-6 text-purple-400" />
-                    <p>No AI output yet for this phase.</p>
-                    <p className="text-xs">Describe what you need above to generate a summary.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Task Detail Modal */}
-          {selectedTask && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedTask(null)}>
-              <Card className="w-full max-w-lg m-4" onClick={(e) => e.stopPropagation()}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{selectedTask.title}</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedTask(null)}>
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">{selectedTask.description || 'No description'}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><span className="text-gray-500">Status:</span> <Badge>{selectedTask.status}</Badge></div>
-                    <div><span className="text-gray-500">Priority:</span> <span className="capitalize">{selectedTask.priority}</span></div>
-                    <div><span className="text-gray-500">Start:</span> {selectedTask.start_date ? new Date(selectedTask.start_date).toLocaleDateString() : 'Not set'}</div>
-                    <div><span className="text-gray-500">Due:</span> {selectedTask.due_date ? new Date(selectedTask.due_date).toLocaleDateString() : 'Not set'}</div>
-                    <div><span className="text-gray-500">Estimate:</span> {selectedTask.estimate_hours || 0} hours</div>
-                    <div><span className="text-gray-500">Actual:</span> {selectedTask.actual_hours || 0} hours</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
         </>
       </PhaseWrapper>
     );
@@ -3158,12 +3073,12 @@ export const PhaseDetailPage: React.FC = () => {
       roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
     const blendedBaseHourlyRate = totalRoleCount
       ? (
-          roleMix.junior * roleRates.junior +
-          roleMix.mid * roleRates.mid +
-          roleMix.senior * roleRates.senior +
-          roleMix.architect * roleRates.architect +
-          roleMix.pm * roleRates.pm
-        ) / totalRoleCount
+        roleMix.junior * roleRates.junior +
+        roleMix.mid * roleRates.mid +
+        roleMix.senior * roleRates.senior +
+        roleMix.architect * roleRates.architect +
+        roleMix.pm * roleRates.pm
+      ) / totalRoleCount
       : baseRate;
 
     const getTaskRate = (task: Task) => {
@@ -3251,572 +3166,572 @@ export const PhaseDetailPage: React.FC = () => {
           <div className="space-y-6">
 
 
-          {/* Scenario Presets + Team Size Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs text-gray-600">Scenario presets:</div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => {
-                  setTeamSizeMultiplier(0.8);
-                  setRoleMix({ junior: 1, mid: 1, senior: 0, architect: 0, pm: 0 });
-                  setUseCustomRoi(false);
-                }}
-              >
-                MVP
-              </Button>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => {
-                  setTeamSizeMultiplier(1.3);
-                  setRoleMix({ junior: 0, mid: 1, senior: 2, architect: 1, pm: 1 });
-                  setUseCustomRoi(false);
-                }}
-              >
-                Aggressive
-              </Button>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => {
-                  setTeamSizeMultiplier(1.5);
-                  setRoleMix({ junior: 1, mid: 2, senior: 2, architect: 1, pm: 1 });
-                  setUseCustomRoi(true);
-                }}
-              >
-                Enterprise
-              </Button>
+            {/* Scenario Presets + Team Size Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs text-gray-600">Scenario presets:</div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => {
+                    setTeamSizeMultiplier(0.8);
+                    setRoleMix({ junior: 1, mid: 1, senior: 0, architect: 0, pm: 0 });
+                    setUseCustomRoi(false);
+                  }}
+                >
+                  MVP
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => {
+                    setTeamSizeMultiplier(1.3);
+                    setRoleMix({ junior: 0, mid: 1, senior: 2, architect: 1, pm: 1 });
+                    setUseCustomRoi(false);
+                  }}
+                >
+                  Aggressive
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => {
+                    setTeamSizeMultiplier(1.5);
+                    setRoleMix({ junior: 1, mid: 2, senior: 2, architect: 1, pm: 1 });
+                    setUseCustomRoi(true);
+                  }}
+                >
+                  Enterprise
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <Card className="border-emerald-200 bg-emerald-50/60">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4 text-emerald-600" />
-                Team Size Scenario
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Move the slider to simulate a smaller or larger team. This scales hourly cost and all charts/cards.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <div className="flex flex-col gap-2 text-xs text-gray-700">
-                <div className="flex items-center justify-between">
-                  <span>Team size multiplier</span>
-                  <span className="font-mono text-emerald-700">{teamSizeMultiplier.toFixed(2)}×</span>
-                </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={2}
-                  step={0.1}
-                  value={teamSizeMultiplier}
-                  onChange={(e) => setTeamSizeMultiplier(parseFloat(e.target.value) || 1)}
-                  className="w-full accent-emerald-600"
-                />
-                <div className="flex justify-between text-[10px] text-gray-500">
-                  <span>0.5× (very small team)</span>
-                  <span>1.0× (current)</span>
-                  <span>2.0× (larger team)</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Custom Cost & Benefit Items */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Custom cost & benefit items</CardTitle>
-              <CardDescription className="text-xs">
-                Add specific costs and expected benefits per item (e.g. licenses, hires, marketing), in USD or JOD.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-4 text-xs text-gray-700">
-              <div className="grid md:grid-cols-4 gap-3 items-end">
-                <div className="md:col-span-2">
-                  <label className="block text-[11px] text-gray-500 mb-1">Description</label>
-                  <input
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs"
-                    placeholder="e.g. Senior backend hire, SaaS subscription"
-                    value={newCostItem.description}
-                    onChange={(e) => setNewCostItem((prev) => ({ ...prev, description: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-gray-500 mb-1">Cost</label>
-                  <input
-                    type="number"
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs"
-                    placeholder="e.g. 5000"
-                    value={newCostItem.cost}
-                    onChange={(e) => setNewCostItem((prev) => ({ ...prev, cost: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-gray-500 mb-1">Benefit</label>
-                  <input
-                    type="number"
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs"
-                    placeholder="e.g. 15000"
-                    value={newCostItem.benefit}
-                    onChange={(e) => setNewCostItem((prev) => ({ ...prev, benefit: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-gray-500 mb-1">Currency</label>
-                  <select
-                    className="w-full border rounded-lg px-2 py-1.5 text-xs"
-                    value={newCostItem.currency}
-                    onChange={(e) => setNewCostItem((prev) => ({ ...prev, currency: e.target.value as 'USD' | 'JOD' }))}
-                  >
-                    <option value="USD">USD</option>
-                    <option value="JOD">JOD</option>
-                  </select>
-                </div>
-                <div className="md:col-span-4 flex justify-end">
-                  <Button
-                    size="sm"
-                    disabled={!newCostItem.description.trim() || !Number(newCostItem.cost) || !Number(newCostItem.benefit)}
-                    onClick={() => {
-                      const cost = Number(newCostItem.cost) || 0;
-                      const benefit = Number(newCostItem.benefit) || 0;
-                      if (!newCostItem.description.trim() || !cost || !benefit) return;
-                      setCustomCostItems((prev) => [
-                        ...prev,
-                        {
-                          id: `item_${Date.now()}_${prev.length}`,
-                          description: newCostItem.description.trim(),
-                          cost,
-                          benefit,
-                          currency: newCostItem.currency,
-                        },
-                      ]);
-                      setNewCostItem({ description: '', cost: '', benefit: '', currency: newCostItem.currency });
-                    }}
-                  >
-                    Add item
-                  </Button>
-                </div>
-              </div>
-
-              {customCostItems.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-gray-600">
-                    <span>Total custom cost:</span>
-                    <span className="font-mono">{totalCustomCost.toLocaleString()} (mixed currencies)</span>
+            <Card className="border-emerald-200 bg-emerald-50/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  Team Size Scenario
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Move the slider to simulate a smaller or larger team. This scales hourly cost and all charts/cards.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-1">
+                <div className="flex flex-col gap-2 text-xs text-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span>Team size multiplier</span>
+                    <span className="font-mono text-emerald-700">{teamSizeMultiplier.toFixed(2)}×</span>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-gray-600">
-                    <span>Total custom benefit:</span>
-                    <span className="font-mono">{totalCustomBenefit.toLocaleString()} (mixed currencies)</span>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    value={teamSizeMultiplier}
+                    onChange={(e) => setTeamSizeMultiplier(parseFloat(e.target.value) || 1)}
+                    className="w-full accent-emerald-600"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500">
+                    <span>0.5× (very small team)</span>
+                    <span>1.0× (current)</span>
+                    <span>2.0× (larger team)</span>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-gray-600">
-                    <span>Custom ROI:</span>
-                    <span className="font-mono">{isFinite(customRoi) ? `${customRoi.toFixed(0)}%` : 'N/A'}</span>
-                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <div className="border-t border-gray-200 pt-2 space-y-1 max-h-48 overflow-y-auto">
-                    {customCostItems.map((item) => {
-                      const itemRoi = item.cost > 0 ? ((item.benefit - item.cost) / item.cost) * 100 : 0;
-                      return (
-                        <div key={item.id} className="flex items-center justify-between text-[11px] bg-gray-50 rounded-lg px-2 py-1.5">
-                          <div className="min-w-0">
-                            <p className="font-medium text-gray-800 truncate">{item.description}</p>
-                            <p className="text-[10px] text-gray-500">
-                              Cost: {item.cost.toLocaleString()} {item.currency} · Benefit: {item.benefit.toLocaleString()} {item.currency}
-                            </p>
+            {/* Custom Cost & Benefit Items */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Custom cost & benefit items</CardTitle>
+                <CardDescription className="text-xs">
+                  Add specific costs and expected benefits per item (e.g. licenses, hires, marketing), in USD or JOD.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-4 text-xs text-gray-700">
+                <div className="grid md:grid-cols-4 gap-3 items-end">
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] text-gray-500 mb-1">Description</label>
+                    <input
+                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      placeholder="e.g. Senior backend hire, SaaS subscription"
+                      value={newCostItem.description}
+                      onChange={(e) => setNewCostItem((prev) => ({ ...prev, description: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-500 mb-1">Cost</label>
+                    <input
+                      type="number"
+                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      placeholder="e.g. 5000"
+                      value={newCostItem.cost}
+                      onChange={(e) => setNewCostItem((prev) => ({ ...prev, cost: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-500 mb-1">Benefit</label>
+                    <input
+                      type="number"
+                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      placeholder="e.g. 15000"
+                      value={newCostItem.benefit}
+                      onChange={(e) => setNewCostItem((prev) => ({ ...prev, benefit: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-500 mb-1">Currency</label>
+                    <select
+                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      value={newCostItem.currency}
+                      onChange={(e) => setNewCostItem((prev) => ({ ...prev, currency: e.target.value as 'USD' | 'JOD' }))}
+                    >
+                      <option value="USD">USD</option>
+                      <option value="JOD">JOD</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-4 flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={!newCostItem.description.trim() || !Number(newCostItem.cost) || !Number(newCostItem.benefit)}
+                      onClick={() => {
+                        const cost = Number(newCostItem.cost) || 0;
+                        const benefit = Number(newCostItem.benefit) || 0;
+                        if (!newCostItem.description.trim() || !cost || !benefit) return;
+                        setCustomCostItems((prev) => [
+                          ...prev,
+                          {
+                            id: `item_${Date.now()}_${prev.length}`,
+                            description: newCostItem.description.trim(),
+                            cost,
+                            benefit,
+                            currency: newCostItem.currency,
+                          },
+                        ]);
+                        setNewCostItem({ description: '', cost: '', benefit: '', currency: newCostItem.currency });
+                      }}
+                    >
+                      Add item
+                    </Button>
+                  </div>
+                </div>
+
+                {customCostItems.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-gray-600">
+                      <span>Total custom cost:</span>
+                      <span className="font-mono">{totalCustomCost.toLocaleString()} (mixed currencies)</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-gray-600">
+                      <span>Total custom benefit:</span>
+                      <span className="font-mono">{totalCustomBenefit.toLocaleString()} (mixed currencies)</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-gray-600">
+                      <span>Custom ROI:</span>
+                      <span className="font-mono">{isFinite(customRoi) ? `${customRoi.toFixed(0)}%` : 'N/A'}</span>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-2 space-y-1 max-h-48 overflow-y-auto">
+                      {customCostItems.map((item) => {
+                        const itemRoi = item.cost > 0 ? ((item.benefit - item.cost) / item.cost) * 100 : 0;
+                        return (
+                          <div key={item.id} className="flex items-center justify-between text-[11px] bg-gray-50 rounded-lg px-2 py-1.5">
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-800 truncate">{item.description}</p>
+                              <p className="text-[10px] text-gray-500">
+                                Cost: {item.cost.toLocaleString()} {item.currency} · Benefit: {item.benefit.toLocaleString()} {item.currency}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] font-mono text-emerald-700">{itemRoi.toFixed(0)}%</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-[10px] text-red-500 px-1 h-6"
+                                onClick={() => setCustomCostItems((prev) => prev.filter((x) => x.id !== item.id))}
+                              >
+                                ✕
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] font-mono text-emerald-700">{itemRoi.toFixed(0)}%</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-[10px] text-red-500 px-1 h-6"
-                              onClick={() => setCustomCostItems((prev) => prev.filter((x) => x.id !== item.id))}
-                            >
-                              ✕
-                            </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Cost Overview Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">${effectiveCostForRoi.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Total Estimated Cost</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{totalHours}h</p>
+                      <p className="text-xs text-gray-500">Total Hours</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Target className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">${effectiveBenefit.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Estimated Benefit ({useCustomRoi ? 'custom totals' : '2× assumption'})</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{roi.toFixed(0)}%</p>
+                      <p className="text-xs text-gray-500">ROI (Benefit vs Cost)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {phaseMarkdown && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Sparkles className="h-4 w-4 text-emerald-500" />
+                    AI Summary
+                  </CardTitle>
+                  <CardDescription className="text-sm">Latest AI output for this phase.</CardDescription>
+                </CardHeader>
+                <CardContent className="prose prose-sm max-w-none text-gray-700">
+                  <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
+                  <RawMarkdownDisclosure />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Charts Grid */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Cost vs Benefit Comparison */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-emerald-500" />
+                    Cost vs Benefit (Current Scenario)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Compare total project cost to estimated benefit using either base or custom totals.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-xs text-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Total Cost</span>
+                      <span className="font-mono">${effectiveCostForRoi.toLocaleString()}</span>
+                    </div>
+                    <div className="h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full bg-rose-500"
+                        style={{ width: '50%' }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Estimated Benefit</span>
+                      <span className="font-mono">${effectiveBenefit.toLocaleString()}</span>
+                    </div>
+                    <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500"
+                        style={{ width: `${effectiveCostForRoi > 0 ? Math.min(100, (effectiveBenefit / effectiveCostForRoi) * 50) : 0}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-2">
+                      Bars are normalized for display; focus on the relative size between cost and benefit.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Cost by Phase Chart */}
+              <Card>
+                <CardHeader className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChart className="h-5 w-5 text-emerald-500" />
+                      Cost Distribution by Phase
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {useManualCostSlices ? 'Using manual overrides' : 'Calculated from current tasks'}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="xs" variant="outline" onClick={startEditingCostSlices}>
+                      {editingCostSlices ? 'Hide editor' : 'Edit values'}
+                    </Button>
+                    {useManualCostSlices && (
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => {
+                          setUseManualCostSlices(false);
+                          setManualCostSlices([]);
+                        }}
+                      >
+                        Use actual
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {editingCostSlices && (
+                    <div className="space-y-2 mb-4 text-xs">
+                      {manualCostSlices.map((slice, idx) => (
+                        <div key={slice.id} className="grid grid-cols-12 gap-2 items-center">
+                          <input
+                            className="col-span-4 border rounded px-2 py-1"
+                            value={slice.label}
+                            onChange={(e) =>
+                              setManualCostSlices((prev) =>
+                                prev.map((entry, i) =>
+                                  i === idx ? { ...entry, label: e.target.value } : entry
+                                )
+                              )
+                            }
+                          />
+                          <input
+                            type="number"
+                            className="col-span-3 border rounded px-2 py-1"
+                            value={slice.cost}
+                            onChange={(e) =>
+                              setManualCostSlices((prev) =>
+                                prev.map((entry, i) =>
+                                  i === idx ? { ...entry, cost: Number(e.target.value) || 0 } : entry
+                                )
+                              )
+                            }
+                          />
+                          <input
+                            type="number"
+                            className="col-span-3 border rounded px-2 py-1"
+                            value={slice.hours}
+                            onChange={(e) =>
+                              setManualCostSlices((prev) =>
+                                prev.map((entry, i) =>
+                                  i === idx ? { ...entry, hours: Number(e.target.value) || 0 } : entry
+                                )
+                              )
+                            }
+                          />
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            onClick={() =>
+                              setManualCostSlices((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <input
+                          className="col-span-4 border rounded px-2 py-1"
+                          placeholder="Label"
+                          value={manualSliceDraft.label}
+                          onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, label: e.target.value }))}
+                        />
+                        <input
+                          type="number"
+                          className="col-span-3 border rounded px-2 py-1"
+                          placeholder="Cost"
+                          value={manualSliceDraft.cost}
+                          onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, cost: e.target.value }))}
+                        />
+                        <input
+                          type="number"
+                          className="col-span-3 border rounded px-2 py-1"
+                          placeholder="Hours"
+                          value={manualSliceDraft.hours}
+                          onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, hours: e.target.value }))}
+                        />
+                        <Button size="xs" variant="outline" onClick={addManualSlice}>
+                          Add
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="xs"
+                          onClick={() => {
+                            setUseManualCostSlices(true);
+                            setEditingCostSlices(false);
+                          }}
+                          disabled={!manualCostSlices.length}
+                        >
+                          Apply overrides
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingCostSlices(false);
+                            setManualSliceDraft({ label: '', cost: '', hours: '' });
+                          }}
+                        >
+                          Close editor
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    {phaseSlicesForChart.map((slice, idx) => {
+                      const percentage = totalCost > 0 && !useManualCostSlices ? (slice.cost / totalCost) * 100 : (slice.cost / manualTotalCost) * 100;
+                      const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-pink-500'];
+                      const colorIdx = idx % colors.length;
+                      return (
+                        <div key={slice.id} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium capitalize">{slice.label}</span>
+                            <span className="text-gray-500">${Math.round(slice.cost).toLocaleString()} ({Math.round(slice.hours)}h)</span>
+                          </div>
+                          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full ${colors[colorIdx]} transition-all`} style={{ width: `${Math.min(100, Math.max(percentage, 0))}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {phaseSlicesForChart.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No cost data available. Add tasks with estimates or switch back to actual data.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Cost by Priority */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
+                    Cost by Priority
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {['high', 'medium', 'low'].map((priority) => {
+                      const data = costByPriority[priority] || { hours: 0, cost: 0 };
+                      const percentage = totalCost > 0 ? (data.cost / totalCost) * 100 : 0;
+                      const colors = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
+                      const icons = { high: '🔴', medium: '🟡', low: '🟢' };
+                      return (
+                        <div key={priority} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium flex items-center gap-2">
+                              {icons[priority as keyof typeof icons]} {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
+                            </span>
+                            <span className="text-gray-500">${data.cost.toLocaleString()}</span>
+                          </div>
+                          <div className="h-6 bg-gray-100 rounded-lg overflow-hidden flex items-center">
+                            <div className={`h-full ${colors[priority as keyof typeof colors]} transition-all flex items-center justify-end pr-2`} style={{ width: `${Math.max(percentage, 5)}%` }}>
+                              <span className="text-xs text-white font-medium">{percentage.toFixed(0)}%</span>
+                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Cost Overview Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
+              {/* ROI Calculator */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-purple-500" />
+                    ROI & Budget Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4">
+                      <p className="text-sm text-emerald-700 font-medium mb-2">Conservative Estimate</p>
+                      <p className="text-3xl font-bold text-emerald-800">${Math.round(totalCost * 0.8).toLocaleString()}</p>
+                      <p className="text-xs text-emerald-600 mt-1">-20% buffer</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+                      <p className="text-sm text-blue-700 font-medium mb-2">Base Estimate</p>
+                      <p className="text-3xl font-bold text-blue-800">${totalCost.toLocaleString()}</p>
+                      <p className="text-xs text-blue-600 mt-1">Current projection</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4">
+                      <p className="text-sm text-amber-700 font-medium mb-2">With Contingency</p>
+                      <p className="text-3xl font-bold text-amber-800">${Math.round(totalCost * 1.25).toLocaleString()}</p>
+                      <p className="text-xs text-amber-600 mt-1">+25% contingency</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">${effectiveCostForRoi.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500">Total Estimated Cost</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{totalHours}h</p>
-                    <p className="text-xs text-gray-500">Total Hours</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Target className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">${effectiveBenefit.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500">Estimated Benefit ({useCustomRoi ? 'custom totals' : '2× assumption'})</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{roi.toFixed(0)}%</p>
-                    <p className="text-xs text-gray-500">ROI (Benefit vs Cost)</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {phaseMarkdown && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Sparkles className="h-4 w-4 text-emerald-500" />
-                  AI Summary
-                </CardTitle>
-                <CardDescription className="text-sm">Latest AI output for this phase.</CardDescription>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none text-gray-700">
-                <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                <RawMarkdownDisclosure />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Charts Grid */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Cost vs Benefit Comparison */}
-            <Card className="lg:col-span-2">
+            {/* AI Chat Section */}
+            <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-emerald-500" />
-                  Cost vs Benefit (Current Scenario)
+                  <Sparkles className="h-5 w-5 text-emerald-500" />
+                  AI Cost Analysis
                 </CardTitle>
-                <CardDescription className="text-xs">
-                  Compare total project cost to estimated benefit using either base or custom totals.
-                </CardDescription>
+                <CardDescription>Ask AI to analyze costs, suggest optimizations, or generate reports</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-xs text-gray-700">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Total Cost</span>
-                    <span className="font-mono">${effectiveCostForRoi.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
-                    <div
-                      className="h-full bg-rose-500"
-                      style={{ width: '50%' }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Estimated Benefit</span>
-                    <span className="font-mono">${effectiveBenefit.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500"
-                      style={{ width: `${effectiveCostForRoi > 0 ? Math.min(100, (effectiveBenefit / effectiveCostForRoi) * 50) : 0}%` }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-2">
-                    Bars are normalized for display; focus on the relative size between cost and benefit.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Cost by Phase Chart */}
-            <Card>
-              <CardHeader className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5 text-emerald-500" />
-                    Cost Distribution by Phase
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {useManualCostSlices ? 'Using manual overrides' : 'Calculated from current tasks'}
-                  </CardDescription>
-                </div>
+              <CardContent className="space-y-4">
+                <textarea
+                  className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-h-[100px] bg-white"
+                  placeholder="Ask AI to analyze your project costs, suggest budget optimizations, or generate a cost breakdown report..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                />
                 <div className="flex gap-2">
-                  <Button size="xs" variant="outline" onClick={startEditingCostSlices}>
-                    {editingCostSlices ? 'Hide editor' : 'Edit values'}
+                  <Button onClick={() => handleGenerate()} disabled={isGenerating || status === 'locked'} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                    {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...</> : <><Sparkles className="mr-2 h-4 w-4" /> Analyze Costs</>}
                   </Button>
-                  {useManualCostSlices && (
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      onClick={() => {
-                        setUseManualCostSlices(false);
-                        setManualCostSlices([]);
-                      }}
-                    >
-                      Use actual
-                    </Button>
-                  )}
+                  <Button variant="outline" onClick={handleDownload} disabled={!phaseMarkdown}>
+                    <Download className="mr-2 h-4 w-4" /> Export Report
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {editingCostSlices && (
-                  <div className="space-y-2 mb-4 text-xs">
-                    {manualCostSlices.map((slice, idx) => (
-                      <div key={slice.id} className="grid grid-cols-12 gap-2 items-center">
-                        <input
-                          className="col-span-4 border rounded px-2 py-1"
-                          value={slice.label}
-                          onChange={(e) =>
-                            setManualCostSlices((prev) =>
-                              prev.map((entry, i) =>
-                                i === idx ? { ...entry, label: e.target.value } : entry
-                              )
-                            )
-                          }
-                        />
-                        <input
-                          type="number"
-                          className="col-span-3 border rounded px-2 py-1"
-                          value={slice.cost}
-                          onChange={(e) =>
-                            setManualCostSlices((prev) =>
-                              prev.map((entry, i) =>
-                                i === idx ? { ...entry, cost: Number(e.target.value) || 0 } : entry
-                              )
-                            )
-                          }
-                        />
-                        <input
-                          type="number"
-                          className="col-span-3 border rounded px-2 py-1"
-                          value={slice.hours}
-                          onChange={(e) =>
-                            setManualCostSlices((prev) =>
-                              prev.map((entry, i) =>
-                                i === idx ? { ...entry, hours: Number(e.target.value) || 0 } : entry
-                              )
-                            )
-                          }
-                        />
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          onClick={() =>
-                            setManualCostSlices((prev) => prev.filter((_, i) => i !== idx))
-                          }
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ))}
-                    <div className="grid grid-cols-12 gap-2 items-center">
-                      <input
-                        className="col-span-4 border rounded px-2 py-1"
-                        placeholder="Label"
-                        value={manualSliceDraft.label}
-                        onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, label: e.target.value }))}
-                      />
-                      <input
-                        type="number"
-                        className="col-span-3 border rounded px-2 py-1"
-                        placeholder="Cost"
-                        value={manualSliceDraft.cost}
-                        onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, cost: e.target.value }))}
-                      />
-                      <input
-                        type="number"
-                        className="col-span-3 border rounded px-2 py-1"
-                        placeholder="Hours"
-                        value={manualSliceDraft.hours}
-                        onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, hours: e.target.value }))}
-                      />
-                      <Button size="xs" variant="outline" onClick={addManualSlice}>
-                        Add
-                      </Button>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="xs"
-                        onClick={() => {
-                          setUseManualCostSlices(true);
-                          setEditingCostSlices(false);
-                        }}
-                        disabled={!manualCostSlices.length}
-                      >
-                        Apply overrides
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingCostSlices(false);
-                          setManualSliceDraft({ label: '', cost: '', hours: '' });
-                        }}
-                      >
-                        Close editor
-                      </Button>
+                {phaseMarkdown && (
+                  <div className="border border-emerald-200 rounded-lg bg-white p-4 mt-4">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
+                      <RawMarkdownDisclosure />
                     </div>
                   </div>
                 )}
-                <div className="space-y-3">
-                  {phaseSlicesForChart.map((slice, idx) => {
-                    const percentage = totalCost > 0 && !useManualCostSlices ? (slice.cost / totalCost) * 100 : (slice.cost / manualTotalCost) * 100;
-                    const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-pink-500'];
-                    const colorIdx = idx % colors.length;
-                    return (
-                      <div key={slice.id} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium capitalize">{slice.label}</span>
-                          <span className="text-gray-500">${Math.round(slice.cost).toLocaleString()} ({Math.round(slice.hours)}h)</span>
-                        </div>
-                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full ${colors[colorIdx]} transition-all`} style={{ width: `${Math.min(100, Math.max(percentage, 0))}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {phaseSlicesForChart.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No cost data available. Add tasks with estimates or switch back to actual data.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Cost by Priority */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-500" />
-                  Cost by Priority
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {['high', 'medium', 'low'].map((priority) => {
-                    const data = costByPriority[priority] || { hours: 0, cost: 0 };
-                    const percentage = totalCost > 0 ? (data.cost / totalCost) * 100 : 0;
-                    const colors = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
-                    const icons = { high: '🔴', medium: '🟡', low: '🟢' };
-                    return (
-                      <div key={priority} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium flex items-center gap-2">
-                            {icons[priority as keyof typeof icons]} {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
-                          </span>
-                          <span className="text-gray-500">${data.cost.toLocaleString()}</span>
-                        </div>
-                        <div className="h-6 bg-gray-100 rounded-lg overflow-hidden flex items-center">
-                          <div className={`h-full ${colors[priority as keyof typeof colors]} transition-all flex items-center justify-end pr-2`} style={{ width: `${Math.max(percentage, 5)}%` }}>
-                            <span className="text-xs text-white font-medium">{percentage.toFixed(0)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* ROI Calculator */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-purple-500" />
-                  ROI & Budget Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4">
-                    <p className="text-sm text-emerald-700 font-medium mb-2">Conservative Estimate</p>
-                    <p className="text-3xl font-bold text-emerald-800">${Math.round(totalCost * 0.8).toLocaleString()}</p>
-                    <p className="text-xs text-emerald-600 mt-1">-20% buffer</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
-                    <p className="text-sm text-blue-700 font-medium mb-2">Base Estimate</p>
-                    <p className="text-3xl font-bold text-blue-800">${totalCost.toLocaleString()}</p>
-                    <p className="text-xs text-blue-600 mt-1">Current projection</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4">
-                    <p className="text-sm text-amber-700 font-medium mb-2">With Contingency</p>
-                    <p className="text-3xl font-bold text-amber-800">${Math.round(totalCost * 1.25).toLocaleString()}</p>
-                    <p className="text-xs text-amber-600 mt-1">+25% contingency</p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* AI Chat Section */}
-          <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-emerald-500" />
-                AI Cost Analysis
-              </CardTitle>
-              <CardDescription>Ask AI to analyze costs, suggest optimizations, or generate reports</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <textarea
-                className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-h-[100px] bg-white"
-                placeholder="Ask AI to analyze your project costs, suggest budget optimizations, or generate a cost breakdown report..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <div className="flex gap-2">
-                <Button onClick={() => handleGenerate()} disabled={isGenerating || status === 'locked'} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
-                  {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...</> : <><Sparkles className="mr-2 h-4 w-4" /> Analyze Costs</>}
-                </Button>
-                <Button variant="outline" onClick={handleDownload} disabled={!phaseMarkdown}>
-                  <Download className="mr-2 h-4 w-4" /> Export Report
-                </Button>
-              </div>
-              {phaseMarkdown && (
-                <div className="border border-emerald-200 rounded-lg bg-white p-4 mt-4">
-                  <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                    <RawMarkdownDisclosure />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
         </>
       </PhaseWrapper>
     );
@@ -4259,7 +4174,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <Download className="mr-2 h-4 w-4" /> Download
                 </Button>
               </div>
-              
+
               {/* Document Preview */}
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <p className="text-sm font-medium text-gray-700 mb-3">Phase Document</p>

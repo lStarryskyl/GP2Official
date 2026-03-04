@@ -99,7 +99,7 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
   };
 
   const overallStats = getStats(Object.values(itemsById));
-  const overallProgress = Math.round((overallStats.approved / overallStats.total) * 100);
+  const overallProgress = overallStats.total > 0 ? Math.round((overallStats.approved / overallStats.total) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -156,12 +156,11 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`border rounded-lg transition-all ${
-                    liveItem.status === 'approved' ? 'border-emerald-200 bg-emerald-50/50' :
-                    liveItem.status === 'pending' ? 'border-amber-200 bg-amber-50/50' :
-                    liveItem.status === 'rejected' ? 'border-red-200 bg-red-50/50' :
-                    'border-gray-200 bg-white'
-                  }`}
+                  className={`border rounded-lg transition-all ${liveItem.status === 'approved' ? 'border-emerald-200 bg-emerald-50/50' :
+                      liveItem.status === 'pending' ? 'border-amber-200 bg-amber-50/50' :
+                        liveItem.status === 'rejected' ? 'border-red-200 bg-red-50/50' :
+                          'border-gray-200 bg-white'
+                    }`}
                 >
                   <div
                     className="p-4 cursor-pointer flex items-center justify-between"

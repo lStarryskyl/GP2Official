@@ -72,7 +72,7 @@ class ChangeLogService:
         )
 
         # Hook into diagram generation and timeline updates
-        await self._trigger_diagram_updates(project_id, change_type, task_ids)
+        await self._trigger_diagram_updates(project_id, payload.entry_type, valid_task_ids)
         return self._as_response(entry)
 
     async def _filter_valid_tasks(self, project_id: str, task_ids: List[str]) -> List[str]:

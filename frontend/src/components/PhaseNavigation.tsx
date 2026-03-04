@@ -1,27 +1,14 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { phaseConfigs } from '@/constants/phases';
-import {
-  ChevronRight,
-  ChevronLeft,
-  Home,
-  Calendar,
-  BarChart3,
-  FileText,
-  CheckCircle2,
-  Layers,
-  Code,
-  ListChecks,
-  Flag,
-  DollarSign,
-  AlertTriangle,
-} from 'lucide-react';
+import { ChevronLeft, Home, Check } from 'lucide-react';
 
 interface PhaseNavigationProps {
   projectId?: string;
   variant?: 'sidebar' | 'horizontal' | 'floating';
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  phaseStatus?: Record<string, string>;
 }
 
 export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
@@ -29,6 +16,7 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
   variant = 'sidebar',
   collapsed = false,
   onToggleCollapse,
+  phaseStatus = {},
 }) => {
   const navigate = useNavigate();
   const { phaseId } = useParams<{ phaseId: string }>();
@@ -37,101 +25,94 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
   const currentPhaseId = phaseId || location.pathname.split('/').pop();
   const effectiveProjectId = projectId || location.pathname.split('/')[2];
 
-  const getPhaseIcon = (id: string): React.ReactNode => {
-    switch (id) {
-      case 'planning':
-        return <Calendar className="h-4 w-4" />;
-      case 'feasibility_study':
-        return <BarChart3 className="h-4 w-4" />;
-      case 'requirements_gathering':
-        return <FileText className="h-4 w-4" />;
-      case 'validation':
-        return <CheckCircle2 className="h-4 w-4" />;
-      case 'design':
-        return <Layers className="h-4 w-4" />;
-      case 'development':
-        return <Code className="h-4 w-4" />;
-      case 'tasks':
-        return <ListChecks className="h-4 w-4" />;
-      case 'cost_benefit':
-        return <DollarSign className="h-4 w-4" />;
-      case 'risks':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'summary':
-        return <Flag className="h-4 w-4" />;
-      default:
-        return <Layers className="h-4 w-4" />;
-    }
-  };
-
   const handlePhaseClick = (phase: typeof phaseConfigs[0]) => {
     if (effectiveProjectId) {
       navigate(`/projects/${effectiveProjectId}/phases/${phase.id}`);
     }
   };
 
+  const getStatus = (id: string) => (phaseStatus[id] || 'locked').toLowerCase();
+
+  // ─── Horizontal Tab Bar ───────────────────────────────────
   if (variant === 'horizontal') {
     return (
-      <div className="w-full bg-navy-900/95 backdrop-blur-xl border-b border-navy-800 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-thin">
-            <button
-              onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:bg-navy-800 hover:text-gold-500 transition-all whitespace-nowrap"
-            >
-              <Home className="h-4 w-4" />
-              Overview
-            </button>
-            <ChevronRight className="h-4 w-4 text-navy-700 flex-shrink-0" />
-            {phaseConfigs.map((phase, idx) => {
-              const isActive = currentPhaseId === phase.id;
-              return (
-                <React.Fragment key={phase.id}>
+      <div className="w-full sticky top-0 z-40">
+        <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-thin">
+              {/* Overview link */}
+              <button
+                onClick={() => navigate(`/projects/${effectiveProjectId}`)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all whitespace-nowrap"
+              >
+                <Home className="h-3.5 w-3.5" />
+                Overview
+              </button>
+
+              <div className="w-px h-5 bg-slate-200 mx-1 flex-shrink-0" />
+
+              {/* Phase tabs */}
+              {phaseConfigs.map((phase) => {
+                const isActive = currentPhaseId === phase.id;
+                const status = getStatus(phase.id);
+                const isCompleted = status === 'completed' || status === 'ready';
+                return (
                   <button
+                    key={phase.id}
                     onClick={() => handlePhaseClick(phase)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                      isActive
-                        ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 shadow-lg shadow-gold-500/30 scale-105'
-                        : 'bg-navy-800 text-gray-400 hover:bg-navy-700 hover:text-white hover:scale-105'
-                    }`}
+                    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${isActive
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                      }`}
                   >
-                    <span className={`flex items-center justify-center w-5 h-5 rounded-full ${isActive ? 'bg-navy-950/20' : 'bg-navy-700'}`}>
-                      {getPhaseIcon(phase.id)}
+                    {/* Step number or check */}
+                    <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${isActive
+                        ? 'bg-white/25 text-white'
+                        : isCompleted
+                          ? 'bg-emerald-100 text-emerald-600'
+                          : 'bg-slate-100 text-slate-400'
+                      }`}>
+                      {isCompleted && !isActive ? <Check className="h-3 w-3" /> : phase.stepNumber}
                     </span>
                     <span>{phase.shortTitle}</span>
+
+                    {/* Active indicator dot */}
+                    {isActive && (
+                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-amber-500 rounded-full" />
+                    )}
                   </button>
-                  {idx < phaseConfigs.length - 1 && (
-                    <ChevronRight className="h-4 w-4 text-navy-700 flex-shrink-0" />
-                  )}
-                </React.Fragment>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // ─── Floating Variant ─────────────────────────────────────
   if (variant === 'floating') {
     return (
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1.5">
         {phaseConfigs.map((phase) => {
           const isActive = currentPhaseId === phase.id;
+          const status = getStatus(phase.id);
+          const isCompleted = status === 'completed' || status === 'ready';
           return (
             <button
               key={phase.id}
               onClick={() => handlePhaseClick(phase)}
-              className={`group relative flex items-center justify-center w-12 h-12 rounded-xl shadow-lg transition-all hover:scale-110 ${
-                isActive
-                  ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 shadow-gold-500/30'
-                  : 'bg-navy-900 border border-navy-800 text-gray-400 hover:bg-navy-800 hover:text-gold-500 hover:border-gold-500/50'
-              }`}
+              className={`group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all ${isActive
+                  ? 'bg-amber-500 text-white shadow-md'
+                  : 'bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-300 shadow-sm'
+                }`}
               title={phase.title}
             >
-              <span className="text-xl">
-                {getPhaseIcon(phase.id)}
-              </span>
-              <span className="absolute right-full mr-2 px-3 py-1.5 rounded-lg bg-navy-800 border border-navy-700 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <span className="text-xs font-bold">{phase.stepNumber}</span>
+              {isCompleted && !isActive && (
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
+              )}
+              <span className="absolute right-full mr-2 px-2.5 py-1 rounded-lg bg-slate-800 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {phase.title}
               </span>
             </button>
@@ -141,63 +122,51 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
     );
   }
 
-  // Sidebar variant (default) - Navy & Gold Theme
+  // ─── Sidebar Variant (default) ────────────────────────────
   return (
     <div
-      className={`flex flex-col h-full transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-64'
-      }`}
-      style={{ backgroundColor: '#0d1525', borderRight: '1px solid #1e3a5f' }}
+      className={`flex flex-col h-full bg-white transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'
+        }`}
     >
       {/* Header */}
-      <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1e3a5f' }}>
+      <div className="p-4 flex items-center justify-between border-b border-slate-100">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)' }}>
-              <span className="font-bold text-sm" style={{ color: '#0a0f1a' }}>GP</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center shadow-sm">
+              <span className="font-bold text-sm text-white">GP</span>
             </div>
-            <span className="font-semibold text-white">Phases</span>
+            <span className="font-semibold text-slate-900">Phases</span>
           </div>
         )}
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-2 rounded-lg text-gray-400 hover:text-amber-400 transition-colors"
-            style={{ ':hover': { backgroundColor: '#152238' } }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
           </button>
         )}
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {/* Project Overview */}
         <button
           onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-          className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
-            !currentPhaseId || currentPhaseId === effectiveProjectId
-              ? 'text-amber-400'
-              : 'text-gray-400 hover:text-white'
-          }`}
-          style={{
-            backgroundColor: (!currentPhaseId || currentPhaseId === effectiveProjectId) ? '#152238' : 'transparent',
-            border: (!currentPhaseId || currentPhaseId === effectiveProjectId) ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid transparent'
-          }}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${!currentPhaseId || currentPhaseId === effectiveProjectId
+              ? 'bg-slate-100 text-slate-900 font-medium'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+            }`}
         >
-          <Home className="h-5 w-5 flex-shrink-0" />
-          {!collapsed && <span className="font-medium">Overview</span>}
+          <Home className="h-4 w-4 flex-shrink-0" />
+          {!collapsed && <span>Overview</span>}
         </button>
 
-        {/* Phase Divider */}
+        {/* Divider */}
         {!collapsed && (
           <div className="px-3 py-2">
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(212, 175, 55, 0.6)' }}>
-              Development Phases
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Phases
             </span>
           </div>
         )}
@@ -205,67 +174,45 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
         {/* Phase Items */}
         {phaseConfigs.map((phase) => {
           const isActive = currentPhaseId === phase.id;
-          const isCompleted = false;
+          const status = getStatus(phase.id);
+          const isCompleted = status === 'completed' || status === 'ready';
 
           return (
             <button
               key={phase.id}
               onClick={() => handlePhaseClick(phase)}
               data-testid={`phase-nav-${phase.id}`}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
-                isActive
-                  ? 'text-[#0a0f1a] shadow-lg'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              style={{
-                background: isActive ? 'linear-gradient(to right, #d4af37, #b8962e)' : 'transparent',
-                boxShadow: isActive ? '0 10px 15px -3px rgba(212, 175, 55, 0.3)' : 'none'
-              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm group ${isActive
+                  ? 'bg-amber-50 text-amber-700 font-medium border border-amber-200'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                }`}
             >
-              {/* Phase Number/Icon */}
-              <div
-                className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all`}
-                style={{ 
-                  backgroundColor: isActive ? 'rgba(10, 15, 26, 0.2)' : '#152238'
-                }}
-              >
-                {getPhaseIcon(phase.id)}
-              </div>
+              {/* Step number */}
+              <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${isActive
+                  ? 'bg-amber-500 text-white shadow-sm'
+                  : isCompleted
+                    ? 'bg-emerald-100 text-emerald-600'
+                    : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                }`}>
+                {isCompleted && !isActive ? <Check className="h-3.5 w-3.5" /> : phase.stepNumber}
+              </span>
 
               {/* Phase Info */}
               {!collapsed && (
-                <div className="flex-1 text-left">
-                  <div className="font-medium text-sm">{phase.shortTitle}</div>
-                  {!isActive && (
-                    <div className="text-xs opacity-60 truncate">
-                      {phase.description.slice(0, 30)}...
-                    </div>
-                  )}
+                <div className="flex-1 text-left min-w-0">
+                  <div className="truncate">{phase.shortTitle}</div>
                 </div>
               )}
 
-              {/* Status Indicator */}
+              {/* Status dot */}
               {!collapsed && (
-                <div className="flex-shrink-0">
-                  {isCompleted ? (
-                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  ) : isActive ? (
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#0a0f1a' }} />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1e3a5f' }} />
-                  )}
-                </div>
+                <span className={`flex-shrink-0 w-2 h-2 rounded-full ${isCompleted ? 'bg-emerald-500' : isActive ? 'bg-amber-500 animate-pulse' : 'bg-slate-200'
+                  }`} />
               )}
             </button>
           );
         })}
       </nav>
-
-      {/* Footer intentionally minimal to avoid placeholder progress */}
     </div>
   );
 };

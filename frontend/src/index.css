@@ -599,6 +599,45 @@ code, pre, .mono {
   color: var(--gray-500);
 }
 
+/* ========================================
+   Global Form Input Contrast Fix
+   Ensures ALL inputs/textareas/selects are readable on dark backgrounds
+   ======================================== */
+
+/* Dark-theme form elements (outside light-bg cards) */
+[class*="bg-[#0"] input:not([type="checkbox"]):not([type="radio"]),
+[class*="bg-[#0"] textarea,
+[class*="bg-[#0"] select,
+.card-glass input:not([type="checkbox"]):not([type="radio"]),
+.card-glass textarea,
+.card-glass select,
+[class*="bg-navy"] input,
+[class*="bg-navy"] textarea,
+[class*="bg-slate-9"] input,
+[class*="bg-slate-9"] textarea {
+  color: var(--gray-100) !important;
+  caret-color: var(--gold-400);
+}
+
+/* Focus states for dark-theme inputs */
+[class*="bg-[#0"] input:focus,
+[class*="bg-[#0"] textarea:focus,
+[class*="bg-[#0"] select:focus,
+.card-glass input:focus,
+.card-glass textarea:focus {
+  border-color: var(--gold-500) !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
+  outline: none;
+}
+
+/* Placeholder text in dark theme */
+[class*="bg-[#0"] input::placeholder,
+[class*="bg-[#0"] textarea::placeholder,
+.card-glass input::placeholder,
+.card-glass textarea::placeholder {
+  color: var(--gray-500) !important;
+}
+
 /* Badge */
 .badge {
   display: inline-flex;

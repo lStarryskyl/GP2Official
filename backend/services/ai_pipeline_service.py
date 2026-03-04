@@ -26,6 +26,7 @@ class ModelProvider(str, Enum):
 
 class TaskType(str, Enum):
     """Types of AI generation tasks."""
+    GENERAL = "general"
     REQUIREMENTS_EXTRACTION = "requirements_extraction"
     SRS_GENERATION = "srs_generation"
     RISK_ANALYSIS = "risk_analysis"
@@ -80,7 +81,7 @@ class AIModelPipeline:
             model_name="stub",
             cost_per_token=0.0,
             quality_score=0.5,
-            specialties=[TaskType.REQUIREMENTS_EXTRACTION, TaskType.SRS_GENERATION]
+            specialties=[TaskType.GENERAL, TaskType.REQUIREMENTS_EXTRACTION, TaskType.SRS_GENERATION]
         )
         
         # Add Gemini if configured

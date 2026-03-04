@@ -32,18 +32,24 @@ class MemoryUpdateResult:
 
 
 class MemoryCursor:
-    """Minimal async cursor supporting find + sort + iteration."""
+    """Minimal async cursor supporting find + sort + limit + iteration."""
 
     def __init__(self, docs: List[Dict[str, Any]]):
         self.docs = docs
+        self._limit = None
 
     def sort(self, key: str, direction: int):
         reverse = direction == -1
-        self.docs = sorted(self.docs, key=lambda d: d.get(key), reverse=reverse)
+        self.docs = sorted(self.docs, key=lambda d: d.get(key) or "", reverse=reverse)
+        return self
+
+    def limit(self, n: int):
+        self._limit = n
         return self
 
     def __aiter__(self):
-        self._iter = iter(self.docs)
+        docs_to_iterate = self.docs[:self._limit] if self._limit else self.docs
+        self._iter = iter(docs_to_iterate)
         return self
 
     async def __anext__(self):
@@ -51,6 +57,12 @@ class MemoryCursor:
             return next(self._iter)
         except StopIteration:
             raise StopAsyncIteration
+    
+    async def to_list(self, length: int = None) -> List[Dict[str, Any]]:
+        """Convert cursor to list (Motor compatibility)."""
+        if length:
+            return self.docs[:length]
+        return self.docs[:self._limit] if self._limit else self.docs
 
 
 class MemoryCollection:
@@ -76,10 +88,47 @@ class MemoryCollection:
         ]
         return MemoryDeleteResult(deleted_count=original_count - len(self.docs))
 
+    def _match_filter(self, doc: Dict[str, Any], filter_doc: Dict[str, Any]) -> bool:
+        """Check if a document matches a MongoDB-style filter (with operator support)."""
+        for k, v in filter_doc.items():
+            doc_value = doc.get(k)
+            if isinstance(v, dict):
+                # Handle MongoDB operators
+                for op, op_val in v.items():
+                    if op == "$gt":
+                        if doc_value is None or doc_value <= op_val:
+                            return False
+                    elif op == "$gte":
+                        if doc_value is None or doc_value < op_val:
+                            return False
+                    elif op == "$lt":
+                        if doc_value is None or doc_value >= op_val:
+                            return False
+                    elif op == "$lte":
+                        if doc_value is None or doc_value > op_val:
+                            return False
+                    elif op == "$ne":
+                        if doc_value == op_val:
+                            return False
+                    elif op == "$in":
+                        if doc_value not in op_val:
+                            return False
+                    elif op == "$nin":
+                        if doc_value in op_val:
+                            return False
+                    else:
+                        # Unknown operator, treat as equality
+                        if doc_value != v:
+                            return False
+            else:
+                if doc_value != v:
+                    return False
+        return True
+
     async def find_one(self, filter_doc: Dict[str, Any], sort=None):
         matched = [
             doc for doc in self.docs
-            if all(doc.get(k) == v for k, v in filter_doc.items())
+            if self._match_filter(doc, filter_doc)
         ]
         if not matched:
             return None
@@ -92,14 +141,14 @@ class MemoryCollection:
     def find(self, filter_doc: Dict[str, Any]):
         matched = [
             dict(doc) for doc in self.docs
-            if all(doc.get(k) == v for k, v in filter_doc.items())
+            if self._match_filter(doc, filter_doc)
         ]
         return MemoryCursor(matched)
 
     async def update_one(self, filter_doc: Dict[str, Any], update: Dict[str, Any], upsert: bool = False):
         set_fields = update.get("$set", {})
         for idx, doc in enumerate(self.docs):
-            if all(doc.get(k) == v for k, v in filter_doc.items()):
+            if self._match_filter(doc, filter_doc):
                 self.docs[idx] = {**doc, **set_fields}
                 return MemoryUpdateResult(matched_count=1, modified_count=1)
         if upsert:
@@ -116,7 +165,7 @@ class MemoryCollection:
         upsert: bool = False,
     ):
         for idx, doc in enumerate(self.docs):
-            if all(doc.get(k) == v for k, v in filter_doc.items()):
+            if self._match_filter(doc, filter_doc):
                 set_fields = update.get("$set", {})
                 set_on_insert = update.get("$setOnInsert", {})
                 self.docs[idx] = {**doc, **set_fields, **set_on_insert}
@@ -129,9 +178,20 @@ class MemoryCollection:
             return dict(new_doc)
         return None
 
+    async def update_many(self, filter_doc: Dict[str, Any], update: Dict[str, Any]):
+        set_fields = update.get("$set", {})
+        matched_count = 0
+        modified_count = 0
+        for idx, doc in enumerate(self.docs):
+            if self._match_filter(doc, filter_doc):
+                matched_count += 1
+                self.docs[idx] = {**doc, **set_fields}
+                modified_count += 1
+        return MemoryUpdateResult(matched_count=matched_count, modified_count=modified_count)
+
     async def delete_one(self, filter_doc: Dict[str, Any]):
         for idx, doc in enumerate(self.docs):
-            if all(doc.get(k) == v for k, v in filter_doc.items()):
+            if self._match_filter(doc, filter_doc):
                 self.docs.pop(idx)
                 return MemoryDeleteResult(deleted_count=1)
         return MemoryDeleteResult(deleted_count=0)

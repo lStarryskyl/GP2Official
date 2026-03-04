@@ -251,7 +251,7 @@ class ApiClient {
   }
 
   async deleteProject(id: string): Promise<void> {
-    await this.client.delete(`/projects/${id}/`);
+    await this.client.delete(`/projects/${id}`);
   }
 
   async generateProject(
@@ -526,6 +526,11 @@ class ApiClient {
   // Personas
   async generatePersonas(projectId: string, count: number = 3): Promise<any[]> {
     const response = await this.client.post(`/projects/${projectId}/personas/generate`, { count });
+    return response.data;
+  }
+
+  async generateUserStories(projectId: string, personaIds?: string[]): Promise<any[]> {
+    const response = await this.client.post(`/projects/${projectId}/user-stories/generate`, { persona_ids: personaIds || [] });
     return response.data;
   }
 

@@ -61,9 +61,9 @@ export const ProjectDetailPage: React.FC = () => {
     setProject((prev) =>
       prev
         ? {
-            ...prev,
-            ui_preferences: { ...(prev.ui_preferences || {}), preset: presetId },
-          }
+          ...prev,
+          ui_preferences: { ...(prev.ui_preferences || {}), preset: presetId },
+        }
         : prev
     );
     try {
@@ -76,9 +76,9 @@ export const ProjectDetailPage: React.FC = () => {
       setProject((prev) =>
         prev
           ? {
-              ...prev,
-              ui_preferences: { ...(prev.ui_preferences || {}), preset: previousPreset },
-            }
+            ...prev,
+            ui_preferences: { ...(prev.ui_preferences || {}), preset: previousPreset },
+          }
           : prev
       );
     } finally {
@@ -286,7 +286,7 @@ export const ProjectDetailPage: React.FC = () => {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           {/* Header gradient bar */}
           <div className="h-2 bg-gradient-to-r from-amber-500 to-orange-600" />
-          
+
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
@@ -308,7 +308,7 @@ export const ProjectDetailPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{project.name}</h1>
@@ -328,7 +328,7 @@ export const ProjectDetailPage: React.FC = () => {
                 </span>
               </div>
             </div>
-            
+
             {/* Workspace Preset Switcher */}
             <div className="pt-4 border-t border-slate-100">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Workspace Mode</p>
@@ -340,11 +340,10 @@ export const ProjectDetailPage: React.FC = () => {
                       key={preset.id}
                       onClick={() => handlePresetChange(preset.id)}
                       disabled={updatingPreset}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                        isActive 
-                          ? 'bg-slate-900 text-white shadow-md' 
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive
+                          ? 'bg-slate-900 text-white shadow-md'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      } ${updatingPreset ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${updatingPreset ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {preset.label}
                     </button>
@@ -390,15 +389,19 @@ export const ProjectDetailPage: React.FC = () => {
                   <h3 className="text-sm font-semibold text-[#374151] mb-3">Key Metrics</h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: 'Requirements', value: requirements.length },
-                      { label: 'Tasks', value: tasks.length },
-                      { label: 'Artifacts', value: artifacts.length },
-                      { label: 'Total Hours', value: totalHours.toFixed(0) },
+                      { label: 'Requirements', value: requirements.length, phase: 'requirements_gathering' },
+                      { label: 'Tasks', value: tasks.length, phase: 'tasks' },
+                      { label: 'Artifacts', value: artifacts.length, phase: 'summary' },
+                      { label: 'Total Hours', value: totalHours.toFixed(0), phase: 'tasks' },
                     ].map((metric) => (
-                      <div key={metric.label} className="rounded-xl border border-slate-200 px-3 py-4 bg-[#F9FAFB] text-center">
-                        <div className="text-2xl font-semibold text-slate-900">{metric.value}</div>
-                        <div className="text-xs text-slate-500">{metric.label}</div>
-                      </div>
+                      <button
+                        key={metric.label}
+                        onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${metric.phase}`)}
+                        className="rounded-xl border border-slate-200 px-3 py-4 bg-[#F9FAFB] text-center hover:border-amber-300 hover:bg-amber-50/50 hover:shadow-sm transition-all cursor-pointer group"
+                      >
+                        <div className="text-2xl font-semibold text-slate-900 group-hover:text-amber-700 transition-colors">{metric.value}</div>
+                        <div className="text-xs text-slate-500 group-hover:text-amber-600 transition-colors">{metric.label}</div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -446,112 +449,112 @@ export const ProjectDetailPage: React.FC = () => {
                 </div>
               </div>
             </aside>
-            )}
+          )}
 
-            <div className="space-y-4 sm:space-y-6">
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm phase-board">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Phases</h2>
-                    <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">Work through each phase sequentially and export deliverables whenever ready.</p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length}>
-                    Export All
-                  </Button>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm phase-board">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Phases</h2>
+                  <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">Work through each phase sequentially and export deliverables whenever ready.</p>
                 </div>
-                <div className="divide-y divide-[#F3F4F6]">
-                  {phaseConfigs.map((phase) => {
-                    const status = (phaseStatus[phase.id] || 'locked').toLowerCase();
-                    const pillClass =
-                      status === 'completed'
-                        ? 'bg-[#E9FCEB] text-[#166534]'
-                        : status === 'active' || status === 'planning'
+                <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length}>
+                  Export All
+                </Button>
+              </div>
+              <div className="divide-y divide-[#F3F4F6]">
+                {phaseConfigs.map((phase) => {
+                  const status = (phaseStatus[phase.id] || 'locked').toLowerCase();
+                  const pillClass =
+                    status === 'completed'
+                      ? 'bg-[#E9FCEB] text-[#166534]'
+                      : status === 'active' || status === 'planning'
                         ? 'bg-[#E0EAFF] text-[#1D4ED8]'
                         : 'bg-[#E5E7EB] text-slate-500';
-                    const pillLabel = statusLabels[status] || status;
-                    const hasOutput = Boolean(phaseOutputs[phase.id]);
-                    return (
-                      <div
-                        key={phase.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`);
-                          }
-                        }}
-                        className={`w-full text-left ${phaseRowPadding} hover:bg-[#F9FAFB] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] rounded-xl`}
-                      >
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
-                            {phase.stepNumber}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <p className={`font-semibold text-slate-900 ${condensePhases ? 'text-sm' : 'text-base'}`}>{phase.title}</p>
-                              <div className="flex items-center gap-2">
-                                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${pillClass}`}>
-                                  {pillLabel}
-                                </span>
-                                {hasOutput && (
-                                  <span
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={(e) => {
+                  const pillLabel = statusLabels[status] || status;
+                  const hasOutput = Boolean(phaseOutputs[phase.id]);
+                  return (
+                    <div
+                      key={phase.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`);
+                        }
+                      }}
+                      className={`w-full text-left ${phaseRowPadding} hover:bg-[#F9FAFB] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] rounded-xl`}
+                    >
+                      <div className="flex items-start gap-3 sm:gap-4">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
+                          {phase.stepNumber}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <p className={`font-semibold text-slate-900 ${condensePhases ? 'text-sm' : 'text-base'}`}>{phase.title}</p>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${pillClass}`}>
+                                {pillLabel}
+                              </span>
+                              {hasOutput && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleExportPhase(phase.id);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
                                       e.stopPropagation();
                                       handleExportPhase(phase.id);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleExportPhase(phase.id);
-                                      }
-                                    }}
-                                    className="text-xs font-semibold text-[#4F46E5] hover:text-[#4338CA]"
-                                  >
-                                    Export
-                                  </span>
-                                )}
-                              </div>
+                                    }
+                                  }}
+                                  className="text-xs font-semibold text-[#4F46E5] hover:text-[#4338CA]"
+                                >
+                                  Export
+                                </span>
+                              )}
                             </div>
-                            <p className={`mt-1 text-slate-500 line-clamp-2 ${condensePhases ? 'text-xs' : 'text-sm'}`}>{phase.description}</p>
                           </div>
+                          <p className={`mt-1 text-slate-500 line-clamp-2 ${condensePhases ? 'text-xs' : 'text-sm'}`}>{phase.description}</p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
+            </div>
 
-              <div className="grid gap-4">
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                  <h2 className="text-base font-semibold text-slate-900 mb-4">Project Details</h2>
-                  <dl className="space-y-3 text-sm text-slate-600">
-                    <div className="flex justify-between">
-                      <span>Type</span>
-                      <span className="font-medium text-slate-900">{project.template_type.replace('_', ' ')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Owner</span>
-                      <span className="font-medium text-slate-900">{project.owner_name || 'Unassigned'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Created</span>
-                      <span className="font-medium text-slate-900">{formatDate(project.created_at)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Last Updated</span>
-                      <span className="font-medium text-slate-900">{formatDate(project.updated_at)}</span>
-                    </div>
-                  </dl>
-                </div>
+            <div className="grid gap-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h2 className="text-base font-semibold text-slate-900 mb-4">Project Details</h2>
+                <dl className="space-y-3 text-sm text-slate-600">
+                  <div className="flex justify-between">
+                    <span>Type</span>
+                    <span className="font-medium text-slate-900">{project.template_type.replace('_', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Owner</span>
+                    <span className="font-medium text-slate-900">{project.owner_name || 'Unassigned'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Created</span>
+                    <span className="font-medium text-slate-900">{formatDate(project.created_at)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Last Updated</span>
+                    <span className="font-medium text-slate-900">{formatDate(project.updated_at)}</span>
+                  </div>
+                </dl>
               </div>
             </div>
           </div>
         </div>
+      </div>
     </Layout>
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { phaseConfigs } from '@/constants/phases';
-import { ChevronLeft, Home, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, Check } from 'lucide-react';
 
 interface PhaseNavigationProps {
   projectId?: string;
@@ -33,67 +33,66 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
 
   const getStatus = (id: string) => (phaseStatus[id] || 'locked').toLowerCase();
 
-  // ─── Horizontal Tab Bar ───────────────────────────────────
+  // ─── Horizontal Tab Bar (Dark Navy/Gold Theme) ───────────────────────────────────
   if (variant === 'horizontal') {
     return (
-      <div className="w-full sticky top-0 z-40">
-        <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-thin">
-              {/* Overview link */}
-              <button
-                onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all whitespace-nowrap"
-              >
-                <Home className="h-3.5 w-3.5" />
-                Overview
-              </button>
+      <div className="w-full bg-[#0d1525]/95 backdrop-blur-xl border-b border-[#1e3a5f] sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-thin">
+            {/* Overview link */}
+            <button
+              onClick={() => navigate(`/projects/${effectiveProjectId}`)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-[#d4af37] hover:bg-[#152238] transition-all whitespace-nowrap"
+            >
+              <Home className="h-3.5 w-3.5" />
+              Overview
+            </button>
 
-              <div className="w-px h-5 bg-slate-200 mx-1 flex-shrink-0" />
+            <ChevronRight className="h-4 w-4 text-[#1e3a5f] flex-shrink-0" />
 
-              {/* Phase tabs */}
-              {phaseConfigs.map((phase) => {
-                const isActive = currentPhaseId === phase.id;
-                const status = getStatus(phase.id);
-                const isCompleted = status === 'completed' || status === 'ready';
-                return (
+            {/* Phase tabs */}
+            {phaseConfigs.map((phase, idx) => {
+              const isActive = currentPhaseId === phase.id;
+              const status = getStatus(phase.id);
+              const isCompleted = status === 'completed' || status === 'ready';
+              return (
+                <React.Fragment key={phase.id}>
                   <button
-                    key={phase.id}
                     onClick={() => handlePhaseClick(phase)}
-                    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${isActive
-                        ? 'bg-amber-500 text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
-                      }`}
+                    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#0a0f1a] shadow-lg shadow-[#d4af37]/30'
+                        : 'bg-[#152238] text-gray-400 hover:bg-[#1e3a5f] hover:text-white'
+                    }`}
                   >
                     {/* Step number or check */}
-                    <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${isActive
-                        ? 'bg-white/25 text-white'
+                    <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
+                      isActive
+                        ? 'bg-[#0a0f1a]/20 text-[#0a0f1a]'
                         : isCompleted
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : 'bg-slate-100 text-slate-400'
-                      }`}>
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : 'bg-[#1e3a5f] text-gray-500'
+                    }`}>
                       {isCompleted && !isActive ? <Check className="h-3 w-3" /> : phase.stepNumber}
                     </span>
                     <span>{phase.shortTitle}</span>
-
-                    {/* Active indicator dot */}
-                    {isActive && (
-                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-amber-500 rounded-full" />
-                    )}
                   </button>
-                );
-              })}
-            </div>
+                  {idx < phaseConfigs.length - 1 && (
+                    <ChevronRight className="h-4 w-4 text-[#1e3a5f] flex-shrink-0" />
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       </div>
     );
   }
 
-  // ─── Floating Variant ─────────────────────────────────────
+  // ─── Floating Variant (Dark Navy/Gold Theme) ─────────────────────────────────────
   if (variant === 'floating') {
     return (
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1.5">
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
         {phaseConfigs.map((phase) => {
           const isActive = currentPhaseId === phase.id;
           const status = getStatus(phase.id);
@@ -102,17 +101,18 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
             <button
               key={phase.id}
               onClick={() => handlePhaseClick(phase)}
-              className={`group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all ${isActive
-                  ? 'bg-amber-500 text-white shadow-md'
-                  : 'bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-300 shadow-sm'
-                }`}
+              className={`group relative flex items-center justify-center w-12 h-12 rounded-xl shadow-lg transition-all hover:scale-110 ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#0a0f1a] shadow-[#d4af37]/30'
+                  : 'bg-[#0d1525] border border-[#1e3a5f] text-gray-400 hover:bg-[#152238] hover:text-[#d4af37] hover:border-[#d4af37]/50'
+              }`}
               title={phase.title}
             >
-              <span className="text-xs font-bold">{phase.stepNumber}</span>
+              <span className="text-sm font-bold">{phase.stepNumber}</span>
               {isCompleted && !isActive && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0d1525]" />
               )}
-              <span className="absolute right-full mr-2 px-2.5 py-1 rounded-lg bg-slate-800 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <span className="absolute right-full mr-3 px-3 py-1.5 rounded-lg bg-[#152238] border border-[#1e3a5f] text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {phase.title}
               </span>
             </button>
@@ -122,51 +122,56 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
     );
   }
 
-  // ─── Sidebar Variant (default) ────────────────────────────
+  // ─── Sidebar Variant (Dark Navy/Gold Theme) ────────────────────────────
   return (
     <div
-      className={`flex flex-col h-full bg-white transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'
-        }`}
+      className={`flex flex-col h-full transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}
+      style={{ backgroundColor: '#0d1525', borderRight: '1px solid #1e3a5f' }}
     >
       {/* Header */}
-      <div className="p-4 flex items-center justify-between border-b border-slate-100">
+      <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1e3a5f' }}>
         {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center shadow-sm">
-              <span className="font-bold text-sm text-white">GP</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)' }}>
+              <span className="font-bold text-sm" style={{ color: '#0a0f1a' }}>GP</span>
             </div>
-            <span className="font-semibold text-slate-900">Phases</span>
+            <span className="font-semibold text-white">Phases</span>
           </div>
         )}
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg text-gray-400 hover:text-[#d4af37] hover:bg-[#152238] transition-colors"
           >
-            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         )}
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {/* Project Overview */}
         <button
           onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${!currentPhaseId || currentPhaseId === effectiveProjectId
-              ? 'bg-slate-100 text-slate-900 font-medium'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-            }`}
+          className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+            !currentPhaseId || currentPhaseId === effectiveProjectId
+              ? 'text-[#d4af37]'
+              : 'text-gray-400 hover:text-white'
+          }`}
+          style={{
+            backgroundColor: (!currentPhaseId || currentPhaseId === effectiveProjectId) ? '#152238' : 'transparent',
+            border: (!currentPhaseId || currentPhaseId === effectiveProjectId) ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid transparent'
+          }}
         >
-          <Home className="h-4 w-4 flex-shrink-0" />
-          {!collapsed && <span>Overview</span>}
+          <Home className="h-5 w-5 flex-shrink-0" />
+          {!collapsed && <span className="font-medium">Overview</span>}
         </button>
 
-        {/* Divider */}
+        {/* Phase Divider */}
         {!collapsed && (
           <div className="px-3 py-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              Phases
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(212, 175, 55, 0.6)' }}>
+              Development Phases
             </span>
           </div>
         )}
@@ -182,32 +187,52 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
               key={phase.id}
               onClick={() => handlePhaseClick(phase)}
               data-testid={`phase-nav-${phase.id}`}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm group ${isActive
-                  ? 'bg-amber-50 text-amber-700 font-medium border border-amber-200'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                }`}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
+                isActive
+                  ? 'text-[#0a0f1a] shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+              style={{
+                background: isActive ? 'linear-gradient(to right, #d4af37, #b8962e)' : 'transparent',
+                boxShadow: isActive ? '0 10px 15px -3px rgba(212, 175, 55, 0.3)' : 'none'
+              }}
             >
-              {/* Step number */}
-              <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${isActive
-                  ? 'bg-amber-500 text-white shadow-sm'
-                  : isCompleted
-                    ? 'bg-emerald-100 text-emerald-600'
-                    : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
-                }`}>
-                {isCompleted && !isActive ? <Check className="h-3.5 w-3.5" /> : phase.stepNumber}
-              </span>
+              {/* Phase Number */}
+              <div
+                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all"
+                style={{ 
+                  backgroundColor: isActive ? 'rgba(10, 15, 26, 0.2)' : '#152238',
+                  color: isCompleted && !isActive ? '#10b981' : 'inherit'
+                }}
+              >
+                {isCompleted && !isActive ? <Check className="h-4 w-4" /> : phase.stepNumber}
+              </div>
 
               {/* Phase Info */}
               {!collapsed && (
-                <div className="flex-1 text-left min-w-0">
-                  <div className="truncate">{phase.shortTitle}</div>
+                <div className="flex-1 text-left">
+                  <div className="font-medium text-sm">{phase.shortTitle}</div>
+                  {!isActive && (
+                    <div className="text-xs opacity-60 truncate">
+                      {phase.description?.slice(0, 30)}...
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Status dot */}
+              {/* Status Indicator */}
               {!collapsed && (
-                <span className={`flex-shrink-0 w-2 h-2 rounded-full ${isCompleted ? 'bg-emerald-500' : isActive ? 'bg-amber-500 animate-pulse' : 'bg-slate-200'
-                  }`} />
+                <div className="flex-shrink-0">
+                  {isCompleted ? (
+                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  ) : isActive ? (
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#0a0f1a' }} />
+                  ) : (
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1e3a5f' }} />
+                  )}
+                </div>
               )}
             </button>
           );

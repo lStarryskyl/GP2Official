@@ -198,7 +198,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleChatSubmit()}
               placeholder="e.g., Create a use case diagram showing user interactions..."
-              className="flex-1 px-4 py-3 text-base border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+              className="flex-1 px-4 py-3 text-base border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 bg-[#152238]"
             />
             <Button
               onClick={handleChatSubmit}
@@ -210,7 +210,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
           </div>
 
           {isUmlGenerating && (
-            <div className="flex items-center justify-center gap-3 py-4 bg-white rounded-xl border border-amber-100">
+            <div className="flex items-center justify-center gap-3 py-4 bg-[#152238] rounded-xl border border-amber-100">
               <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
               <span className="text-amber-700 font-medium">AI is generating your diagram...</span>
             </div>
@@ -227,7 +227,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
               selectedDiagram === type
                 ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-400'
-                : 'bg-white text-slate-600 hover:bg-amber-50 border border-slate-200 hover:border-amber-200'
+                : 'bg-[#152238] text-slate-600 hover:bg-amber-50 border border-slate-200 hover:border-amber-200'
             }`}
           >
             {getIcon(type)}
@@ -245,7 +245,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {/* Zoom controls */}
-            <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 px-2 py-1">
+            <div className="flex items-center gap-1 bg-[#152238] rounded-lg border border-slate-200 px-2 py-1">
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-slate-100" onClick={() => setZoom(Math.max(50, zoom - 25))}>
                 <ZoomOut className="h-4 w-4 text-slate-600" />
               </Button>
@@ -267,7 +267,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
         <CardContent className="p-0">
           {/* Diagram Display - LARGE */}
           <div 
-            className="bg-white overflow-auto flex items-center justify-center"
+            className="bg-[#152238] overflow-auto flex items-center justify-center"
             style={{ minHeight: '600px', maxHeight: '80vh' }}
           >
             {isRendering ? (

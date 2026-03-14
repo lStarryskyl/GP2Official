@@ -284,6 +284,29 @@ export const PhaseDetailPage: React.FC = () => {
     loadProjectData();
   }, [id, teamSizeMultiplier, roleMix]);
 
+  // Auto-generate phase content on first visit if no content exists
+  const autoGenerateTriggeredRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!id || !phaseId || isLoading || isGenerating || !canTriggerAi) return;
+    
+    // Skip phases that don't support auto-generation
+    const autoGenPhases = ['planning', 'feasibility_study', 'requirements_gathering', 'validation', 'design', 'development'];
+    if (!autoGenPhases.includes(phaseId)) return;
+    
+    // Check if we already have content for this phase
+    const hasContent = artifacts.some(
+      (art) => art.type === `PHASE_${phaseId.toUpperCase()}` && art.content_json?.markdown
+    );
+    
+    // Check if we already triggered auto-generation for this phase in this session
+    const cacheKey = `${id}-${phaseId}`;
+    if (hasContent || autoGenerateTriggeredRef.current.has(cacheKey)) return;
+    
+    // Mark as triggered and auto-generate
+    autoGenerateTriggeredRef.current.add(cacheKey);
+    handleGenerate(`Auto-generate comprehensive ${phaseId.replace('_', ' ')} content for this project`);
+  }, [id, phaseId, isLoading, artifacts, canTriggerAi]);
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (!event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) {
@@ -317,7 +340,7 @@ export const PhaseDetailPage: React.FC = () => {
         <summary className="cursor-pointer font-medium text-gray-600">
           Show raw AI output
         </summary>
-        <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-700 overflow-x-auto">
+        <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-[#1e3a5f] bg-[#1e3a5f]/50 p-3 text-[11px] leading-relaxed text-gray-300 overflow-x-auto">
           {phaseRawMarkdown}
         </pre>
       </details>
@@ -412,7 +435,8 @@ export const PhaseDetailPage: React.FC = () => {
     });
   }, [phaseId, parsedRisks, isEditingRisks]);
 
-  const unifiedPromptRef = useRef<HTMLTextAreaElement | null>(null);
+  const unifiedPromptRef = useRef<HTMLTextAreaElement>(null);
+  const regenerateInputRef = useRef<HTMLInputElement>(null);
 
   const hydrateRiskDraft = (source: RiskDraft | null) => {
     if (source) {
@@ -1280,9 +1304,9 @@ export const PhaseDetailPage: React.FC = () => {
   if (!project || !phaseConfig) {
     return (
       <Layout>
-        <div className="text-center py-16 bg-slate-50">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Phase not found</h2>
-          <Button onClick={() => navigate(`/projects/${id}`)} className="bg-amber-500 hover:bg-amber-600 text-white font-semibold">Back to Project</Button>
+        <div className="text-center py-16 bg-[#0a0f1a]">
+          <h2 className="text-2xl font-bold text-white mb-4">Phase not found</h2>
+          <Button onClick={() => navigate(`/projects/${id}`)} className="bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold">Back to Project</Button>
         </div>
       </Layout>
     );
@@ -1301,26 +1325,26 @@ export const PhaseDetailPage: React.FC = () => {
   const PhaseWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
       <Layout>
-        <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
+        <div className="min-h-[calc(100vh-4rem)] bg-[#0a0f1a]">
           {/* Horizontal Navigation */}
           <PhaseNavigation projectId={id} variant="horizontal" phaseStatus={phaseStatus} />
 
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
             <div className="space-y-5">
               {/* Phase Header */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500" />
+              <div className="bg-[#0d1525] rounded-2xl border border-[#1e3a5f]/50 shadow-lg overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-[#d4af37] via-[#e6c358] to-[#b8962e]" />
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500 text-white font-bold text-lg shadow-sm">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#d4af37] to-[#b8962e] text-[#0a0f1a] font-bold text-lg shadow-lg">
                         {phaseConfig.stepNumber}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-0.5">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-[#d4af37] mb-0.5">
                           Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
                         </p>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                        <h1 className="text-xl sm:text-2xl font-bold text-white">
                           {phaseConfig.title}
                         </h1>
                       </div>
@@ -1329,7 +1353,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <Button
                         variant="outline"
                         onClick={() => navigate(`/projects/${id}`)}
-                        className="text-slate-600 border-slate-200 hover:bg-slate-50"
+                        className="text-gray-400 border-[#1e3a5f] hover:border-[#d4af37]/50 hover:text-[#d4af37] bg-transparent"
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back
@@ -1338,53 +1362,53 @@ export const PhaseDetailPage: React.FC = () => {
                         <Button
                           variant="outline"
                           onClick={handleDownload}
-                          className="text-slate-600 border-slate-200 hover:bg-slate-50"
+                          className="text-gray-400 border-[#1e3a5f] hover:border-[#d4af37]/50 hover:text-[#d4af37] bg-transparent"
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Export
                         </Button>
                       )}
                       <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${status === 'completed'
-                        ? 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         : status === 'locked'
-                          ? 'bg-slate-100 text-slate-500'
-                          : 'bg-amber-100 text-amber-700'
+                          ? 'bg-[#1e3a5f]/500/10 text-gray-500 border border-gray-500/20'
+                          : 'bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30'
                         }`}>
                         {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● In Progress'}
                       </span>
                     </div>
                   </div>
                   {phaseConfig.description && (
-                    <p className="mt-2 text-sm text-slate-500 max-w-2xl ml-16">{phaseConfig.description}</p>
+                    <p className="mt-2 text-sm text-gray-400 max-w-2xl ml-16">{phaseConfig.description}</p>
                   )}
                 </div>
               </div>
 
               {/* Limited Access Banner */}
               {!canTriggerAi && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <div className="bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-xl p-4 flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-[#d4af37] flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-amber-800 text-sm">Limited Access</p>
-                    <p className="text-amber-700 text-xs">You have {user?.role_label || 'reviewer'} access. A Program Manager must trigger AI generation.</p>
+                    <p className="font-medium text-[#d4af37] text-sm">Limited Access</p>
+                    <p className="text-gray-400 text-xs">You have {user?.role_label || 'reviewer'} access. A Program Manager must trigger AI generation.</p>
                   </div>
                 </div>
               )}
 
               {/* Next Phase Banner */}
               {nextPhase && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center justify-between gap-4">
+                <div className="bg-[#0d1525] rounded-xl border border-[#1e3a5f]/50 p-4 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 text-amber-700 font-bold text-sm">
+                    <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#d4af37]/20 text-[#d4af37] font-bold text-sm border border-[#d4af37]/30">
                       {nextPhase.stepNumber}
                     </span>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-600">Continue to Next</p>
-                      <p className="font-semibold text-slate-900">{nextPhase.title}</p>
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-[#d4af37]">Continue to Next</p>
+                      <p className="font-semibold text-white">{nextPhase.title}</p>
                     </div>
                   </div>
                   <Button
-                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
+                    className="bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold shadow-lg"
                     onClick={() => navigate(`/projects/${id}/phases/${nextPhase.id}`)}
                   >
                     Continue
@@ -1395,81 +1419,48 @@ export const PhaseDetailPage: React.FC = () => {
 
               {/* Error */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2 text-red-700 text-sm">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 flex items-center gap-2 text-red-400 text-sm">
                   <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                   {error}
                 </div>
               )}
 
-              {/* AI Assistant Card */}
+              {/* Compact AI Regenerate Bar - only show if content exists or generating */}
               {phaseId !== 'validation' && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-5 sm:p-6">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="p-2.5 rounded-xl bg-amber-500 shadow-sm">
-                        <Sparkles className="h-5 w-5 text-white" />
+                <div className="bg-[#0d1525] rounded-xl border border-[#1e3a5f] overflow-hidden">
+                  <div className="p-3 sm:p-4">
+                    {isGenerating ? (
+                      <div className="flex items-center justify-center gap-3 py-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#d4af37]" />
+                        <span className="text-sm font-medium text-gray-300">Generating content with AI...</span>
                       </div>
-                      <div>
-                        <h3 className="text-base font-bold text-slate-900">AI Assistant</h3>
-                        <p className="text-sm text-slate-500">Enter a prompt to generate or refine content for this phase</p>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <textarea
-                          ref={unifiedPromptRef}
-                          className="w-full rounded-xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all resize-none"
-                          rows={3}
-                          placeholder="E.g., 'Generate detailed requirements with acceptance criteria' or 'Create a risk assessment matrix'"
-                        />
-                        {isGenerating && (
-                          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                            <div className="flex items-center gap-3 text-amber-600">
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                              <span className="font-medium text-sm">Generating content...</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                    ) : (
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { label: '📊 Analysis', prompt: 'Generate comprehensive analysis' },
-                            { label: '📋 Requirements', prompt: 'Create detailed requirements list' },
-                            { label: '⚠️ Risks', prompt: 'Generate risk assessment' },
-                          ].map((suggestion) => (
-                            <button
-                              key={suggestion.label}
-                              onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = suggestion.prompt; }}
-                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-all border border-slate-200"
-                            >
-                              {suggestion.label}
-                            </button>
-                          ))}
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-[#d4af37]" />
+                          <span className="text-sm text-gray-400">Content auto-generated</span>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => { if (unifiedPromptRef.current) unifiedPromptRef.current.value = ''; }}
-                            disabled={isGenerating}
-                            className="text-slate-500 border-slate-200"
-                          >
-                            Clear
-                          </Button>
+                        <div className="flex items-center gap-2">
+                          <input
+                            ref={regenerateInputRef}
+                            type="text"
+                            className="w-48 sm:w-64 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[#1e3a5f] bg-[#152238] focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 transition-all"
+                            placeholder="Custom prompt (optional)"
+                          />
                           <Button
                             disabled={isGenerating}
                             onClick={() => {
-                              const prompt = unifiedPromptRef.current?.value || '';
-                              if (!prompt.trim()) return;
+                              const prompt = regenerateInputRef.current?.value || `Regenerate ${phaseId?.replace('_', ' ')} content`;
                               handleGenerate(prompt);
                             }}
-                            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
+                            className="bg-[#152238] hover:bg-[#1e3a5f] text-[#d4af37] border border-[#d4af37]/30 hover:border-[#d4af37] text-sm px-3 py-1.5 font-medium"
                           >
-                            {isGenerating ? 'Generating…' : 'Generate with AI'}
+                            <Undo2 className="h-3.5 w-3.5 mr-1.5" />
+                            Regenerate
                           </Button>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1524,81 +1515,72 @@ export const PhaseDetailPage: React.FC = () => {
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.length}</p>
-                    <p className="text-xs text-gray-500">Total Requirements</p>
-                  </div>
+            <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                  <FileText className="h-5 w-5 text-blue-400" />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <p className="text-2xl font-bold text-white">{requirements.length}</p>
+                  <p className="text-xs text-gray-500">Total Requirements</p>
+                </div>
+              </div>
+            </div>
 
             {/* Cost vs Benefit Comparison card removed here; lives in cost_benefit phase instead */}
-            <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
-                    <Shield className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.filter(r => r.type === 'non_functional').length}</p>
-                    <p className="text-xs text-gray-500">Non-Functional</p>
-                  </div>
+            <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
+                  <Shield className="h-5 w-5 text-emerald-400" />
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.filter(r => r.priority === 'high').length}</p>
-                    <p className="text-xs text-gray-500">High Priority</p>
-                  </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{requirements.filter(r => r.type === 'non_functional').length}</p>
+                  <p className="text-xs text-gray-500">Non-Functional</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+            <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#d4af37]/20 rounded-lg border border-[#d4af37]/30">
+                  <TrendingUp className="h-5 w-5 text-[#d4af37]" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{requirements.filter(r => r.priority === 'high').length}</p>
+                  <p className="text-xs text-gray-500">High Priority</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Requirements Catalog */}
-          <Card>
-            <CardHeader>
+          <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-2xl overflow-hidden">
+            <div className="p-5 border-b border-[#1e3a5f]/30">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <CardTitle>
-                    Requirements Catalog
-                  </CardTitle>
-                  <CardDescription>
-                    Functional and non-functional requirements with priority scoring
-                  </CardDescription>
+                  <h3 className="font-bold text-white">Requirements Catalog</h3>
+                  <p className="text-sm text-gray-500">Functional and non-functional requirements with priority scoring</p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleSyncRequirements}
+                  className="border-[#1e3a5f] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37]"
                 >
                   Sync Validation
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-6">
               {/* Add Requirement */}
-              <div className="mb-6 p-4 border border-dashed border-blue-200 rounded-lg bg-blue-50/50 space-y-3">
+              <div className="mb-6 p-4 border border-dashed border-[#1e3a5f] rounded-lg bg-[#152238]/50 space-y-3">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium text-gray-900">Add Requirement</span>
+                    <FileText className="h-4 w-4 text-[#d4af37]" />
+                    <span className="text-sm font-medium text-white">Add Requirement</span>
                   </div>
                   <select
-                    className="text-xs border border-blue-200 rounded px-2 py-1 bg-white"
+                    className="text-xs border border-[#1e3a5f] rounded px-2 py-1 bg-[#152238] text-gray-300"
                     value={requirementDraft.type}
                     onChange={(e) => setRequirementDraft({ ...requirementDraft, type: e.target.value })}
                   >
@@ -1607,20 +1589,20 @@ export const PhaseDetailPage: React.FC = () => {
                   </select>
                 </div>
                 <input
-                  className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm bg-[#152238] text-white placeholder-gray-500 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30"
                   placeholder="Requirement title..."
                   value={requirementDraft.title}
                   onChange={(e) => setRequirementDraft({ ...requirementDraft, title: e.target.value })}
                 />
                 <textarea
-                  className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent min-h-[70px]"
+                  className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm bg-[#152238] text-white placeholder-gray-500 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 min-h-[70px]"
                   placeholder="Requirement description..."
                   value={requirementDraft.description}
                   onChange={(e) => setRequirementDraft({ ...requirementDraft, description: e.target.value })}
                 />
                 <div className="flex flex-wrap items-center gap-3">
                   <select
-                    className="border border-blue-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                    className="border border-[#1e3a5f] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-gray-300"
                     value={requirementDraft.priority}
                     onChange={(e) => setRequirementDraft({ ...requirementDraft, priority: e.target.value })}
                   >
@@ -1630,7 +1612,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <option value="critical">Critical</option>
                   </select>
                   <select
-                    className="border border-blue-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                    className="border border-[#1e3a5f] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-gray-300"
                     value={requirementDraft.status}
                     onChange={(e) => setRequirementDraft({ ...requirementDraft, status: e.target.value })}
                   >
@@ -1641,7 +1623,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </select>
                   <Button
                     size="sm"
-                    className="ml-auto bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                    className="ml-auto bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold"
                     disabled={!requirementDraft.title.trim()}
                     onClick={async () => {
                       if (!id || !requirementDraft.title.trim()) return;
@@ -1674,14 +1656,14 @@ export const PhaseDetailPage: React.FC = () => {
 
               {requirements.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p>No requirements gathered yet.</p>
-                  <p className="text-sm mt-1">Use the AI assistant to generate requirements.</p>
+                  <FileText className="h-12 w-12 mx-auto mb-3 text-gray-600" />
+                  <p className="text-gray-400">No requirements gathered yet.</p>
+                  <p className="text-sm mt-1 text-gray-500">Use the AI assistant to generate requirements.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {requirements.map((req) => (
-                    <div key={req.requirement_id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={req.requirement_id} className="p-4 border border-[#1e3a5f]/50 rounded-lg bg-[#152238]/30 hover:bg-[#152238] transition-colors">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -1699,14 +1681,14 @@ export const PhaseDetailPage: React.FC = () => {
                           {editingRequirementId === req.requirement_id ? (
                             <div className="space-y-2 mt-1">
                               <input
-                                className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+                                className="w-full border border-[#1e3a5f] rounded-lg px-3 py-1.5 text-sm"
                                 value={editingRequirementDraft.title}
                                 onChange={(e) =>
                                   setEditingRequirementDraft((prev) => ({ ...prev, title: e.target.value }))
                                 }
                               />
                               <textarea
-                                className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+                                className="w-full border border-[#1e3a5f] rounded-lg px-3 py-1.5 text-sm"
                                 rows={3}
                                 value={editingRequirementDraft.description}
                                 onChange={(e) =>
@@ -1715,7 +1697,7 @@ export const PhaseDetailPage: React.FC = () => {
                               />
                               <div className="flex flex-wrap items-center gap-2">
                                 <select
-                                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                                  className="border border-[#1e3a5f] rounded-lg px-2 py-1.5 text-xs bg-[#152238]"
                                   value={editingRequirementDraft.priority}
                                   onChange={(e) =>
                                     setEditingRequirementDraft((prev) => ({ ...prev, priority: e.target.value }))
@@ -1727,7 +1709,7 @@ export const PhaseDetailPage: React.FC = () => {
                                   <option value="critical">Critical</option>
                                 </select>
                                 <select
-                                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                                  className="border border-[#1e3a5f] rounded-lg px-2 py-1.5 text-xs bg-[#152238]"
                                   value={editingRequirementDraft.status}
                                   onChange={(e) =>
                                     setEditingRequirementDraft((prev) => ({ ...prev, status: e.target.value }))
@@ -1777,8 +1759,8 @@ export const PhaseDetailPage: React.FC = () => {
                             </div>
                           ) : (
                             <>
-                              <h4 className="font-medium text-gray-900">{req.title}</h4>
-                              <p className="text-sm text-gray-600 mt-1">{req.description}</p>
+                              <h4 className="font-medium text-white">{req.title}</h4>
+                              <p className="text-sm text-gray-400 mt-1">{req.description}</p>
                             </>
                           )}
                         </div>
@@ -1806,11 +1788,11 @@ export const PhaseDetailPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="mt-4 pt-2 border-t border-dashed border-gray-200 flex items-center justify-between text-[11px] text-gray-600">
+              <div className="mt-4 pt-2 border-t border-dashed border-[#1e3a5f] flex items-center justify-between text-[11px] text-gray-500">
                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    className="rounded border-[#1e3a5f] bg-[#152238] text-[#d4af37] focus:ring-[#d4af37]"
                     checked={useCustomRoi}
                     onChange={(e) => setUseCustomRoi(e.target.checked)}
                   />
@@ -1822,38 +1804,38 @@ export const PhaseDetailPage: React.FC = () => {
                     : 'High-level ROI uses task hours × hourly rate with 2× benefit assumption.'}
                 </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* AI Generation */}
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-blue-600" />
-                AI Requirements Assistant
-              </CardTitle>
-              <CardDescription>Generate requirements from your project description</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-2xl overflow-hidden">
+            <div className="p-5 border-b border-[#1e3a5f]/30">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-[#d4af37]" />
+                <h3 className="font-bold text-white">AI Requirements Assistant</h3>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Generate requirements from your project description</p>
+            </div>
+            <div className="p-6 space-y-4">
               <textarea
-                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent min-h-[100px] bg-white"
+                className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm bg-[#152238] text-white placeholder-gray-500 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 min-h-[100px]"
                 placeholder="Describe what you want AI to help with: Generate functional requirements, create acceptance criteria, suggest non-functional requirements..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
               />
               <div className="flex gap-2 flex-wrap">
-                <Button onClick={() => handleGenerate()} disabled={isGenerating || status === 'locked'} className="bg-gradient-to-r from-blue-500 to-indigo-500">
+                <Button onClick={() => handleGenerate()} disabled={isGenerating || status === 'locked'} className="bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold">
                   {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-2 h-4 w-4" /> Generate Requirements</>}
                 </Button>
-                <Button variant="outline" onClick={() => handleGenerate('Generate functional requirements based on the project brief')}>
+                <Button variant="outline" onClick={() => handleGenerate('Generate functional requirements based on the project brief')} className="border-[#1e3a5f] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37]">
                   <Wand2 className="mr-2 h-4 w-4" /> Auto-Generate FR
                 </Button>
-                <Button variant="outline" onClick={() => handleGenerate('Generate non-functional requirements (performance, security, scalability)')}>
+                <Button variant="outline" onClick={() => handleGenerate('Generate non-functional requirements (performance, security, scalability)')} className="border-[#1e3a5f] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37]">
                   <Shield className="mr-2 h-4 w-4" /> Auto-Generate NFR
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </PhaseWrapper>
     );
@@ -2016,7 +1998,7 @@ export const PhaseDetailPage: React.FC = () => {
                     {riskDraft.overview.map((item, idx) => (
                       <div key={idx} className="flex items-start gap-2">
                         <textarea
-                          className="flex-1 min-h-[50px] border border-gray-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-200"
+                          className="flex-1 min-h-[50px] border border-[#1e3a5f] rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-200"
                           value={item}
                           onChange={(e) =>
                             setRiskDraft((prev) => {
@@ -2053,7 +2035,7 @@ export const PhaseDetailPage: React.FC = () => {
                     </Button>
                   </div>
                 ) : parsedRisks && parsedRisks.overview.length ? (
-                  <ul className="list-disc pl-5 space-y-1 text-xs text-gray-700">
+                  <ul className="list-disc pl-5 space-y-1 text-xs text-gray-300">
                     {parsedRisks.overview.map((item, idx) => (
                       <li key={idx} className="leading-snug">
                         {item}
@@ -2082,24 +2064,24 @@ export const PhaseDetailPage: React.FC = () => {
                 <CardContent>
                   {isEditingRisks ? (
                     <div className="space-y-3">
-                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <div className="overflow-x-auto border border-[#1e3a5f] rounded-lg">
                         <table className="w-full text-xs border-collapse">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-[#1e3a5f]/50">
                             <tr>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Risk</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Impact</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Likelihood</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Mitigation</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Owner</th>
-                              <th className="px-2 py-2 text-right font-semibold text-gray-700 border-b border-gray-200 sr-only">Actions</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Risk</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Impact</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Likelihood</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Mitigation</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Owner</th>
+                              <th className="px-2 py-2 text-right font-semibold text-gray-300 border-b border-[#1e3a5f] sr-only">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
                             {riskDraft.riskRows.map((row, idx) => (
-                              <tr key={idx} className="bg-white">
+                              <tr key={idx} className="bg-[#152238]">
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <input
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs"
                                     placeholder="Risk description"
                                     value={row.risk}
                                     onChange={(e) =>
@@ -2113,7 +2095,7 @@ export const PhaseDetailPage: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <select
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs bg-white"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs bg-[#152238]"
                                     value={row.impact}
                                     onChange={(e) =>
                                       setRiskDraft((prev) => {
@@ -2130,7 +2112,7 @@ export const PhaseDetailPage: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <select
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs bg-white"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs bg-[#152238]"
                                     value={row.likelihood}
                                     onChange={(e) =>
                                       setRiskDraft((prev) => {
@@ -2147,7 +2129,7 @@ export const PhaseDetailPage: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <textarea
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs min-h-[60px]"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs min-h-[60px]"
                                     placeholder="Mitigation strategy"
                                     value={row.mitigation}
                                     onChange={(e) =>
@@ -2161,7 +2143,7 @@ export const PhaseDetailPage: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <input
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs"
                                     placeholder="Owner"
                                     value={row.owner}
                                     onChange={(e) =>
@@ -2208,15 +2190,15 @@ export const PhaseDetailPage: React.FC = () => {
                       </div>
                     </div>
                   ) : parsedRisks && parsedRisks.riskRows.length ? (
-                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <div className="overflow-x-auto border border-[#1e3a5f] rounded-lg">
                       <table className="w-full text-xs border-collapse">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-[#1e3a5f]/50">
                           <tr>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Risk</th>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Impact</th>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Likelihood</th>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Mitigation</th>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Owner</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Risk</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Impact</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Likelihood</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Mitigation</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Owner</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2235,20 +2217,20 @@ export const PhaseDetailPage: React.FC = () => {
                               if (lower.startsWith('low')) {
                                 return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-medium">🟢 {level}</span>;
                               }
-                              return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 text-[10px] font-medium">{level}</span>;
+                              return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#1e3a5f]/50 text-gray-600 text-[10px] font-medium">{level}</span>;
                             };
 
                             return (
-                              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                                <td className="align-top px-2 py-2 border-b border-gray-100 text-gray-900 font-medium w-48">
+                              <tr key={idx} className={idx % 2 === 0 ? 'bg-[#152238]' : 'bg-[#1e3a5f]/50/60'}>
+                                <td className="align-top px-2 py-2 border-b border-gray-100 text-white font-medium w-48">
                                   {row.risk}
                                 </td>
                                 <td className="align-top px-2 py-2 border-b border-gray-100">{chip(row.impact)}</td>
                                 <td className="align-top px-2 py-2 border-b border-gray-100">{chip(row.likelihood)}</td>
-                                <td className="align-top px-2 py-2 border-b border-gray-100 text-gray-700 max-w-xs">
+                                <td className="align-top px-2 py-2 border-b border-gray-100 text-gray-300 max-w-xs">
                                   <p className="whitespace-normal break-words">{row.mitigation}</p>
                                 </td>
-                                <td className="align-top px-2 py-2 border-b border-gray-100 text-gray-700 w-32">{row.owner}</td>
+                                <td className="align-top px-2 py-2 border-b border-gray-100 text-gray-300 w-32">{row.owner}</td>
                               </tr>
                             );
                           })}
@@ -2275,22 +2257,22 @@ export const PhaseDetailPage: React.FC = () => {
                 <CardContent>
                   {isEditingRisks ? (
                     <div className="space-y-3">
-                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <div className="overflow-x-auto border border-[#1e3a5f] rounded-lg">
                         <table className="w-full text-xs border-collapse">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-[#1e3a5f]/50">
                             <tr>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Aspect</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Before</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">After</th>
-                              <th className="px-2 py-2 text-right font-semibold text-gray-700 border-b border-gray-200 sr-only">Actions</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Aspect</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Before</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">After</th>
+                              <th className="px-2 py-2 text-right font-semibold text-gray-300 border-b border-[#1e3a5f] sr-only">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
                             {riskDraft.beforeAfter.map((row, idx) => (
-                              <tr key={idx} className="bg-white">
+                              <tr key={idx} className="bg-[#152238]">
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <input
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs"
                                     placeholder="Aspect"
                                     value={row.aspect}
                                     onChange={(e) =>
@@ -2304,7 +2286,7 @@ export const PhaseDetailPage: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <textarea
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs min-h-[50px]"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs min-h-[50px]"
                                     placeholder="Before mitigation"
                                     value={row.before}
                                     onChange={(e) =>
@@ -2318,7 +2300,7 @@ export const PhaseDetailPage: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-2 border-b border-gray-100">
                                   <textarea
-                                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs min-h-[50px]"
+                                    className="w-full border border-[#1e3a5f] rounded px-2 py-1 text-xs min-h-[50px]"
                                     placeholder="After mitigation"
                                     value={row.after}
                                     onChange={(e) =>
@@ -2362,21 +2344,21 @@ export const PhaseDetailPage: React.FC = () => {
                       </Button>
                     </div>
                   ) : parsedRisks && parsedRisks.beforeAfter.length ? (
-                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <div className="overflow-x-auto border border-[#1e3a5f] rounded-lg">
                       <table className="w-full text-xs border-collapse">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-[#1e3a5f]/50">
                           <tr>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Aspect</th>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">Before</th>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">After</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Aspect</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">Before</th>
+                            <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[#1e3a5f]">After</th>
                           </tr>
                         </thead>
                         <tbody>
                           {parsedRisks.beforeAfter.map((row, idx) => (
-                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                              <td className="px-2 py-2 border-b border-gray-100 text-gray-900 font-medium">{row.aspect}</td>
-                              <td className="px-2 py-2 border-b border-gray-100 text-gray-700">{row.before}</td>
-                              <td className="px-2 py-2 border-b border-gray-100 text-gray-700">{row.after}</td>
+                            <tr key={idx} className={idx % 2 === 0 ? 'bg-[#152238]' : 'bg-[#1e3a5f]/50/60'}>
+                              <td className="px-2 py-2 border-b border-gray-100 text-white font-medium">{row.aspect}</td>
+                              <td className="px-2 py-2 border-b border-gray-100 text-gray-300">{row.before}</td>
+                              <td className="px-2 py-2 border-b border-gray-100 text-gray-300">{row.after}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2405,7 +2387,7 @@ export const PhaseDetailPage: React.FC = () => {
                       {riskDraft.actions.map((action, idx) => (
                         <div key={idx} className="flex items-start gap-2">
                           <textarea
-                            className="flex-1 min-h-[45px] border border-gray-200 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-200"
+                            className="flex-1 min-h-[45px] border border-[#1e3a5f] rounded px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-200"
                             placeholder="Describe the recommended action..."
                             value={action}
                             onChange={(e) =>
@@ -2443,7 +2425,7 @@ export const PhaseDetailPage: React.FC = () => {
                       </Button>
                     </div>
                   ) : parsedRisks && parsedRisks.actions.length ? (
-                    <ul className="space-y-1 text-xs text-gray-700">
+                    <ul className="space-y-1 text-xs text-gray-300">
                       {parsedRisks.actions.map((action, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <input type="checkbox" className="mt-[2px] h-3 w-3 rounded border-gray-300" />
@@ -2506,7 +2488,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <ListChecks className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
+                      <p className="text-2xl font-bold text-white">{tasks.length}</p>
                       <p className="text-xs text-gray-500">Total Tasks</p>
                     </div>
                   </div>
@@ -2519,7 +2501,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">{completedCount}</p>
+                      <p className="text-2xl font-bold text-white">{completedCount}</p>
                       <p className="text-xs text-gray-500">Completed</p>
                     </div>
                   </div>
@@ -2532,7 +2514,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <Clock className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">{totalHours}h</p>
+                      <p className="text-2xl font-bold text-white">{totalHours}h</p>
                       <p className="text-xs text-gray-500">Est. Hours</p>
                     </div>
                   </div>
@@ -2545,7 +2527,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <TrendingUp className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">{progressPct}%</p>
+                      <p className="text-2xl font-bold text-white">{progressPct}%</p>
                       <p className="text-xs text-gray-500">Progress</p>
                     </div>
                   </div>
@@ -2567,13 +2549,13 @@ export const PhaseDetailPage: React.FC = () => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <input
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                      className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                       placeholder="Task title..."
                       value={newTask.title}
                       onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                     />
                     <textarea
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
+                      className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
                       placeholder="Description..."
                       value={newTask.description}
                       onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
@@ -2584,7 +2566,7 @@ export const PhaseDetailPage: React.FC = () => {
                         <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
                         <input
                           type="date"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
+                          className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
                           value={newTask.start_date}
                           onChange={(e) => setNewTask({ ...newTask, start_date: e.target.value })}
                         />
@@ -2593,7 +2575,7 @@ export const PhaseDetailPage: React.FC = () => {
                         <label className="text-xs text-gray-500 mb-1 block">Due Date</label>
                         <input
                           type="date"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
+                          className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
                           value={newTask.due_date}
                           onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
                           min={newTask.start_date || undefined}
@@ -2602,7 +2584,7 @@ export const PhaseDetailPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <select
-                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                        className="border border-[#1e3a5f] rounded-lg px-2 py-1.5 text-sm"
                         value={newTask.priority}
                         onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
                       >
@@ -2611,7 +2593,7 @@ export const PhaseDetailPage: React.FC = () => {
                         <option value="high">🔴 High</option>
                       </select>
                       <select
-                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                        className="border border-[#1e3a5f] rounded-lg px-2 py-1.5 text-sm"
                         value={newTask.status}
                         onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
                       >
@@ -2623,7 +2605,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Dependencies (task titles or IDs, comma separated)</label>
                       <input
-                        className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                        className="w-full border border-[#1e3a5f] rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                         placeholder="e.g. Design UI, Implement API"
                         value={newTask.dependencies}
                         onChange={(e) => setNewTask({ ...newTask, dependencies: e.target.value })}
@@ -2717,7 +2699,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm">Task List</CardTitle>
                       <select
-                        className="text-xs border border-gray-200 rounded px-2 py-1"
+                        className="text-xs border border-[#1e3a5f] rounded px-2 py-1"
                         value={taskFilter}
                         onChange={(e) => setTaskFilter(e.target.value as any)}
                       >
@@ -2742,7 +2724,7 @@ export const PhaseDetailPage: React.FC = () => {
                       return (
                         <div
                           key={task.task_id}
-                          className={`p-3 rounded-lg border-l-4 ${priorityColors[task.priority] || 'border-l-gray-300'} bg-white border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${done ? 'opacity-60' : ''}`}
+                          className={`p-3 rounded-lg border-l-4 ${priorityColors[task.priority] || 'border-l-gray-300'} bg-[#152238] border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${done ? 'opacity-60' : ''}`}
                           onClick={() => setSelectedTask(task)}
                         >
                           <div className="flex items-start gap-2">
@@ -2753,7 +2735,7 @@ export const PhaseDetailPage: React.FC = () => {
                               className="mt-1 rounded"
                             />
                             <div className="flex-1 min-w-0">
-                              <p className={`font-medium text-sm ${done ? 'line-through text-gray-400' : 'text-gray-900'}`}>{task.title}</p>
+                              <p className={`font-medium text-sm ${done ? 'line-through text-gray-400' : 'text-white'}`}>{task.title}</p>
                               <p className="text-xs text-gray-500 truncate">{task.description}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 {task.due_date && (
@@ -2789,11 +2771,11 @@ export const PhaseDetailPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                          <button onClick={() => setGanttViewMode('chart')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'chart' ? 'bg-white shadow' : ''}`}>Chart</button>
-                          <button onClick={() => setGanttViewMode('list')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'list' ? 'bg-white shadow' : ''}`}>List</button>
-                          <button onClick={() => setGanttViewMode('board')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'board' ? 'bg-white shadow' : ''}`}>Board</button>
+                          <button onClick={() => setGanttViewMode('chart')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'chart' ? 'bg-[#152238] shadow' : ''}`}>Chart</button>
+                          <button onClick={() => setGanttViewMode('list')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'list' ? 'bg-[#152238] shadow' : ''}`}>List</button>
+                          <button onClick={() => setGanttViewMode('board')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'board' ? 'bg-[#152238] shadow' : ''}`}>Board</button>
                         </div>
-                        <select className="text-xs border border-gray-200 rounded-lg px-2 py-1" value={ganttScale} onChange={(e) => setGanttScale(e.target.value as any)}>
+                        <select className="text-xs border border-[#1e3a5f] rounded-lg px-2 py-1" value={ganttScale} onChange={(e) => setGanttScale(e.target.value as any)}>
                           <option value="auto">Auto</option>
                           <option value="2w">2 Weeks</option>
                           <option value="1m">1 Month</option>
@@ -2810,10 +2792,10 @@ export const PhaseDetailPage: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     {ganttViewMode === 'chart' && (
-                      <div className="relative border border-gray-200 rounded-xl bg-gradient-to-b from-gray-50 to-white p-4 overflow-x-auto" style={{ minHeight: Math.max(300, ganttData.height), transform: `scale(${ganttZoom / 100})`, transformOrigin: 'top left' }}>
+                      <div className="relative border border-[#1e3a5f] rounded-xl bg-gradient-to-b from-gray-50 to-white p-4 overflow-x-auto" style={{ minHeight: Math.max(300, ganttData.height), transform: `scale(${ganttZoom / 100})`, transformOrigin: 'top left' }}>
                         <div className="min-w-[800px]">
                           {/* Timeline Header */}
-                          <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-2 border-b border-gray-200">
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-2 border-b border-[#1e3a5f]">
                             {Array.from({ length: 7 }).map((_, idx) => {
                               const date = new Date(ganttData.start.getTime() + ((ganttData.end.getTime() - ganttData.start.getTime()) * idx) / 6);
                               return <span key={idx} className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>;
@@ -2826,7 +2808,7 @@ export const PhaseDetailPage: React.FC = () => {
                               return (
                                 <div key={bar.id} className="flex items-center gap-3">
                                   <div className="w-32 flex-shrink-0">
-                                    <p className="text-xs font-medium text-gray-700 truncate">{bar.title}</p>
+                                    <p className="text-xs font-medium text-gray-300 truncate">{bar.title}</p>
                                     <p className="text-[10px] text-gray-400">{task?.estimate_hours || 0}h</p>
                                   </div>
                                   <div className="flex-1 relative h-8 bg-gray-100 rounded-lg overflow-hidden">
@@ -2862,11 +2844,11 @@ export const PhaseDetailPage: React.FC = () => {
                     {ganttViewMode === 'board' && (
                       <div className="grid grid-cols-3 gap-4">
                         {['planned', 'in_progress', 'completed'].map((status) => (
-                          <div key={status} className="bg-gray-50 rounded-xl p-3">
-                            <h4 className="font-medium text-sm text-gray-700 mb-3 capitalize">{status.replace('_', ' ')}</h4>
+                          <div key={status} className="bg-[#1e3a5f]/50 rounded-xl p-3">
+                            <h4 className="font-medium text-sm text-gray-300 mb-3 capitalize">{status.replace('_', ' ')}</h4>
                             <div className="space-y-2">
                               {tasks.filter(t => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === status).map(task => (
-                                <div key={task.task_id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                <div key={task.task_id} className="bg-[#152238] p-3 rounded-lg border border-[#1e3a5f] shadow-sm">
                                   <p className="text-sm font-medium">{task.title}</p>
                                   <p className="text-xs text-gray-500 truncate">{task.description}</p>
                                 </div>
@@ -2879,7 +2861,7 @@ export const PhaseDetailPage: React.FC = () => {
                     {ganttViewMode === 'list' && (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-[#1e3a5f]/50">
                             <tr>
                               <th className="text-left p-2 font-medium text-gray-600">Task</th>
                               <th className="text-left p-2 font-medium text-gray-600">Status</th>
@@ -2891,7 +2873,7 @@ export const PhaseDetailPage: React.FC = () => {
                           </thead>
                           <tbody>
                             {tasks.map(task => (
-                              <tr key={task.task_id} className="border-b border-gray-100 hover:bg-gray-50">
+                              <tr key={task.task_id} className="border-b border-gray-100 hover:bg-[#1e3a5f]/50">
                                 <td className="p-2">{task.title}</td>
                                 <td className="p-2"><Badge variant={task.status === 'completed' ? 'success' : task.status === 'in_progress' ? 'warning' : 'secondary'}>{task.status}</Badge></td>
                                 <td className="p-2 capitalize">{task.priority}</td>
@@ -2921,7 +2903,7 @@ export const PhaseDetailPage: React.FC = () => {
                         { label: 'Do First', color: 'bg-red-50 border-red-200', tasks: matrixBuckets.urgentImportant, icon: '🔥' },
                         { label: 'Schedule', color: 'bg-blue-50 border-blue-200', tasks: matrixBuckets.notUrgentImportant, icon: '📅' },
                         { label: 'Delegate', color: 'bg-amber-50 border-amber-200', tasks: matrixBuckets.urgentNotImportant, icon: '👥' },
-                        { label: 'Eliminate', color: 'bg-gray-50 border-gray-200', tasks: matrixBuckets.notUrgentNotImportant, icon: '🗑️' },
+                        { label: 'Eliminate', color: 'bg-[#1e3a5f]/50 border-[#1e3a5f]', tasks: matrixBuckets.notUrgentNotImportant, icon: '🗑️' },
                       ].map(({ label, color, tasks: bucketTasks, icon }) => (
                         <div key={label} className={`${color} border rounded-xl p-3`}>
                           <p className="font-medium text-sm mb-2">{icon} {label}</p>
@@ -2944,7 +2926,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <span className="font-medium text-sm text-purple-900">AI Quick Actions</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" className="bg-white" onClick={() => {
+                      <Button size="sm" variant="outline" className="bg-[#152238]" onClick={() => {
                         const updated = tasks.map((t, idx) => {
                           const start = t.start_date ? new Date(t.start_date) : new Date(Date.now() + idx * 86400000);
                           const end = t.due_date ? new Date(t.due_date) : new Date(start.getTime() + 86400000 * 2);
@@ -2954,7 +2936,7 @@ export const PhaseDetailPage: React.FC = () => {
                       }}>
                         <Calendar className="h-3 w-3 mr-1" /> Auto-fill Dates
                       </Button>
-                      <Button size="sm" variant="outline" className="bg-white" onClick={() => {
+                      <Button size="sm" variant="outline" className="bg-[#152238]" onClick={() => {
                         const sorted = [...tasks].sort((a, b) => {
                           const order = { high: 0, medium: 1, low: 2 };
                           return (order[a.priority as keyof typeof order] || 2) - (order[b.priority as keyof typeof order] || 2);
@@ -2963,7 +2945,7 @@ export const PhaseDetailPage: React.FC = () => {
                       }}>
                         <TrendingUp className="h-3 w-3 mr-1" /> Sort by Priority
                       </Button>
-                      <Button size="sm" variant="outline" className="bg-white" onClick={() => {
+                      <Button size="sm" variant="outline" className="bg-[#152238]" onClick={() => {
                         const deduped: Record<string, Task> = {};
                         tasks.forEach((t) => { deduped[t.task_id] = t; });
                         setTasks(Object.values(deduped));
@@ -2988,7 +2970,7 @@ export const PhaseDetailPage: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <textarea
-                  className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent min-h-[90px] bg-white"
+                  className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent min-h-[90px] bg-[#152238]"
                   placeholder="E.g., “Summarize task dependencies”, “Highlight schedule risks”, “Draft QA tasks for sprint 2”"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -3013,9 +2995,9 @@ export const PhaseDetailPage: React.FC = () => {
                     <Download className="mr-2 h-4 w-4" /> Export
                   </Button>
                 </div>
-                <div className="border border-purple-100 rounded-xl bg-white/80 p-4 min-h-[160px]">
+                <div className="border border-purple-100 rounded-xl bg-[#152238]/80 p-4 min-h-[160px]">
                   {phaseMarkdown ? (
-                    <div className="prose prose-sm max-w-none text-gray-700">
+                    <div className="prose prose-sm max-w-none text-gray-300">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
                       <RawMarkdownDisclosure />
                     </div>
@@ -3217,7 +3199,7 @@ export const PhaseDetailPage: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-1">
-                <div className="flex flex-col gap-2 text-xs text-gray-700">
+                <div className="flex flex-col gap-2 text-xs text-gray-300">
                   <div className="flex items-center justify-between">
                     <span>Team size multiplier</span>
                     <span className="font-mono text-emerald-700">{teamSizeMultiplier.toFixed(2)}×</span>
@@ -3248,7 +3230,7 @@ export const PhaseDetailPage: React.FC = () => {
                   Add specific costs and expected benefits per item (e.g. licenses, hires, marketing), in USD or JOD.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 space-y-4 text-xs text-gray-700">
+              <CardContent className="pt-0 space-y-4 text-xs text-gray-300">
                 <div className="grid md:grid-cols-4 gap-3 items-end">
                   <div className="md:col-span-2">
                     <label className="block text-[11px] text-gray-500 mb-1">Description</label>
@@ -3331,11 +3313,11 @@ export const PhaseDetailPage: React.FC = () => {
                       <span className="font-mono">{isFinite(customRoi) ? `${customRoi.toFixed(0)}%` : 'N/A'}</span>
                     </div>
 
-                    <div className="border-t border-gray-200 pt-2 space-y-1 max-h-48 overflow-y-auto">
+                    <div className="border-t border-[#1e3a5f] pt-2 space-y-1 max-h-48 overflow-y-auto">
                       {customCostItems.map((item) => {
                         const itemRoi = item.cost > 0 ? ((item.benefit - item.cost) / item.cost) * 100 : 0;
                         return (
-                          <div key={item.id} className="flex items-center justify-between text-[11px] bg-gray-50 rounded-lg px-2 py-1.5">
+                          <div key={item.id} className="flex items-center justify-between text-[11px] bg-[#1e3a5f]/50 rounded-lg px-2 py-1.5">
                             <div className="min-w-0">
                               <p className="font-medium text-gray-800 truncate">{item.description}</p>
                               <p className="text-[10px] text-gray-500">
@@ -3371,7 +3353,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <DollarSign className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">${effectiveCostForRoi.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-white">${effectiveCostForRoi.toLocaleString()}</p>
                       <p className="text-xs text-gray-500">Total Estimated Cost</p>
                     </div>
                   </div>
@@ -3384,7 +3366,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <Clock className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">{totalHours}h</p>
+                      <p className="text-2xl font-bold text-white">{totalHours}h</p>
                       <p className="text-xs text-gray-500">Total Hours</p>
                     </div>
                   </div>
@@ -3397,7 +3379,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <Target className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">${effectiveBenefit.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-white">${effectiveBenefit.toLocaleString()}</p>
                       <p className="text-xs text-gray-500">Estimated Benefit ({useCustomRoi ? 'custom totals' : '2× assumption'})</p>
                     </div>
                   </div>
@@ -3410,7 +3392,7 @@ export const PhaseDetailPage: React.FC = () => {
                       <TrendingUp className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">{roi.toFixed(0)}%</p>
+                      <p className="text-2xl font-bold text-white">{roi.toFixed(0)}%</p>
                       <p className="text-xs text-gray-500">ROI (Benefit vs Cost)</p>
                     </div>
                   </div>
@@ -3427,7 +3409,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </CardTitle>
                   <CardDescription className="text-sm">Latest AI output for this phase.</CardDescription>
                 </CardHeader>
-                <CardContent className="prose prose-sm max-w-none text-gray-700">
+                <CardContent className="prose prose-sm max-w-none text-gray-300">
                   <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
                   <RawMarkdownDisclosure />
                 </CardContent>
@@ -3448,7 +3430,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-xs text-gray-700">
+                  <div className="space-y-3 text-xs text-gray-300">
                     <div className="flex items-center justify-between">
                       <span className="font-medium">Total Cost</span>
                       <span className="font-mono">${effectiveCostForRoi.toLocaleString()}</span>
@@ -3708,7 +3690,7 @@ export const PhaseDetailPage: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <textarea
-                  className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-h-[100px] bg-white"
+                  className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-h-[100px] bg-[#152238]"
                   placeholder="Ask AI to analyze your project costs, suggest budget optimizations, or generate a cost breakdown report..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -3722,7 +3704,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </Button>
                 </div>
                 {phaseMarkdown && (
-                  <div className="border border-emerald-200 rounded-lg bg-white p-4 mt-4">
+                  <div className="border border-emerald-200 rounded-lg bg-[#152238] p-4 mt-4">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
                       <RawMarkdownDisclosure />
@@ -3784,7 +3766,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <FileText className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.length}</p>
+                    <p className="text-2xl font-bold text-white">{requirements.length}</p>
                     <p className="text-xs text-gray-500">Requirements</p>
                   </div>
                 </div>
@@ -3797,7 +3779,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.filter(r => r.status === 'approved').length}</p>
+                    <p className="text-2xl font-bold text-white">{requirements.filter(r => r.status === 'approved').length}</p>
                     <p className="text-xs text-gray-500">Validated</p>
                   </div>
                 </div>
@@ -3810,7 +3792,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <AlertTriangle className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.filter(r => r.status === 'pending').length}</p>
+                    <p className="text-2xl font-bold text-white">{requirements.filter(r => r.status === 'pending').length}</p>
                     <p className="text-xs text-gray-500">Pending Review</p>
                   </div>
                 </div>
@@ -3823,7 +3805,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <Target className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{requirements.length ? Math.round((requirements.filter(r => r.status === 'approved').length / requirements.length) * 100) : 0}%</p>
+                    <p className="text-2xl font-bold text-white">{requirements.length ? Math.round((requirements.filter(r => r.status === 'approved').length / requirements.length) * 100) : 0}%</p>
                     <p className="text-xs text-gray-500">Coverage</p>
                   </div>
                 </div>
@@ -3846,7 +3828,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div key={req.requirement_id} className={`p-4 rounded-lg border-l-4 ${req.status === 'approved' ? 'border-l-emerald-500 bg-emerald-50' : req.status === 'rejected' ? 'border-l-red-500 bg-red-50' : 'border-l-amber-500 bg-amber-50'}`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{req.title}</p>
+                        <p className="font-medium text-white">{req.title}</p>
                         <p className="text-sm text-gray-600 mt-1">{req.description}</p>
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant={req.priority === 'high' ? 'destructive' : req.priority === 'medium' ? 'warning' : 'secondary'}>{req.priority}</Badge>
@@ -3877,13 +3859,13 @@ export const PhaseDetailPage: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {validationTechniques.map((technique) => (
-                  <div key={technique.id} className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white">
+                  <div key={technique.id} className="p-4 rounded-xl border border-[#1e3a5f] hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-[#152238]">
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-blue-100 rounded-lg">
                         <technique.icon className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{technique.name}</p>
+                        <p className="font-medium text-white">{technique.name}</p>
                         <p className="text-sm text-gray-500">{technique.description}</p>
                       </div>
                     </div>
@@ -3913,10 +3895,10 @@ export const PhaseDetailPage: React.FC = () => {
                   {requirements.map((req) => (
                     <div
                       key={req.requirement_id}
-                      className="border rounded-lg px-3 py-2 flex items-center justify-between gap-3 bg-white"
+                      className="border rounded-lg px-3 py-2 flex items-center justify-between gap-3 bg-[#152238]"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{req.title}</p>
+                        <p className="text-sm font-medium text-white truncate">{req.title}</p>
                         <p className="text-xs text-gray-500 line-clamp-2">{req.description}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
@@ -3978,11 +3960,11 @@ export const PhaseDetailPage: React.FC = () => {
           )}
 
           {latestArtifact && (
-            <Card className="border border-dashed border-gray-200">
+            <Card className="border border-dashed border-[#1e3a5f]">
               <CardContent className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase text-gray-500">Last generated</p>
-                  <p className="text-sm font-semibold text-gray-900">{latestArtifact.title}</p>
+                  <p className="text-sm font-semibold text-white">{latestArtifact.title}</p>
                   <p className="text-xs text-gray-500">
                     {latestArtifact.metadata?.generated_at
                       ? `Updated ${new Date(latestArtifact.metadata.generated_at).toLocaleString()}`
@@ -3991,13 +3973,13 @@ export const PhaseDetailPage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Phase</p>
-                  <p className="text-sm font-semibold text-gray-900">Design & Architecture</p>
+                  <p className="text-sm font-semibold text-white">Design & Architecture</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          <Card className="bg-gray-50 border border-gray-200">
+          <Card className="bg-[#1e3a5f]/50 border border-[#1e3a5f]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-gray-600" />
@@ -4008,7 +3990,7 @@ export const PhaseDetailPage: React.FC = () => {
             <CardContent className="space-y-3">
               <textarea
                 ref={unifiedPromptRef}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                 rows={3}
                 placeholder="E.g., 'Generate the validation checklist with stakeholder signoff steps'"
               />
@@ -4048,14 +4030,14 @@ export const PhaseDetailPage: React.FC = () => {
                 {diagramTypes.map((diagram) => {
                   const artifact = artifacts.find(a => a.type?.toLowerCase().includes(diagram.id));
                   return (
-                    <div key={diagram.id} className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${artifact ? 'border-violet-300 bg-violet-50' : 'border-dashed border-gray-300 bg-gray-50 hover:border-violet-300'}`} onClick={() => navigate(`/projects/${id}/uml/${diagram.id}`)}>
+                    <div key={diagram.id} className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${artifact ? 'border-violet-300 bg-violet-50' : 'border-dashed border-gray-300 bg-[#1e3a5f]/50 hover:border-violet-300'}`} onClick={() => navigate(`/projects/${id}/uml/${diagram.id}`)}>
                       <div className="flex items-center gap-3 mb-3">
                         <div className={`p-2 rounded-lg ${artifact ? 'bg-violet-200' : 'bg-gray-200'}`}>
                           <diagram.icon className={`h-5 w-5 ${artifact ? 'text-violet-600' : 'text-gray-500'}`} />
                         </div>
                         {artifact && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                       </div>
-                      <p className="font-medium text-gray-900">{diagram.name}</p>
+                      <p className="font-medium text-white">{diagram.name}</p>
                       <p className="text-xs text-gray-500 mt-1">{diagram.description}</p>
                       {artifact ? (
                         <p className="text-xs text-violet-600 mt-2">✓ Created</p>
@@ -4080,7 +4062,7 @@ export const PhaseDetailPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <textarea
-                className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:border-transparent min-h-[100px] bg-white"
+                className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:border-transparent min-h-[100px] bg-[#152238]"
                 placeholder="Ask AI about architecture patterns, technology choices, or design trade-offs..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -4094,7 +4076,7 @@ export const PhaseDetailPage: React.FC = () => {
                 </Button>
               </div>
               {phaseMarkdown && (
-                <div className="border border-violet-200 rounded-lg bg-white p-4 mt-4">
+                <div className="border border-violet-200 rounded-lg bg-[#152238] p-4 mt-4">
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
                     <RawMarkdownDisclosure />
@@ -4161,7 +4143,7 @@ export const PhaseDetailPage: React.FC = () => {
                 </p>
               </div>
               <textarea
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent min-h-[150px] resize-none"
+                className="w-full border border-[#1e3a5f] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent min-h-[150px] resize-none"
                 placeholder={`What would you like to accomplish in the ${phaseConfig.title} phase?`}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -4176,9 +4158,9 @@ export const PhaseDetailPage: React.FC = () => {
               </div>
 
               {/* Document Preview */}
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">Phase Document</p>
-                <div className="border border-gray-200 rounded-lg bg-white p-4 min-h-[300px] max-h-[500px] overflow-y-auto">
+              <div className="border-t border-[#1e3a5f] pt-4 mt-4">
+                <p className="text-sm font-medium text-gray-300 mb-3">Phase Document</p>
+                <div className="border border-[#1e3a5f] rounded-lg bg-[#152238] p-4 min-h-[300px] max-h-[500px] overflow-y-auto">
                   {phaseMarkdown ? (
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>

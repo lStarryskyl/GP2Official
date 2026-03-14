@@ -107,11 +107,12 @@ class AIModelPipeline:
             )
         
         # Add OpenAI GPT if configured with a real API key
-        if settings.llm_api_key:  # Only add if we have a valid key (not placeholder)
+        openai_key = settings.openai_api_key or settings.llm_api_key
+        if openai_key:  # Only add if we have a valid key
             models["gpt-4"] = ModelConfig(
                 provider=ModelProvider.GPT,
                 model_name=settings.llm_model_name or "gpt-4",
-                api_key=settings.llm_api_key,
+                api_key=openai_key,
                 cost_per_token=0.00003,
                 quality_score=0.95,
                 specialties=[

@@ -143,7 +143,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
               className={`p-4 rounded-xl border-2 transition-all text-left ${
                 isSelected
                   ? 'border-red-400 bg-red-50 shadow-lg scale-105'
-                  : 'border-[#1e3a5f] hover:border-gray-300 hover:bg-gray-50'
+                  : 'border-[#1e4a28] hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
               <div className={`p-2 rounded-lg ${colors.bg} w-fit mb-2`}>
@@ -419,7 +419,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
                       </thead>
                       <tbody>
                         {group.endpoints.map((endpoint, idx) => (
-                          <tr key={idx} className="border-t border-[#1e3a5f] hover:bg-white">
+                          <tr key={idx} className="border-t border-[#1e4a28] hover:bg-white">
                             <td className="px-4 py-2">
                               <span className={`px-2 py-1 rounded text-xs font-medium border ${methodColors[endpoint.method]}`}>
                                 {endpoint.method}

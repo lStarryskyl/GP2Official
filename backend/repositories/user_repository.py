@@ -5,20 +5,18 @@ from datetime import datetime
 import bcrypt
 import uuid
 
-from config import settings
 from database import get_db
 from models.user import User, UserCreate, resolve_role
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseUserRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseUserRepository()
+    except ImportError:
+        pass
     return _MongoUserRepository()
 
 
@@ -59,12 +57,12 @@ class UserRepository:
 
 
 class _SupabaseUserRepository:
-    """Supabase PostgreSQL implementation."""
-    
+    """PostgreSQL implementation."""
+
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized. Check SUPABASE_URL and USE_SUPABASE environment variables.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
     
     async def create(self, user_data: UserCreate) -> User:
@@ -84,10 +82,10 @@ class _SupabaseUserRepository:
                 await conn.execute('''
                     INSERT INTO users (id, email, full_name, organization, hashed_password, role, created_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7)
-                ''', user_id, user_data.email.lower(), user_data.full_name, 
+                ''', user_id, user_data.email.lower(), user_data.full_name,
                     user_data.organization or "Private Workspace", hashed_password, role_key, now)
         except Exception as e:
-            print(f"[SUPABASE ERROR] Failed to create user: {e}")
+            print(f"[DB ERROR] Failed to create user: {e}")
             raise
         
         return User(

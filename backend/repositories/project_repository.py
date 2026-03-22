@@ -6,20 +6,16 @@ from typing import List, Optional, Dict, Any
 from database import get_db
 from models.project import Project, ProjectCreate, ProjectUpdate
 from datetime import datetime
-from config import settings
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        # Check if Supabase pool is actually initialized
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseProjectRepository()
-        except ImportError:
-            pass
-        # Fall through to MongoDB if Supabase pool not available
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseProjectRepository()
+    except ImportError:
+        pass
     return _MongoProjectRepository()
 
 
@@ -59,12 +55,12 @@ class ProjectRepository:
 
 
 class _SupabaseProjectRepository:
-    """Supabase PostgreSQL implementation."""
-    
+    """PostgreSQL implementation."""
+
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
     
     async def create(self, project_data: ProjectCreate, user_id: str, organization: str, owner_member: Optional[Dict[str, Any]] = None) -> Project:

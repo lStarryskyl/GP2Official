@@ -5,58 +5,61 @@
 @tailwind utilities;
 
 /* ========================================
-   ACORN - Corporate Professional Design
-   Navy & Gold Premium Theme
+   ACORN - Living Tree / Deep Forest Theme
    ======================================== */
 
 :root {
-  /* Navy Blue Palette */
-  --navy-950: #0a0f1a;
-  --navy-900: #0d1525;
-  --navy-850: #111b2e;
-  --navy-800: #152238;
-  --navy-700: #1e3a5f;
-  --navy-600: #2563eb;
-  --navy-500: #3b82f6;
-  --navy-400: #60a5fa;
-  --navy-300: #93c5fd;
-  
-  /* Gold Accent Palette */
-  --gold-500: #d4af37;
-  --gold-400: #e6c358;
-  --gold-300: #f0d77a;
-  --gold-200: #f7e8a8;
-  --gold-600: #b8962e;
-  --gold-700: #9a7b24;
-  
-  /* Neutral Grays */
-  --gray-950: #030712;
-  --gray-900: #111827;
-  --gray-800: #1f2937;
-  --gray-700: #374151;
-  --gray-600: #4b5563;
-  --gray-500: #6b7280;
-  --gray-400: #9ca3af;
-  --gray-300: #d1d5db;
-  --gray-200: #e5e7eb;
-  --gray-100: #f3f4f6;
-  --gray-50: #f9fafb;
-  
+  /* Forest Green Palette */
+  --forest-950: #040a06;
+  --forest-900: #0a150e;
+  --forest-850: #0f1f15;
+  --forest-800: #142b1a;
+  --forest-750: #1a3520;
+  --forest-700: #1e4a28;
+  --forest-600: #2d6a3f;
+  --forest-500: #3d8a55;
+  --forest-400: #4ade80;
+  --forest-300: #86efac;
+  --forest-200: #bbf7d0;
+
+  /* Bark Brown */
+  --bark-900: #1c0f09;
+  --bark-800: #2c1810;
+  --bark-700: #3d2b1f;
+  --bark-600: #5c4033;
+
+  /* Sage / Muted Greens */
+  --sage-900: #1a2b1e;
+  --sage-800: #2d4a35;
+  --sage-700: #4a7a56;
+  --sage-600: #6b9e7a;
+  --sage-500: #8fbc8f;
+  --sage-400: #a8d5a8;
+
+  /* Amber / Warm highlights */
+  --amber-400: #fbbf24;
+  --amber-300: #fcd34d;
+  --amber-500: #d97706;
+
+  /* Text */
+  --text-primary: #e8f5e0;
+  --text-muted: #6b9e7a;
+
   /* Status Colors */
-  --success: #10b981;
+  --success: #22c55e;
   --warning: #f59e0b;
   --error: #ef4444;
-  --info: #3b82f6;
-  
+  --info: #4ade80;
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --shadow-gold: 0 4px 20px -4px rgba(212, 175, 55, 0.3);
-  --shadow-gold-lg: 0 8px 30px -4px rgba(212, 175, 55, 0.4);
-  --shadow-navy: 0 4px 20px -4px rgba(30, 58, 95, 0.5);
-  
+  --shadow-forest: 0 4px 20px -4px rgba(74, 222, 128, 0.3);
+  --shadow-forest-lg: 0 8px 30px -4px rgba(74, 222, 128, 0.4);
+  --shadow-amber: 0 4px 20px -4px rgba(251, 191, 36, 0.3);
+
   /* Animation Timing */
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
@@ -81,8 +84,8 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--navy-950);
-  color: var(--gray-100);
+  background: var(--forest-900);
+  color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -96,21 +99,21 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--navy-900);
+  background: var(--forest-850);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--navy-700);
+  background: var(--forest-700);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-500);
+  background: var(--forest-400);
 }
 
 ::selection {
-  background: rgba(212, 175, 55, 0.3);
-  color: white;
+  background: rgba(74, 222, 128, 0.25);
+  color: var(--text-primary);
 }
 
 /* ========================================
@@ -122,22 +125,30 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.025em;
-  color: var(--gray-50);
+  color: var(--text-primary);
 }
 
 code, pre, .mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-.text-gradient-gold {
-  background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 50%, var(--gold-600) 100%);
+.text-gradient-forest {
+  background: linear-gradient(135deg, #4ade80 0%, #86efac 50%, #bbf7d0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.text-gradient-navy {
-  background: linear-gradient(135deg, var(--navy-300) 0%, var(--navy-500) 100%);
+/* Keep old class as alias for backward compat in case it's used elsewhere */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #4ade80 0%, #86efac 50%, #bbf7d0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-sage {
+  background: linear-gradient(135deg, var(--sage-400) 0%, var(--sage-600) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -309,6 +320,16 @@ code, pre, .mono {
   }
 }
 
+@keyframes shimmer-forest {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Keep old name for backward compat */
 @keyframes shimmer-gold {
   0% {
     background-position: -200% center;
@@ -320,10 +341,10 @@ code, pre, .mono {
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
   }
   50% {
-    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6), 0 0 60px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 0 40px rgba(74, 222, 128, 0.6), 0 0 60px rgba(74, 222, 128, 0.3);
   }
 }
 
@@ -363,13 +384,35 @@ code, pre, .mono {
   }
 }
 
-/* Line Draw */
+/* Line Draw - for tree branches */
 @keyframes drawLine {
   from {
     stroke-dashoffset: 1000;
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* Leaf Sway - organic tree animation */
+@keyframes leafSway {
+  0%, 100% {
+    transform: rotate(-3deg) scale(1);
+  }
+  50% {
+    transform: rotate(3deg) scale(1.02);
+  }
+}
+
+/* Branch grow animation */
+@keyframes branchGrow {
+  0% {
+    stroke-dashoffset: 1000;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 }
 
@@ -436,9 +479,9 @@ code, pre, .mono {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.15), transparent);
   background-size: 200% 100%;
-  animation: shimmer-gold 2s infinite;
+  animation: shimmer-forest 2s infinite;
 }
 
 .animate-morph {
@@ -447,6 +490,10 @@ code, pre, .mono {
 
 .animate-rotate-slow {
   animation: rotate-slow 20s linear infinite;
+}
+
+.animate-leaf-sway {
+  animation: leafSway 4s ease-in-out infinite;
 }
 
 /* Stagger Delays */
@@ -468,10 +515,10 @@ code, pre, .mono {
    Component Styles
    ======================================== */
 
-/* Premium Card */
+/* Forest Card */
 .card {
-  background: linear-gradient(145deg, var(--navy-850), var(--navy-900));
-  border: 1px solid var(--navy-800);
+  background: linear-gradient(145deg, var(--forest-800), var(--forest-850));
+  border: 1px solid var(--forest-700);
   border-radius: 16px;
   position: relative;
   overflow: hidden;
@@ -485,15 +532,15 @@ code, pre, .mono {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+  background: linear-gradient(90deg, transparent, var(--forest-400), transparent);
   opacity: 0;
   transition: opacity 0.4s;
 }
 
 .card:hover {
   transform: translateY(-8px);
-  border-color: rgba(212, 175, 55, 0.3);
-  box-shadow: var(--shadow-gold);
+  border-color: rgba(74, 222, 128, 0.3);
+  box-shadow: var(--shadow-forest);
 }
 
 .card:hover::before {
@@ -502,14 +549,14 @@ code, pre, .mono {
 
 /* Glass Card */
 .card-glass {
-  background: rgba(13, 21, 37, 0.8);
+  background: rgba(20, 43, 26, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.1);
   border-radius: 16px;
 }
 
-/* Premium Button */
+/* Primary Button - Forest Green */
 .btn-primary {
   position: relative;
   display: inline-flex;
@@ -517,16 +564,16 @@ code, pre, .mono {
   justify-content: center;
   gap: 10px;
   padding: 14px 32px;
-  background: linear-gradient(135deg, var(--gold-500), var(--gold-600));
-  color: var(--navy-950);
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--forest-400), var(--forest-600));
+  color: var(--forest-900);
+  font-weight: 700;
   font-size: 15px;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   overflow: hidden;
   transition: all 0.3s var(--ease-out-expo);
-  box-shadow: var(--shadow-gold);
+  box-shadow: var(--shadow-forest);
 }
 
 .btn-primary::before {
@@ -536,13 +583,13 @@ code, pre, .mono {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
   transition: left 0.5s;
 }
 
 .btn-primary:hover {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: var(--shadow-gold-lg);
+  box-shadow: var(--shadow-forest-lg);
 }
 
 .btn-primary:hover::before {
@@ -553,7 +600,7 @@ code, pre, .mono {
   transform: translateY(-1px) scale(0.99);
 }
 
-/* Secondary Button */
+/* Secondary Button - Bark/Forest Outline */
 .btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -561,19 +608,19 @@ code, pre, .mono {
   gap: 10px;
   padding: 14px 32px;
   background: transparent;
-  color: var(--gray-200);
+  color: var(--text-primary);
   font-weight: 500;
   font-size: 15px;
-  border: 1px solid var(--navy-700);
+  border: 1px solid var(--forest-700);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s var(--ease-out-expo);
 }
 
 .btn-secondary:hover {
-  color: var(--gold-400);
-  border-color: var(--gold-500);
-  background: rgba(212, 175, 55, 0.1);
+  color: var(--forest-400);
+  border-color: var(--forest-400);
+  background: rgba(74, 222, 128, 0.08);
   transform: translateY(-2px);
 }
 
@@ -581,73 +628,67 @@ code, pre, .mono {
 .input {
   width: 100%;
   padding: 14px 18px;
-  background: var(--navy-900);
-  border: 1px solid var(--navy-700);
+  background: var(--forest-850);
+  border: 1px solid var(--forest-700);
   border-radius: 10px;
-  color: var(--gray-100);
+  color: var(--text-primary);
   font-size: 15px;
   transition: all 0.3s var(--ease-smooth);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--gold-500);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+  border-color: var(--forest-400);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
 }
 
 .input::placeholder {
-  color: var(--gray-500);
+  color: var(--sage-600);
 }
 
 /* ========================================
    Global Form Input Contrast Fix
-   Ensures ALL inputs/textareas/selects are readable on dark backgrounds
    ======================================== */
 
-/* Dark-theme form elements (outside light-bg cards) */
 [class*="bg-[#0"] input:not([type="checkbox"]):not([type="radio"]),
 [class*="bg-[#0"] textarea,
 [class*="bg-[#0"] select,
 .card-glass input:not([type="checkbox"]):not([type="radio"]),
 .card-glass textarea,
 .card-glass select,
-[class*="bg-navy"] input,
-[class*="bg-navy"] textarea,
-[class*="bg-slate-9"] input,
-[class*="bg-slate-9"] textarea {
-  color: var(--gray-100) !important;
-  caret-color: var(--gold-400);
+[class*="bg-forest"] input,
+[class*="bg-forest"] textarea {
+  color: var(--text-primary) !important;
+  caret-color: var(--forest-400);
 }
 
-/* Focus states for dark-theme inputs */
 [class*="bg-[#0"] input:focus,
 [class*="bg-[#0"] textarea:focus,
 [class*="bg-[#0"] select:focus,
 .card-glass input:focus,
 .card-glass textarea:focus {
-  border-color: var(--gold-500) !important;
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
+  border-color: var(--forest-400) !important;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15) !important;
   outline: none;
 }
 
-/* Placeholder text in dark theme */
 [class*="bg-[#0"] input::placeholder,
 [class*="bg-[#0"] textarea::placeholder,
 .card-glass input::placeholder,
 .card-glass textarea::placeholder {
-  color: var(--gray-500) !important;
+  color: var(--sage-600) !important;
 }
 
-/* Badge */
+/* Badge - Forest Green Tint */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
   border-radius: 100px;
-  color: var(--gold-400);
+  color: var(--forest-400);
   font-size: 13px;
   font-weight: 600;
 }
@@ -656,18 +697,20 @@ code, pre, .mono {
    Background Effects
    ======================================== */
 
+/* Forest canopy grid pattern */
 .bg-grid {
-  background-image: 
-    linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+  background-image:
+    linear-gradient(rgba(74, 222, 128, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 222, 128, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 
 .bg-dots {
-  background-image: radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(74, 222, 128, 0.12) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
+/* Glow Orb Base */
 .glow-orb {
   position: absolute;
   border-radius: 50%;
@@ -675,18 +718,34 @@ code, pre, .mono {
   pointer-events: none;
 }
 
+/* Forest green glow */
+.glow-orb-forest {
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.15) 0%, transparent 70%);
+}
+
+/* Deep forest / dark green glow (replaces navy) */
+.glow-orb-bark {
+  background: radial-gradient(circle, rgba(61, 43, 31, 0.2) 0%, transparent 70%);
+}
+
+/* Amber accent glow */
+.glow-orb-amber {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.12) 0%, transparent 70%);
+}
+
+/* Legacy aliases */
 .glow-orb-gold {
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.15) 0%, transparent 70%);
 }
 
 .glow-orb-navy {
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(30, 74, 40, 0.15) 0%, transparent 70%);
 }
 
 /* Animated Border */
 .border-animated {
   position: relative;
-  background: var(--navy-900);
+  background: var(--forest-850);
   border-radius: 16px;
 }
 
@@ -694,7 +753,7 @@ code, pre, .mono {
   content: '';
   position: absolute;
   inset: -2px;
-  background: linear-gradient(45deg, var(--gold-500), var(--navy-600), var(--gold-500), var(--navy-600));
+  background: linear-gradient(45deg, var(--forest-400), var(--forest-700), var(--forest-400), var(--amber-400));
   background-size: 300% 300%;
   border-radius: 18px;
   z-index: -1;
@@ -731,17 +790,17 @@ code, pre, .mono {
    ======================================== */
 
 .skeleton {
-  background: linear-gradient(90deg, var(--navy-800), var(--navy-700), var(--navy-800));
+  background: linear-gradient(90deg, var(--forest-800), var(--forest-700), var(--forest-800));
   background-size: 200% 100%;
-  animation: shimmer-gold 1.5s infinite;
+  animation: shimmer-forest 1.5s infinite;
   border-radius: 8px;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--navy-700);
-  border-top-color: var(--gold-500);
+  border: 3px solid var(--forest-700);
+  border-top-color: var(--forest-400);
   border-radius: 50%;
   animation: rotate-slow 1s linear infinite;
 }
@@ -764,7 +823,7 @@ code, pre, .mono {
 }
 
 .hover-glow:hover {
-  box-shadow: 0 0 40px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 40px rgba(74, 222, 128, 0.3);
 }
 
 .hover-scale {
@@ -773,6 +832,25 @@ code, pre, .mono {
 
 .hover-scale:hover {
   transform: scale(1.05);
+}
+
+/* ========================================
+   Tree Visualization Styles
+   ======================================== */
+
+.tree-node {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.tree-node:hover {
+  filter: drop-shadow(0 0 12px rgba(74, 222, 128, 0.5));
+}
+
+.tree-branch {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: branchGrow 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
 /* ========================================
@@ -812,11 +890,11 @@ code, pre, .mono {
   :root {
     font-size: 14px;
   }
-  
+
   .card {
     border-radius: 12px;
   }
-  
+
   .btn-primary,
   .btn-secondary {
     padding: 12px 24px;

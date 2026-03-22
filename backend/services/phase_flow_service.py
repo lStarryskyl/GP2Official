@@ -3,7 +3,7 @@
 from typing import Dict, Tuple, Optional
 import logging
 import time
-import openai
+import google.generativeai as genai
 
 from config import settings
 from repositories.project_repository import ProjectRepository
@@ -13,6 +13,10 @@ from repositories.ai_run_repository import AiRunRepository
 from services.markdown_formatter import MarkdownFormatter
 
 logger = logging.getLogger(__name__)
+
+# Configure Gemini once at module level
+if settings.gemini_api_key:
+    genai.configure(api_key=settings.gemini_api_key)
 
 PHASE_ORDER = [
     "planning",
@@ -45,18 +49,14 @@ class PhaseFlowService:
     """Manage sequential phase generation and storage."""
 
     def __init__(self):
-        self.provider = settings.llm_provider
-        self.api_key = settings.llm_api_key
-        self.model = settings.llm_model_name
+        self.api_key = settings.gemini_api_key
+        self.model_name = settings.gemini_pro_model  # gemini-2.5-pro-latest for phase generation
         self.project_repo = ProjectRepository()
         self.artifact_repo = ArtifactRepository()
         self.ai_run_repo = AiRunRepository()
         self.markdown_formatter = MarkdownFormatter()
-        
-        # Debug service initialization
-        logger.info(f"PhaseFlowService initialized - Provider: {self.provider}, Model: {self.model}")
-        logger.info(f"API key configured: {'Yes' if self.api_key else 'No'}")
-        logger.info(f"API key length: {len(self.api_key) if self.api_key else 0} characters")
+        logger.info(f"PhaseFlowService initialized - Provider: Gemini, Model: {self.model_name}")
+        logger.info(f"Gemini API key configured: {'Yes' if self.api_key else 'No'}")
 
     async def get_status(self, project_id: str, organization: str) -> Dict[str, str]:
         project = await self.project_repo.get_by_id(project_id, organization)
@@ -189,16 +189,10 @@ class PhaseFlowService:
         user_prompt: str,
         user_id: Optional[str] = None,
     ) -> str:
-        llm_requires_key = self.provider not in {"stub", "mock"}
-        
-        # Always use placeholder content if no API key is configured
-        if not self.api_key or self.api_key == "":
-            logger.info(f"No API key configured, using placeholder content for phase {phase}")
-            logger.info(f"API key value: {self.api_key}")
-            placeholder = await self._generate_placeholder_content(phase, user_prompt)
-            logger.info(f"Generated placeholder content length: {len(placeholder)} characters")
-            logger.info(f"Placeholder content preview: {placeholder[:200]}...")
-            return placeholder
+        # Use placeholder content if no Gemini API key is configured
+        if not self.api_key:
+            logger.info(f"No Gemini API key configured, using placeholder content for phase {phase}")
+            return await self._generate_placeholder_content(phase, user_prompt)
             
         system_message = (
             "You are Athena, an expert AI program manager inside the Acorn platform. "
@@ -293,41 +287,31 @@ class PhaseFlowService:
             user_id=user_id,
             job_type="phase",
             phase=phase,
-            provider=self.provider,
-            model=self.model,
+            provider="gemini",
+            model=self.model_name,
             prompt=prompt,
             metadata={"phase_title": PHASE_TITLES.get(phase)},
         )
 
-        if llm_requires_key and not self.api_key:
-            logger.warning("LLM API key missing; generating placeholder content")
-            placeholder = await self._generate_placeholder_content(phase, user_prompt)
-            await self.ai_run_repo.complete_run(
-                run_entry.id,
-                status="completed",
-                response=placeholder,
-                error_message="LLM API key missing - using placeholder content",
-            )
-            return placeholder
-
-        # Use official OpenAI SDK
-        client = openai.AsyncOpenAI(api_key=self.api_key)
-        
+        # Call Gemini API
         started_at = time.perf_counter()
         try:
-            logger.info(f"Calling OpenAI API with model: {self.model}")
-            completion = await client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=4000,
-                temperature=0.7,
+            logger.info(f"Calling Gemini API with model: {self.model_name} for phase: {phase}")
+            model = genai.GenerativeModel(
+                model_name=self.model_name,
+                system_instruction=system_message,
             )
-            response = completion.choices[0].message.content
+            full_prompt = f"{prompt}\n\nProduce a structured Markdown response with clear headings, bullet lists, and actionable items."
+            response_obj = await model.generate_content_async(
+                full_prompt,
+                generation_config=genai.GenerationConfig(
+                    max_output_tokens=4000,
+                    temperature=0.7,
+                )
+            )
+            response = response_obj.text
             duration = int((time.perf_counter() - started_at) * 1000)
-            logger.info(f"OpenAI response received: {len(response)} characters in {duration}ms")
+            logger.info(f"Gemini response received: {len(response)} characters in {duration}ms")
             await self.ai_run_repo.complete_run(
                 run_entry.id,
                 status="completed",
@@ -335,7 +319,7 @@ class PhaseFlowService:
                 duration_ms=duration,
             )
             return response
-        except Exception as exc:  # pragma: no cover
+        except Exception as exc:
             logger.error("Failed to generate phase output: %s", exc)
             duration = int((time.perf_counter() - started_at) * 1000)
             await self.ai_run_repo.complete_run(
@@ -344,7 +328,9 @@ class PhaseFlowService:
                 error_message=str(exc),
                 duration_ms=duration,
             )
-            return f"# {PHASE_TITLES[phase]}\n\nWe encountered an error generating this phase. Please try again later."
+            # Fall back to placeholder content so the UI never breaks
+            logger.info(f"Falling back to placeholder content for phase {phase}")
+            return await self._generate_placeholder_content(phase, user_prompt)
 
     async def _generate_placeholder_content(self, phase: str, user_prompt: str) -> str:
         """Generate useful placeholder content when LLM is not available."""

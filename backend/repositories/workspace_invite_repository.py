@@ -5,20 +5,18 @@ from datetime import datetime
 import secrets
 import uuid
 
-from config import settings
 from database import get_db
 from models.invite import WorkspaceInvite
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseWorkspaceInviteRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseWorkspaceInviteRepository()
+    except ImportError:
+        pass
     return _MongoWorkspaceInviteRepository()
 
 
@@ -52,12 +50,12 @@ class WorkspaceInviteRepository:
 
 
 class _SupabaseWorkspaceInviteRepository:
-    """Supabase PostgreSQL implementation."""
-    
+    """PostgreSQL implementation."""
+
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
 
     async def create_invite(self, organization: str, email: str, role: str, invited_by: str, message: Optional[str] = None) -> WorkspaceInvite:

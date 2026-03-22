@@ -109,6 +109,15 @@ class ApiClient {
     );
   }
 
+  // Generic request helpers (used by components that aren't covered by typed methods)
+  async post(path: string, data?: any): Promise<any> {
+    return this.client.post(path, data);
+  }
+
+  async get(path: string, params?: any): Promise<any> {
+    return this.client.get(path, { params });
+  }
+
   // Health check to warm up server
   async healthCheck(): Promise<boolean> {
     try {

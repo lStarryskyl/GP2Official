@@ -7,26 +7,98 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Navy Blue Palette
-        navy: {
-          950: '#0a0f1a',
-          900: '#0d1525',
-          850: '#111b2e',
-          800: '#152238',
-          700: '#1e3a5f',
-          600: '#2563eb',
-          500: '#3b82f6',
-          400: '#60a5fa',
-          300: '#93c5fd',
+        // Deep Forest / Nature Theme
+        forest: {
+          950: '#040a06',
+          900: '#0a150e',
+          850: '#0f1f15',
+          800: '#142b1a',
+          750: '#1a3520',
+          700: '#1e4a28',
+          600: '#2d6a3f',
+          500: '#3d8a55',
+          400: '#4ade80',
+          300: '#86efac',
+          200: '#bbf7d0',
         },
-        // Gold Accent Palette
-        gold: {
-          700: '#9a7b24',
-          600: '#b8962e',
-          500: '#d4af37',
-          400: '#e6c358',
-          300: '#f0d77a',
-          200: '#f7e8a8',
+        bark: {
+          900: '#1c0f09',
+          800: '#2c1810',
+          700: '#3d2b1f',
+          600: '#5c4033',
+        },
+        sage: {
+          900: '#1a2b1e',
+          800: '#2d4a35',
+          700: '#4a7a56',
+          600: '#6b9e7a',
+          500: '#8fbc8f',
+          400: '#a8d5a8',
+        },
+        moss: {
+          900: '#0d1f10',
+          800: '#162b1a',
+          700: '#1e3d25',
+          600: '#2a5233',
+        },
+        amber: {
+          900: '#1a1000',
+          700: '#92400e',
+          600: '#b45309',
+          500: '#d97706',
+          400: '#fbbf24',
+          300: '#fcd34d',
+          200: '#fde68a',
+        },
+        // Teal — Costs & Benefits phase
+        teal: {
+          900: '#0a1e1c',
+          800: '#0d2b28',
+          700: '#134036',
+          600: '#1a5c50',
+          500: '#2A9D8F',
+          400: '#3bbcad',
+          300: '#7dd5ca',
+        },
+        // Plum — System Design phase
+        plum: {
+          900: '#150e20',
+          800: '#1e1430',
+          700: '#2e1f48',
+          600: '#4a3070',
+          500: '#6B4C8A',
+          400: '#8B68B0',
+          300: '#b49dd0',
+        },
+        // Rust — Risks phase
+        rust: {
+          900: '#1a0800',
+          800: '#2a0e00',
+          700: '#3d1800',
+          600: '#7a2e0a',
+          500: '#C1440E',
+          400: '#e05a24',
+          300: '#f08050',
+        },
+        // Extended bark palette
+        bark: {
+          900: '#1c0f09',
+          800: '#2c1810',
+          700: '#3d2b1f',
+          600: '#5c4033',
+          500: '#8B5E3C',
+          400: '#a87850',
+          300: '#c89870',
+        },
+        // Slate — Validation phase
+        slate: {
+          900: '#0d1419',
+          800: '#152030',
+          700: '#1e3045',
+          600: '#2d4560',
+          500: '#5F7A8A',
+          400: '#7a9ab0',
+          300: '#9abccc',
         },
       },
       fontFamily: {
@@ -46,9 +118,11 @@ module.exports = {
         'elastic': 'elasticPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
         'float': 'float 6s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite',
-        'shimmer': 'shimmer-gold 2s infinite',
+        'shimmer': 'shimmer-forest 2s infinite',
         'morph': 'morph 8s ease-in-out infinite',
         'rotate-slow': 'rotate-slow 20s linear infinite',
+        'leaf-sway': 'leafSway 4s ease-in-out infinite',
+        'branch-grow': 'branchGrow 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards',
       },
       keyframes: {
         revealUp: {
@@ -102,10 +176,10 @@ module.exports = {
           '75%': { transform: 'translateY(10px) rotate(-1deg)' },
         },
         glow: {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(212, 175, 55, 0.3)' },
-          '50%': { boxShadow: '0 0 40px rgba(212, 175, 55, 0.6), 0 0 60px rgba(212, 175, 55, 0.3)' },
+          '0%, 100%': { boxShadow: '0 0 20px rgba(74, 222, 128, 0.3)' },
+          '50%': { boxShadow: '0 0 40px rgba(74, 222, 128, 0.6), 0 0 60px rgba(74, 222, 128, 0.3)' },
         },
-        'shimmer-gold': {
+        'shimmer-forest': {
           '0%': { backgroundPosition: '-200% center' },
           '100%': { backgroundPosition: '200% center' },
         },
@@ -117,15 +191,25 @@ module.exports = {
           from: { transform: 'rotate(0deg)' },
           to: { transform: 'rotate(360deg)' },
         },
+        leafSway: {
+          '0%, 100%': { transform: 'rotate(-3deg) scale(1)' },
+          '50%': { transform: 'rotate(3deg) scale(1.02)' },
+        },
+        branchGrow: {
+          '0%': { strokeDashoffset: '1000', opacity: '0' },
+          '100%': { strokeDashoffset: '0', opacity: '1' },
+        },
       },
       boxShadow: {
-        'gold': '0 4px 20px -4px rgba(212, 175, 55, 0.3)',
-        'gold-lg': '0 8px 30px -4px rgba(212, 175, 55, 0.4)',
-        'navy': '0 4px 20px -4px rgba(30, 58, 95, 0.5)',
+        'forest': '0 4px 20px -4px rgba(74, 222, 128, 0.3)',
+        'forest-lg': '0 8px 30px -4px rgba(74, 222, 128, 0.4)',
+        'bark': '0 4px 20px -4px rgba(61, 43, 31, 0.5)',
+        'amber': '0 4px 20px -4px rgba(251, 191, 36, 0.3)',
       },
       backgroundImage: {
-        'gradient-gold': 'linear-gradient(135deg, #d4af37 0%, #9a7b24 100%)',
-        'gradient-navy': 'linear-gradient(135deg, #1e3a5f 0%, #0d1525 100%)',
+        'gradient-forest': 'linear-gradient(135deg, #4ade80 0%, #2d6a3f 100%)',
+        'gradient-bark': 'linear-gradient(135deg, #1e4a28 0%, #0f1f15 100%)',
+        'gradient-canopy': 'linear-gradient(135deg, #86efac 0%, #4ade80 50%, #2d6a3f 100%)',
       },
     },
   },

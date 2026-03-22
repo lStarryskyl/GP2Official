@@ -4,15 +4,15 @@
 export const colors = {
   // Primary backgrounds
   bg: {
-    primary: '#0a0f1a',      // Darkest background
-    secondary: '#0d1525',    // Sidebar/card background
-    tertiary: '#111b2e',     // Elevated surfaces
+    primary: '#0a150e',      // Darkest background
+    secondary: '#0a150e',    // Sidebar/card background
+    tertiary: '#0f1f15',     // Elevated surfaces
     elevated: '#152238',     // Hover states, inputs
   },
   
   // Gold accent palette
   gold: {
-    primary: '#d4af37',      // Primary gold
+    primary: '#4ade80',      // Primary gold
     light: '#e6c358',        // Hover/highlight
     dark: '#b8962e',         // Darker gold
     muted: '#9a7b24',        // Subtle gold
@@ -21,7 +21,7 @@ export const colors = {
   
   // Border colors
   border: {
-    primary: '#1e3a5f',      // Primary border
+    primary: '#1e4a28',      // Primary border
     muted: 'rgba(30, 58, 95, 0.5)',   // Subtle border
     gold: 'rgba(212, 175, 55, 0.3)',  // Gold border
   },
@@ -51,7 +51,7 @@ export const colors = {
     design: '#ec4899',       // pink
     development: '#10b981',  // emerald
     validation: '#f59e0b',   // amber
-    summary: '#d4af37',      // gold
+    summary: '#4ade80',      // gold
   },
 };
 
@@ -59,29 +59,29 @@ export const colors = {
 export const tw = {
   // Card styles
   card: {
-    base: 'bg-[#0d1525] border border-[#1e3a5f]/50 rounded-2xl',
-    hover: 'hover:border-[#d4af37]/30 hover:shadow-lg hover:shadow-[#d4af37]/5',
-    elevated: 'bg-[#111b2e] border border-[#1e3a5f] rounded-xl',
-    glass: 'bg-[#0d1525]/80 backdrop-blur-lg border border-[#1e3a5f]/50 rounded-2xl',
+    base: 'bg-[#0a150e] border border-[#1e4a28]/50 rounded-2xl',
+    hover: 'hover:border-[#4ade80]/30 hover:shadow-lg hover:shadow-[#4ade80]/5',
+    elevated: 'bg-[#0f1f15] border border-[#1e4a28] rounded-xl',
+    glass: 'bg-[#0a150e]/80 backdrop-blur-lg border border-[#1e4a28]/50 rounded-2xl',
   },
   
   // Button styles
   button: {
-    primary: 'bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold shadow-lg shadow-[#d4af37]/20',
-    secondary: 'bg-[#152238] hover:bg-[#1e3a5f] text-[#d4af37] border border-[#d4af37]/30 hover:border-[#d4af37]',
-    ghost: 'text-gray-400 hover:text-white hover:bg-[#1e3a5f]/30',
+    primary: 'bg-gradient-to-r from-[#4ade80] to-[#b8962e] hover:from-[#e6c358] hover:to-[#4ade80] text-[#0a150e] font-semibold shadow-lg shadow-[#4ade80]/20',
+    secondary: 'bg-[#152238] hover:bg-[#1e4a28] text-[#4ade80] border border-[#4ade80]/30 hover:border-[#4ade80]',
+    ghost: 'text-gray-400 hover:text-white hover:bg-[#1e4a28]/30',
     danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30',
   },
   
   // Input styles
   input: {
-    base: 'bg-[#152238] border border-[#1e3a5f] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 transition-all',
-    search: 'bg-[#111b2e] border border-[#1e3a5f]/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-[#d4af37]/50 focus:ring-1 focus:ring-[#d4af37]/20',
+    base: 'bg-[#152238] border border-[#1e4a28] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-[#4ade80] focus:ring-2 focus:ring-[#4ade80]/20 transition-all',
+    search: 'bg-[#0f1f15] border border-[#1e4a28]/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-[#4ade80]/50 focus:ring-1 focus:ring-[#4ade80]/20',
   },
   
   // Badge styles
   badge: {
-    gold: 'bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/30',
+    gold: 'bg-[#4ade80]/10 text-[#4ade80] border border-[#4ade80]/30',
     success: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
     warning: 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
     error: 'bg-red-500/10 text-red-400 border border-red-500/30',
@@ -95,8 +95,8 @@ export const tw = {
     subheading: 'text-gray-300 font-medium',
     body: 'text-gray-400',
     muted: 'text-gray-500',
-    gold: 'text-[#d4af37]',
-    gradient: 'bg-gradient-to-r from-[#d4af37] to-[#e6c358] bg-clip-text text-transparent',
+    gold: 'text-[#4ade80]',
+    gradient: 'bg-gradient-to-r from-[#4ade80] to-[#e6c358] bg-clip-text text-transparent',
   },
   
   // Layout helpers
@@ -173,7 +173,7 @@ export const phaseConfig = {
     label: 'Summary',
     icon: 'Flag',
     color: colors.phases.summary,
-    gradient: 'from-[#d4af37] to-[#b8962e]',
+    gradient: 'from-[#4ade80] to-[#b8962e]',
     order: 7,
   },
 };

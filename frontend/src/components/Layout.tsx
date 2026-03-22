@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  LogOut, 
-  MessageCircle, 
+import {
+  LogOut,
+  MessageCircle,
   FolderKanban,
   Settings,
   Bell,
@@ -20,7 +20,8 @@ import {
   Kanban,
   FileText,
   Users,
-  CreditCard
+  CreditCard,
+  TreePine
 } from 'lucide-react';
 import { ConversationalDock } from '@/components/ConversationalDock';
 
@@ -29,26 +30,24 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { id: 'projects', icon: FolderKanban, label: 'Projects', path: '/projects' },
-  { id: 'analytics', icon: BarChart3, label: 'Analytics', path: '/analytics' },
-  { id: 'profile', icon: User, label: 'Profile', path: '/profile' },
+  { id: 'projects',  icon: FolderKanban, label: 'Projects',  path: '/projects' },
+  { id: 'analytics', icon: BarChart3,    label: 'Analytics', path: '/analytics' },
+  { id: 'profile',   icon: User,         label: 'Profile',   path: '/profile' },
 ];
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [assistantOpen, setAssistantOpen] = useState(false);
+  const { user, logout }         = useAuthStore();
+  const navigate                 = useNavigate();
+  const location                 = useLocation();
+  const [assistantOpen, setAssistantOpen]     = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen]   = useState(false);
+  const [isVisible, setIsVisible]             = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
     const savedState = localStorage.getItem('sidebar_collapsed');
-    if (savedState !== null) {
-      setSidebarCollapsed(savedState === 'true');
-    }
+    if (savedState !== null) setSidebarCollapsed(savedState === 'true');
   }, []);
 
   useEffect(() => {
@@ -60,13 +59,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const projectMatch = useMemo(() => location.pathname.match(/\/projects\/([^/]+)/), [location.pathname]);
+  const projectMatch  = useMemo(() => location.pathname.match(/\/projects\/([^/]+)/), [location.pathname]);
   const activeProjectId = projectMatch && projectMatch[1]?.length > 6 ? projectMatch[1] : null;
-  
+
   useEffect(() => {
-    if (!activeProjectId) {
-      setAssistantOpen(false);
-    }
+    if (!activeProjectId) setAssistantOpen(false);
   }, [activeProjectId]);
 
   const isActive = (path: string) => {
@@ -77,37 +74,38 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] flex">
+    <div className="min-h-screen bg-[#0a150e] flex">
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-grid opacity-10" />
+        {/* Subtle ambient forest glow */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(74,222,128,0.04) 0%, transparent 70%)', filter: 'blur(60px)' }}
+        />
       </div>
 
       {/* Sidebar - Desktop */}
-      <aside 
-        className={`hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-[#0d1525] border-r border-[#1e3a5f]/50 transition-all duration-300 z-40 ${
+      <aside
+        className={`hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-[#0f1f15] border-r border-[#1e4a28]/50 transition-all duration-300 z-40 ${
           sidebarCollapsed ? 'w-20' : 'w-64'
         }`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#1e3a5f]/50">
-          <Link 
-            to="/projects" 
-            className="flex items-center gap-3 group"
-          >
+        <div className="h-16 flex items-center justify-between px-4 border-b border-[#1e4a28]/50">
+          <Link to="/projects" className="flex items-center gap-3 group">
             <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#d4af37] to-[#9a7b24] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity" />
-              <div className="relative w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#b8962e] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5 text-[#0a0f1a]" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#4ade80] to-[#2d6a3f] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity" />
+              <div className="relative w-10 h-10 bg-gradient-to-br from-[#4ade80] to-[#3d8a55] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <TreePine className="w-5 h-5 text-[#0a150e]" />
               </div>
             </div>
             {!sidebarCollapsed && (
-              <span className="text-xl font-bold text-gradient-gold">Acorn</span>
+              <span className="text-xl font-bold text-gradient-forest">Acorn</span>
             )}
           </Link>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1e3a5f]/50 transition-all"
+            className="p-2 rounded-lg text-[#6b9e7a] hover:text-[#e8f5e0] hover:bg-[#1e4a28]/50 transition-all"
           >
             {sidebarCollapsed ? (
               <ChevronRight className="w-4 h-4" />
@@ -121,7 +119,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="p-3">
           <button
             onClick={() => navigate('/projects/new')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold shadow-lg shadow-[#d4af37]/20 transition-all ${
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-gradient-to-r from-[#4ade80] to-[#3d8a55] hover:from-[#86efac] hover:to-[#4ade80] text-[#0a150e] font-semibold shadow-lg shadow-[#4ade80]/20 transition-all ${
               sidebarCollapsed ? 'justify-center' : ''
             }`}
           >
@@ -134,35 +132,35 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {!sidebarCollapsed && (
             <div className="px-3 py-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-[#6b9e7a] uppercase tracking-wider">
                 Navigation
               </span>
             </div>
           )}
 
           {navItems.map((item) => {
-            const Icon = item.icon;
+            const Icon   = item.icon;
             const active = isActive(item.path);
-            
+
             return (
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                   active
-                    ? 'bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/30'
-                    : 'text-gray-400 hover:text-white hover:bg-[#1e3a5f]/30 border border-transparent'
+                    ? 'bg-[#4ade80]/10 text-[#4ade80] border border-[#4ade80]/30'
+                    : 'text-[#6b9e7a] hover:text-[#e8f5e0] hover:bg-[#1e4a28]/30 border border-transparent'
                 } ${sidebarCollapsed ? 'justify-center' : ''}`}
                 title={sidebarCollapsed ? item.label : undefined}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-[#d4af37]' : ''}`} />
+                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-[#4ade80]' : ''}`} />
                 {!sidebarCollapsed && (
-                  <span className={`font-medium ${active ? 'text-[#d4af37]' : ''}`}>
+                  <span className={`font-medium ${active ? 'text-[#4ade80]' : ''}`}>
                     {item.label}
                   </span>
                 )}
                 {active && !sidebarCollapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
                 )}
               </button>
             );
@@ -170,28 +168,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </nav>
 
         {/* User Section */}
-        <div className="border-t border-[#1e3a5f]/50 p-3">
+        <div className="border-t border-[#1e4a28]/50 p-3">
           {user && (
-            <div className={`flex items-center gap-3 p-3 rounded-xl bg-[#111b2e]/50 mb-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-[#9a7b24]/20 flex items-center justify-center text-sm font-semibold text-[#d4af37] flex-shrink-0 border border-[#d4af37]/30">
+            <div className={`flex items-center gap-3 p-3 rounded-xl bg-[#142b1a]/50 mb-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4ade80]/20 to-[#2d6a3f]/20 flex items-center justify-center text-sm font-semibold text-[#4ade80] flex-shrink-0 border border-[#4ade80]/30">
                 {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
               </div>
               {!sidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-sm font-semibold text-[#e8f5e0] truncate">
                     {user.full_name || user.email?.split('@')[0]}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-[#6b9e7a] truncate">
                     {user.organization || 'Enterprise'}
                   </p>
                 </div>
               )}
             </div>
           )}
-          
+
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b9e7a] hover:text-red-400 hover:bg-red-500/10 transition-all ${
               sidebarCollapsed ? 'justify-center' : ''
             }`}
             title={sidebarCollapsed ? 'Logout' : undefined}
@@ -203,17 +201,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#0d1525]/95 backdrop-blur-lg border-b border-[#1e3a5f]/50 z-50 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#0f1f15]/95 backdrop-blur-lg border-b border-[#1e4a28]/50 z-50 flex items-center justify-between px-4">
         <Link to="/projects" className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#b8962e] rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-[#0a0f1a]" />
+          <div className="w-9 h-9 bg-gradient-to-br from-[#4ade80] to-[#3d8a55] rounded-lg flex items-center justify-center">
+            <TreePine className="w-5 h-5 text-[#0a150e]" />
           </div>
-          <span className="text-lg font-bold text-gradient-gold">Acorn</span>
+          <span className="text-lg font-bold text-gradient-forest">Acorn</span>
         </Link>
-        
+
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1e3a5f]/50 transition-all"
+          className="p-2 rounded-lg text-[#6b9e7a] hover:text-[#e8f5e0] hover:bg-[#1e4a28]/50 transition-all"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -221,12 +219,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-[#0a0f1a]/95 backdrop-blur-lg pt-16 animate-reveal-down">
+        <div className="lg:hidden fixed inset-0 z-40 bg-[#0a150e]/95 backdrop-blur-lg pt-16 animate-reveal-down">
           <nav className="p-4 space-y-2">
             {navItems.map((item) => {
-              const Icon = item.icon;
+              const Icon   = item.icon;
               const active = isActive(item.path);
-              
+
               return (
                 <button
                   key={item.id}
@@ -236,8 +234,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }}
                   className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all ${
                     active
-                      ? 'bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/30'
-                      : 'text-gray-300 hover:bg-[#1e3a5f]/30'
+                      ? 'bg-[#4ade80]/10 text-[#4ade80] border border-[#4ade80]/30'
+                      : 'text-[#a8d5a8] hover:bg-[#1e4a28]/30'
                   }`}
                 >
                   <Icon className="w-6 h-6" />
@@ -245,8 +243,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </button>
               );
             })}
-            
-            <div className="pt-4 border-t border-[#1e3a5f]/50 mt-4">
+
+            <div className="pt-4 border-t border-[#1e4a28]/50 mt-4">
               <button
                 onClick={() => {
                   handleLogout();
@@ -263,7 +261,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Main Content */}
-      <main 
+      <main
         className={`flex-1 transition-all duration-300 ${
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
         } pt-16 lg:pt-0`}
@@ -279,10 +277,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {!assistantOpen && (
             <button
               onClick={() => setAssistantOpen(true)}
-              className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#b8962e] flex items-center justify-center shadow-lg shadow-[#d4af37]/30 hover:scale-110 hover:shadow-[#d4af37]/50 transition-all group"
+              className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4ade80] to-[#3d8a55] flex items-center justify-center shadow-lg shadow-[#4ade80]/30 hover:scale-110 hover:shadow-[#4ade80]/50 transition-all group"
             >
-              <MessageCircle className="w-6 h-6 text-[#0a0f1a]" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0f1a] animate-pulse" />
+              <MessageCircle className="w-6 h-6 text-[#0a150e]" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-[#0a150e] animate-pulse" />
             </button>
           )}
 

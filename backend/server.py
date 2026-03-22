@@ -7,10 +7,11 @@ import os
 
 from database import init_db, close_db
 from routes import (
-    auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow, 
+    auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow,
     sandbox, users, change_log, websocket, ai_pipeline, personas, srs_audit, billing, export,
     negotiation, payment, version, notifications, traceability, templates, explainability, utils
 )
+from routes import ai_chat
 from config import settings
 
 
@@ -93,6 +94,7 @@ app.include_router(traceability.router, prefix="/api", tags=["Traceability"])
 app.include_router(templates.router, prefix="/api", tags=["Templates"])
 app.include_router(explainability.router, prefix="/api", tags=["AI Explainability"])
 app.include_router(utils.router, prefix="/api/utils", tags=["Utilities"])
+app.include_router(ai_chat.router, prefix="/api/ai-chat", tags=["AI Chat"])
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

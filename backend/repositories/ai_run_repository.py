@@ -6,18 +6,16 @@ from typing import Dict, List, Optional
 
 from database import get_db
 from models.ai_run import AiRun
-from config import settings
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseAiRunRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseAiRunRepository()
+    except ImportError:
+        pass
     return _MongoAiRunRepository()
 
 
@@ -84,12 +82,12 @@ class AiRunRepository:
 
 
 class _SupabaseAiRunRepository:
-    """Supabase PostgreSQL implementation."""
+    """PostgreSQL implementation."""
 
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
 
     def _row_to_ai_run(self, row) -> AiRun:

@@ -1,0 +1,19 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "./Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "backend"
+source = "."
+
+[services.build]
+builder = "dockerfile"
+dockerfilePath = "./Dockerfile"
+
+[services.deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30

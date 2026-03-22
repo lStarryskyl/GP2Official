@@ -247,7 +247,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-400 bg-emerald-500/20 border border-emerald-500/30';
-    if (score >= 60) return 'text-[#d4af37] bg-[#d4af37]/20 border border-[#d4af37]/30';
+    if (score >= 60) return 'text-[#4ade80] bg-[#4ade80]/20 border border-[#4ade80]/30';
     return 'text-red-400 bg-red-500/20 border border-red-500/30';
   };
 
@@ -272,14 +272,14 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
     purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: 'text-purple-400', gradient: 'from-purple-500 to-violet-600' },
     blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: 'text-blue-400', gradient: 'from-blue-500 to-indigo-600' },
     green: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: 'text-emerald-400', gradient: 'from-emerald-500 to-teal-600' },
-    amber: { bg: 'bg-[#d4af37]/10', border: 'border-[#d4af37]/30', icon: 'text-[#d4af37]', gradient: 'from-[#d4af37] to-[#b8962e]' },
+    amber: { bg: 'bg-[#4ade80]/10', border: 'border-[#4ade80]/30', icon: 'text-[#4ade80]', gradient: 'from-[#4ade80] to-[#b8962e]' },
     red: { bg: 'bg-red-500/10', border: 'border-red-500/30', icon: 'text-red-400', gradient: 'from-red-500 to-rose-600' },
   };
 
   return (
     <div className="space-y-6">
       {/* Overall Score Card - Modern Design */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#0d1525] shadow-xl ring-1 ring-[#1e3a5f]/50">
+      <div className="relative overflow-hidden rounded-3xl bg-[#0a150e] shadow-xl ring-1 ring-[#1e4a28]/50">
         <div className={`bg-gradient-to-br ${getScoreGradient(overallScore)} p-8`}>
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div className="space-y-2">
@@ -316,7 +316,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
             </div>
           </div>
         </div>
-        <div className="p-5 bg-[#111b2e]">
+        <div className="p-5 bg-[#0f1f15]">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {sections.map((section) => {
               const colors = sectionColors[section.color];
@@ -324,7 +324,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                 <button
                   key={section.id}
                   onClick={() => toggleSection(section.id)}
-                  className={`p-4 rounded-2xl ${colors.bg} text-center transition-all hover:scale-105 hover:shadow-md cursor-pointer border ${colors.border} hover:border-[#d4af37]/50`}
+                  className={`p-4 rounded-2xl ${colors.bg} text-center transition-all hover:scale-105 hover:shadow-md cursor-pointer border ${colors.border} hover:border-[#4ade80]/50`}
                 >
                   <div className={`text-2xl font-bold ${colors.icon}`}>{section.score}%</div>
                   <div className="text-xs text-gray-400 mt-1 font-medium">{section.title.split(' ')[0]}</div>
@@ -336,11 +336,11 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
       </div>
 
       {/* Project Context - Modern Card */}
-      <div className="rounded-2xl bg-[#0d1525] border border-[#1e3a5f]/50 p-5 shadow-lg">
+      <div className="rounded-2xl bg-[#0a150e] border border-[#1e4a28]/50 p-5 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#d4af37]/20 rounded-2xl border border-[#d4af37]/30">
-              <FileText className="h-6 w-6 text-[#d4af37]" />
+            <div className="p-3 bg-[#4ade80]/20 rounded-2xl border border-[#4ade80]/30">
+              <FileText className="h-6 w-6 text-[#4ade80]" />
             </div>
             <div>
               <p className="text-xs uppercase text-gray-500 font-semibold tracking-wider">Project Context</p>
@@ -348,7 +348,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
             </div>
           </div>
           {projectId && (
-            <Badge variant="secondary" className="font-mono bg-[#152238] text-gray-400 border border-[#1e3a5f]">{projectId}</Badge>
+            <Badge variant="secondary" className="font-mono bg-[#152238] text-gray-400 border border-[#1e4a28]">{projectId}</Badge>
           )}
         </div>
         {content && (
@@ -367,7 +367,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
           const progress = Math.round((completedItems / section.items.length) * 100);
 
           return (
-            <div key={section.id} className="rounded-2xl bg-[#0d1525] border border-[#1e3a5f]/50 overflow-hidden transition-all hover:border-[#d4af37]/30">
+            <div key={section.id} className="rounded-2xl bg-[#0a150e] border border-[#1e4a28]/50 overflow-hidden transition-all hover:border-[#4ade80]/30">
               <button
                 onClick={() => toggleSection(section.id)}
                 className="w-full p-5 flex items-center justify-between hover:bg-[#152238]/50 transition-colors"
@@ -382,7 +382,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                       <p className="text-sm text-gray-500">
                         {completedItems} of {section.items.length} documented
                       </p>
-                      <div className="w-24 h-1.5 bg-[#1e3a5f] rounded-full overflow-hidden">
+                      <div className="w-24 h-1.5 bg-[#1e4a28] rounded-full overflow-hidden">
                         <div className={`h-full bg-gradient-to-r ${colors.gradient} transition-all`} style={{ width: `${progress}%` }} />
                       </div>
                     </div>
@@ -392,16 +392,16 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                   <div className={`px-4 py-1.5 rounded-full text-sm font-bold ${getScoreColor(section.score || 0)}`}>
                     {section.score}%
                   </div>
-                  <div className={`p-2 rounded-xl transition-all ${isExpanded ? 'bg-[#1e3a5f] rotate-180' : 'bg-[#152238]'}`}>
+                  <div className={`p-2 rounded-xl transition-all ${isExpanded ? 'bg-[#1e4a28] rotate-180' : 'bg-[#152238]'}`}>
                     <ChevronDown className="h-5 w-5 text-gray-400" />
                   </div>
                 </div>
               </button>
 
               {isExpanded && (
-                <div className="border-t border-[#1e3a5f]/30">
+                <div className="border-t border-[#1e4a28]/30">
                   {/* Progress Bar */}
-                  <div className="px-4 py-2 bg-[#111b2e] space-y-3">
+                  <div className="px-4 py-2 bg-[#0f1f15] space-y-3">
                     <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                       <span className="font-medium text-white">Adjust Section Score</span>
                       <input
@@ -410,9 +410,9 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                         max={100}
                         value={section.score || 0}
                         onChange={(e) => handleScoreChange(section.id, Number(e.target.value))}
-                        className="flex-1 accent-[#d4af37]"
+                        className="flex-1 accent-[#4ade80]"
                       />
-                      <span className="font-semibold text-[#d4af37] w-12 text-right">{section.score}%</span>
+                      <span className="font-semibold text-[#4ade80] w-12 text-right">{section.score}%</span>
                       <Button
                         size="sm"
                         variant="outline"
@@ -425,7 +425,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                       <span>Completion Progress</span>
                       <span>{progress}%</span>
                     </div>
-                    <div className="h-2 bg-[#1e3a5f] rounded-full overflow-hidden">
+                    <div className="h-2 bg-[#1e4a28] rounded-full overflow-hidden">
                       <div
                         className={`h-full bg-gradient-to-r ${colors.gradient} transition-all`}
                         style={{ width: `${progress}%` }}
@@ -442,8 +442,8 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                           item.status === 'complete'
                             ? 'bg-emerald-500/10 border-emerald-500/30'
                             : item.status === 'partial'
-                            ? 'bg-[#d4af37]/10 border-[#d4af37]/30'
-                            : 'bg-[#152238] border-[#1e3a5f]'
+                            ? 'bg-[#4ade80]/10 border-[#4ade80]/30'
+                            : 'bg-[#152238] border-[#1e4a28]'
                         }`}
                       >
                         {getStatusIcon(item.status)}
@@ -464,7 +464,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                             {item.status || 'Not Started'}
                           </Badge>
                           <select
-                            className="border border-[#1e3a5f] rounded-lg px-2 py-1 text-xs bg-[#152238] text-gray-300"
+                            className="border border-[#1e4a28] rounded-lg px-2 py-1 text-xs bg-[#152238] text-gray-300"
                             value={item.status || 'missing'}
                             onChange={(e) =>
                               handleStatusChange(section.id, idx, e.target.value as FeasibilityStatus)
@@ -505,10 +505,10 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
       </div>
 
       {/* AI Feasibility Studies */}
-      <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#1e3a5f]/30">
+      <div className="bg-[#0a150e] border border-[#1e4a28]/50 rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#1e4a28]/30">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#d4af37]" />
+            <FileText className="h-5 w-5 text-[#4ade80]" />
             <h3 className="font-bold text-white">AI Feasibility Studies</h3>
           </div>
           <p className="text-sm text-gray-500 mt-1">
@@ -519,7 +519,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-400">Your Findings</p>
             <textarea
-              className="w-full border border-[#1e3a5f] rounded-lg px-3 py-2 text-sm min-h-[80px] bg-[#152238] text-white placeholder-gray-500"
+              className="w-full border border-[#1e4a28] rounded-lg px-3 py-2 text-sm min-h-[80px] bg-[#152238] text-white placeholder-gray-500"
               placeholder="Write your own feasibility notes here. AI can help refine and structure them."
               value={userFindings}
               onChange={(e) => setUserFindings(e.target.value)}
@@ -559,14 +559,14 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
               {studies.map((study) => (
                 <div
                   key={study.id}
-                  className="border border-[#1e3a5f] rounded-lg p-3 bg-[#152238]"
+                  className="border border-[#1e4a28] rounded-lg p-3 bg-[#152238]"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <h4 className="font-semibold text-sm text-white truncate">{study.title || 'Feasibility Study'}</h4>
                     {Array.isArray(study.tags) && study.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 ml-2">
                         {study.tags.map((tag: string) => (
-                          <Badge key={tag} variant="secondary" className="text-[10px] bg-[#1e3a5f] text-gray-400">
+                          <Badge key={tag} variant="secondary" className="text-[10px] bg-[#1e4a28] text-gray-400">
                             {tag}
                           </Badge>
                         ))}
@@ -600,10 +600,10 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
       </div>
 
       {/* AI Chat for Custom Analysis */}
-      <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#1e3a5f]/30">
+      <div className="bg-[#0a150e] border border-[#1e4a28]/50 rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#1e4a28]/30">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-[#d4af37]" />
+            <Sparkles className="h-5 w-5 text-[#4ade80]" />
             <h3 className="font-bold text-white">AI Feasibility Analysis</h3>
           </div>
           <p className="text-sm text-gray-500 mt-1">
@@ -612,7 +612,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
         </div>
         <div className="p-6 space-y-4">
           <textarea
-            className="w-full border border-[#1e3a5f] rounded-lg px-4 py-3 text-sm min-h-[120px] bg-[#152238] text-white placeholder-gray-500 resize-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30"
+            className="w-full border border-[#1e4a28] rounded-lg px-4 py-3 text-sm min-h-[120px] bg-[#152238] text-white placeholder-gray-500 resize-none focus:border-[#4ade80] focus:ring-1 focus:ring-[#4ade80]/30"
             placeholder="E.g., 'Analyze the technical feasibility of implementing real-time collaboration features' or 'Evaluate the market potential in the European market'"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -621,7 +621,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
             <Button
               onClick={() => onGenerate(input || 'Generate a comprehensive feasibility study')}
               disabled={isGenerating}
-              className="bg-gradient-to-r from-[#d4af37] to-[#b8962e] hover:from-[#e6c358] hover:to-[#d4af37] text-[#0a0f1a] font-semibold"
+              className="bg-gradient-to-r from-[#4ade80] to-[#b8962e] hover:from-[#e6c358] hover:to-[#4ade80] text-[#0a150e] font-semibold"
             >
               {isGenerating ? (
                 <>
@@ -635,15 +635,15 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={() => onGenerate('Generate TAM/SAM/SOM market analysis')} className="border-[#1e3a5f] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37]">
+            <Button variant="outline" onClick={() => onGenerate('Generate TAM/SAM/SOM market analysis')} className="border-[#1e4a28] text-gray-400 hover:border-[#4ade80]/50 hover:text-[#4ade80]">
               <BarChart3 className="mr-2 h-4 w-4" />
               Market Size
             </Button>
-            <Button variant="outline" onClick={() => onGenerate('Generate tech stack recommendation')} className="border-[#1e3a5f] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37]">
+            <Button variant="outline" onClick={() => onGenerate('Generate tech stack recommendation')} className="border-[#1e4a28] text-gray-400 hover:border-[#4ade80]/50 hover:text-[#4ade80]">
               <Server className="mr-2 h-4 w-4" />
               Tech Stack
             </Button>
-            <Button variant="outline" onClick={() => onGenerate('Generate ROI forecast and break-even analysis')} className="border-[#1e3a5f] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37]">
+            <Button variant="outline" onClick={() => onGenerate('Generate ROI forecast and break-even analysis')} className="border-[#1e4a28] text-gray-400 hover:border-[#4ade80]/50 hover:text-[#4ade80]">
               <TrendingUp className="mr-2 h-4 w-4" />
               ROI Forecast
             </Button>
@@ -652,10 +652,10 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
       </div>
 
       {/* Feasibility Summary */}
-      <div className="bg-[#0d1525] border border-[#1e3a5f]/50 rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#1e3a5f]/30">
+      <div className="bg-[#0a150e] border border-[#1e4a28]/50 rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#1e4a28]/30">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#d4af37]" />
+            <FileText className="h-5 w-5 text-[#4ade80]" />
             <h3 className="font-bold text-white">Feasibility Summary</h3>
           </div>
         </div>
@@ -690,7 +690,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                 {Array.isArray(latestStudy?.tags) && latestStudy.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {latestStudy.tags.map((tag: string) => (
-                      <Badge key={tag} variant="secondary" className="text-[10px] bg-[#1e3a5f] text-gray-400">
+                      <Badge key={tag} variant="secondary" className="text-[10px] bg-[#1e4a28] text-gray-400">
                         {tag}
                       </Badge>
                     ))}

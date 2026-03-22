@@ -1,0 +1,260 @@
+/**
+ * AIChatAssistant — floating per-phase chat panel
+ *
+ * Usage:
+ *   <AIChatAssistant
+ *     projectId="..."
+ *     projectName="..."
+ *     phase="planning"
+ *     phaseName="Planning"
+ *   />
+ *
+ * Shows a floating leaf button. Click → opens a chat drawer.
+ * Athena (gemini-2.0-flash) answers questions about the current phase.
+ */
+
+import React, { useState, useRef, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { Loader2, Send, X, Sparkles, ChevronDown } from 'lucide-react';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+interface Props {
+  projectId: string;
+  projectName: string;
+  phase: string;
+  phaseName: string;
+  phaseColor?: string;
+}
+
+// Per-phase accent colors
+const PHASE_COLORS: Record<string, string> = {
+  planning:               '#D4A017',
+  feasibility_study:      '#7BA05B',
+  requirements_gathering: '#3d8a55',
+  validation:             '#5F7A8A',
+  design:                 '#6B4C8A',
+  development:            '#8B5E3C',
+  tasks:                  '#D4A017',
+  cost_benefit:           '#2A9D8F',
+  risks:                  '#C1440E',
+  summary:                '#4ade80',
+};
+
+const QUICK_PROMPTS = [
+  'Summarise this phase in 3 bullet points',
+  'What are the biggest risks here?',
+  'Suggest 3 improvements to this phase',
+  'What should I do next after this phase?',
+  'Explain this to a non-technical stakeholder',
+];
+
+export const AIChatAssistant: React.FC<Props> = ({
+  projectId,
+  projectName,
+  phase,
+  phaseName,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: `Hi! I'm **Athena**, your AI assistant for the **${phaseName}** phase. Ask me anything about this phase, or use a quick prompt below.`,
+      timestamp: new Date(),
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const accentColor = PHASE_COLORS[phase] || '#4ade80';
+
+  useEffect(() => {
+    if (isOpen) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => inputRef.current?.focus(), 150);
+    }
+  }, [isOpen, messages]);
+
+  const sendMessage = async (text?: string) => {
+    const msgText = (text || input).trim();
+    if (!msgText || isSending) return;
+
+    const userMsg: Message = { role: 'user', content: msgText, timestamp: new Date() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setIsSending(true);
+
+    try {
+      const res = await api.post('/ai-chat/chat', {
+        project_id: projectId,
+        project_name: projectName,
+        phase,
+        message: msgText,
+        chat_history: messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
+      });
+
+      const assistantMsg: Message = {
+        role: 'assistant',
+        content: res.data.response || 'I could not generate a response. Please try again.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date(),
+      }]);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // ── Floating trigger button ───────────────────────────────────────────
+  return (
+    <>
+      {/* Floating leaf button */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm shadow-2xl transition-all duration-300 hover:scale-105"
+          style={{
+            background: `linear-gradient(135deg, ${accentColor}cc, ${accentColor})`,
+            color: '#0a150e',
+            boxShadow: `0 8px 32px ${accentColor}44`,
+          }}
+          title="Ask Athena about this phase"
+        >
+          <Sparkles className="w-4 h-4" />
+          Ask Athena
+        </button>
+      )}
+
+      {/* Chat Panel */}
+      {isOpen && (
+        <div
+          className="fixed bottom-6 right-6 z-50 flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+          style={{
+            width: '380px',
+            height: '520px',
+            background: '#0f1f15',
+            border: `1px solid ${accentColor}44`,
+            boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 40px ${accentColor}18`,
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+            style={{ background: `${accentColor}18`, borderBottom: `1px solid ${accentColor}33` }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: accentColor }}>
+                <Sparkles className="w-4 h-4 text-[#0a150e]" />
+              </div>
+              <div>
+                <p className="font-bold text-[#e8f5e0] text-sm">Athena</p>
+                <p className="text-xs" style={{ color: accentColor }}>{phaseName} Phase</p>
+              </div>
+            </div>
+            <button onClick={() => setIsOpen(false)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#6b9e7a] hover:text-[#e8f5e0] hover:bg-[#1e4a28] transition-all">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className="max-w-[88%] px-3 py-2.5 rounded-xl text-sm leading-relaxed"
+                  style={{
+                    background: msg.role === 'user'
+                      ? `${accentColor}22`
+                      : 'rgba(20,43,26,0.8)',
+                    border: msg.role === 'user'
+                      ? `1px solid ${accentColor}44`
+                      : '1px solid rgba(30,74,40,0.5)',
+                    color: msg.role === 'user' ? '#e8f5e0' : '#a8d5a8',
+                  }}
+                >
+                  {/* Render markdown-ish bold */}
+                  {msg.content.split(/\*\*(.*?)\*\*/g).map((part, j) =>
+                    j % 2 === 1
+                      ? <strong key={j} style={{ color: accentColor }}>{part}</strong>
+                      : <span key={j}>{part}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {isSending && (
+              <div className="flex justify-start">
+                <div className="px-3 py-2.5 rounded-xl" style={{ background: 'rgba(20,43,26,0.8)', border: '1px solid rgba(30,74,40,0.5)' }}>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#4ade80]" />
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Quick Prompts */}
+          <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto flex-shrink-0" style={{ scrollbarWidth: 'none' }}>
+            {QUICK_PROMPTS.map(p => (
+              <button
+                key={p}
+                onClick={() => sendMessage(p)}
+                disabled={isSending}
+                className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 disabled:opacity-50"
+                style={{
+                  background: `${accentColor}12`,
+                  border: `1px solid ${accentColor}30`,
+                  color: accentColor,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="px-3 pb-3 flex-shrink-0">
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+              style={{ background: '#142b1a', border: `1px solid ${accentColor}33` }}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                placeholder="Ask about this phase..."
+                disabled={isSending}
+                className="flex-1 bg-transparent outline-none text-sm text-[#e8f5e0] placeholder-[#4a7a56] disabled:opacity-50"
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || isSending}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 hover:scale-110"
+                style={{ background: accentColor }}
+              >
+                {isSending
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0a150e]" />
+                  : <Send className="w-3.5 h-3.5 text-[#0a150e]" />
+                }
+              </button>
+            </div>
+            <p className="text-xs text-center mt-1.5 text-[#2d6a3f]">Powered by Gemini 2.0 Flash</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default AIChatAssistant;

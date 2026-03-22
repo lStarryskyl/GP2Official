@@ -5,18 +5,16 @@ from typing import List, Optional
 from datetime import datetime
 from database import get_db
 from models.task import Task
-from config import settings
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseTaskRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseTaskRepository()
+    except ImportError:
+        pass
     return _MongoTaskRepository()
 
 
@@ -56,12 +54,12 @@ class TaskRepository:
 
 
 class _SupabaseTaskRepository:
-    """Supabase PostgreSQL implementation."""
+    """PostgreSQL implementation."""
 
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
 
     def _row_to_task(self, row) -> Task:

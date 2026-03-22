@@ -1,324 +1,468 @@
-"""Database connection with in-memory fallback."""
+"""PostgreSQL database connection using AsyncPG."""
 
-from typing import Any, Dict, List, Optional
-from motor.motor_asyncio import AsyncIOMotorClient
-from config import settings
-import logging
-import os
 import asyncio
+import logging
+from typing import Any, Dict, List, Optional
+from datetime import datetime
+import asyncpg
+from config import settings
 
 logger = logging.getLogger(__name__)
 
-# Global database client
-client: Any = None
-db: Any = None
-
-
-class MemoryInsertResult:
-    def __init__(self, inserted_id: str = None):
-        self.inserted_id = inserted_id
-
-
-class MemoryDeleteResult:
-    def __init__(self, deleted_count: int = 0):
-        self.deleted_count = deleted_count
-
-
-class MemoryUpdateResult:
-    def __init__(self, matched_count: int = 0, modified_count: int = 0, upserted_id: Optional[str] = None):
-        self.matched_count = matched_count
-        self.modified_count = modified_count
-        self.upserted_id = upserted_id
-
-
-class MemoryCursor:
-    """Minimal async cursor supporting find + sort + limit + iteration."""
-
-    def __init__(self, docs: List[Dict[str, Any]]):
-        self.docs = docs
-        self._limit = None
-
-    def sort(self, key: str, direction: int):
-        reverse = direction == -1
-        self.docs = sorted(self.docs, key=lambda d: d.get(key) or "", reverse=reverse)
-        return self
-
-    def limit(self, n: int):
-        self._limit = n
-        return self
-
-    def __aiter__(self):
-        docs_to_iterate = self.docs[:self._limit] if self._limit else self.docs
-        self._iter = iter(docs_to_iterate)
-        return self
-
-    async def __anext__(self):
-        try:
-            return next(self._iter)
-        except StopIteration:
-            raise StopAsyncIteration
-    
-    async def to_list(self, length: int = None) -> List[Dict[str, Any]]:
-        """Convert cursor to list (Motor compatibility)."""
-        if length:
-            return self.docs[:length]
-        return self.docs[:self._limit] if self._limit else self.docs
-
-
-class MemoryCollection:
-    """Very small in-memory collection that mimics Motor calls used in this app."""
-
-    def __init__(self):
-        self.docs: List[Dict[str, Any]] = []
-
-    async def insert_one(self, doc: Dict[str, Any]):
-        self.docs.append(dict(doc))
-        return MemoryInsertResult(inserted_id=doc.get("_id"))
-
-    async def insert_many(self, docs: List[Dict[str, Any]]):
-        for doc in docs:
-            self.docs.append(dict(doc))
-        return MemoryInsertResult()
-
-    async def delete_many(self, filter_doc: Dict[str, Any]):
-        original_count = len(self.docs)
-        self.docs = [
-            doc for doc in self.docs
-            if not all(doc.get(k) == v for k, v in filter_doc.items())
-        ]
-        return MemoryDeleteResult(deleted_count=original_count - len(self.docs))
-
-    def _match_filter(self, doc: Dict[str, Any], filter_doc: Dict[str, Any]) -> bool:
-        """Check if a document matches a MongoDB-style filter (with operator support)."""
-        for k, v in filter_doc.items():
-            doc_value = doc.get(k)
-            if isinstance(v, dict):
-                # Handle MongoDB operators
-                for op, op_val in v.items():
-                    if op == "$gt":
-                        if doc_value is None or doc_value <= op_val:
-                            return False
-                    elif op == "$gte":
-                        if doc_value is None or doc_value < op_val:
-                            return False
-                    elif op == "$lt":
-                        if doc_value is None or doc_value >= op_val:
-                            return False
-                    elif op == "$lte":
-                        if doc_value is None or doc_value > op_val:
-                            return False
-                    elif op == "$ne":
-                        if doc_value == op_val:
-                            return False
-                    elif op == "$in":
-                        if doc_value not in op_val:
-                            return False
-                    elif op == "$nin":
-                        if doc_value in op_val:
-                            return False
-                    else:
-                        # Unknown operator, treat as equality
-                        if doc_value != v:
-                            return False
-            else:
-                if doc_value != v:
-                    return False
-        return True
-
-    async def find_one(self, filter_doc: Dict[str, Any], sort=None):
-        matched = [
-            doc for doc in self.docs
-            if self._match_filter(doc, filter_doc)
-        ]
-        if not matched:
-            return None
-        if sort:
-            for key, direction in reversed(sort):
-                reverse = direction == -1
-                matched = sorted(matched, key=lambda d: d.get(key) or "", reverse=reverse)
-        return dict(matched[0])
-
-    def find(self, filter_doc: Dict[str, Any]):
-        matched = [
-            dict(doc) for doc in self.docs
-            if self._match_filter(doc, filter_doc)
-        ]
-        return MemoryCursor(matched)
-
-    async def update_one(self, filter_doc: Dict[str, Any], update: Dict[str, Any], upsert: bool = False):
-        set_fields = update.get("$set", {})
-        for idx, doc in enumerate(self.docs):
-            if self._match_filter(doc, filter_doc):
-                self.docs[idx] = {**doc, **set_fields}
-                return MemoryUpdateResult(matched_count=1, modified_count=1)
-        if upsert:
-            new_doc = {**filter_doc, **set_fields}
-            self.docs.append(new_doc)
-            return MemoryUpdateResult(matched_count=0, modified_count=1, upserted_id=new_doc.get("_id"))
-        return MemoryUpdateResult()
-
-    async def find_one_and_update(
-        self,
-        filter_doc: Dict[str, Any],
-        update: Dict[str, Any],
-        return_document: bool = True,
-        upsert: bool = False,
-    ):
-        for idx, doc in enumerate(self.docs):
-            if self._match_filter(doc, filter_doc):
-                set_fields = update.get("$set", {})
-                set_on_insert = update.get("$setOnInsert", {})
-                self.docs[idx] = {**doc, **set_fields, **set_on_insert}
-                return dict(self.docs[idx])
-        if upsert:
-            new_doc = {**filter_doc}
-            new_doc.update(update.get("$setOnInsert", {}))
-            new_doc.update(update.get("$set", {}))
-            self.docs.append(new_doc)
-            return dict(new_doc)
-        return None
-
-    async def update_many(self, filter_doc: Dict[str, Any], update: Dict[str, Any]):
-        set_fields = update.get("$set", {})
-        matched_count = 0
-        modified_count = 0
-        for idx, doc in enumerate(self.docs):
-            if self._match_filter(doc, filter_doc):
-                matched_count += 1
-                self.docs[idx] = {**doc, **set_fields}
-                modified_count += 1
-        return MemoryUpdateResult(matched_count=matched_count, modified_count=modified_count)
-
-    async def delete_one(self, filter_doc: Dict[str, Any]):
-        for idx, doc in enumerate(self.docs):
-            if self._match_filter(doc, filter_doc):
-                self.docs.pop(idx)
-                return MemoryDeleteResult(deleted_count=1)
-        return MemoryDeleteResult(deleted_count=0)
-
-
-class MemoryDB:
-    """Container for named collections."""
-
-    def __init__(self):
-        self.collections: Dict[str, MemoryCollection] = {}
-
-    def __getitem__(self, name: str) -> MemoryCollection:
-        if name not in self.collections:
-            self.collections[name] = MemoryCollection()
-        return self.collections[name]
-
-
-class MemoryClient:
-    """Simple client wrapper mirroring motor interface we rely on."""
-
-    def __init__(self):
-        self.databases: Dict[str, MemoryDB] = {}
-
-    def __getitem__(self, name: str) -> MemoryDB:
-        if name not in self.databases:
-            self.databases[name] = MemoryDB()
-        return self.databases[name]
-
-    @property
-    def admin(self):
-        class Admin:
-            async def command(self, *_args, **_kwargs):
-                return {"ok": 1}
-        return Admin()
-
-    def close(self):
-        """No-op for in-memory."""
-        return None
+# Global database pool
+pool: Optional[asyncpg.Pool] = None
 
 
 async def init_db():
-    """Initialize database connection with automatic in-memory fallback."""
-    global client, db
-    
-    # Clean the supabase_url (remove quotes if present)
-    raw_supabase_url = (settings.supabase_url or "").strip().strip('"').strip("'")
-    
-    # Debug: Print to ensure visibility in Render logs
-    print(f"[DB INIT] use_supabase={settings.use_supabase}, supabase_url={'SET' if raw_supabase_url else 'NOT SET'}, service_key={'SET' if settings.supabase_service_key else 'NOT SET'}")
-    logger.info(f"Database config: use_supabase={settings.use_supabase}, supabase_url={'set' if raw_supabase_url else 'not set'}")
-    
-    # Check if using Supabase
-    if settings.use_supabase and raw_supabase_url:
-        try:
-            from database_supabase import init_supabase_db
-            await init_supabase_db()
-            print("[DB INIT] ✅ Supabase PostgreSQL database connected successfully!")
-            logger.info("Using Supabase PostgreSQL database")
-            return
-        except Exception as e:
-            print(f"[DB INIT] ❌ Supabase initialization failed: {e}")
-            logger.error(f"Supabase initialization failed: {e}")
-            print("[DB INIT] Falling back to in-memory database")
-            logger.warning("Falling back to in-memory database")
-            client = MemoryClient()
-            db = client[settings.database_name]
-            print("[DB INIT] ⚠️ Using in-memory database fallback. Data will not persist between restarts.")
-            logger.warning("Using in-memory database fallback. Data will not persist between restarts.")
-            return
-    
-    # Check for in-memory mode
-    use_memory = os.environ.get("USE_IN_MEMORY_DB", "").lower() == "true"
-    if use_memory or settings.use_in_memory_db:
-        client = MemoryClient()
-        db = client[settings.database_name]
-        logger.warning("Using in-memory database (USE_IN_MEMORY_DB=true)")
+    """Initialize PostgreSQL connection pool."""
+    global pool
+
+    db_url = settings.database_url
+    if not db_url:
+        raise ValueError("DATABASE_URL environment variable is not set. Please configure Railway PostgreSQL.")
+
+    # Normalize postgres:// to postgresql:// (Railway uses postgres://)
+    if db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+    print(f"[DB] Connecting to PostgreSQL...")
+
+    pool = await asyncpg.create_pool(
+        db_url,
+        min_size=settings.db_min_connections,
+        max_size=settings.db_max_connections,
+        command_timeout=settings.db_connect_timeout,
+        server_settings={
+            'application_name': 'acorn',
+            'search_path': 'public'
+        }
+    )
+
+    async with pool.acquire() as conn:
+        result = await conn.fetchval('SELECT 1')
+        print(f"[DB] Connection test: OK")
+
+    print("[DB] Connected to PostgreSQL successfully!")
+    await ensure_tables_exist()
+
+
+async def ensure_tables_exist():
+    """Create tables if they don't exist or fix column types."""
+    global pool
+    if not pool:
         return
 
-    try:
-        # Configure connection with pooling and retry logic
-        client = AsyncIOMotorClient(
-            settings.mongo_url,
-            maxPoolSize=settings.db_max_connections,
-            minPoolSize=settings.db_min_connections,
-            serverSelectionTimeoutMS=settings.db_connect_timeout * 1000,
-            connectTimeoutMS=settings.db_connect_timeout * 1000,
-            socketTimeoutMS=settings.db_connect_timeout * 1000,
-            retryWrites=True,
-            retryReads=True,
-        )
-        
-        db = client[settings.database_name]
-        
-        # Test connection with retry logic
-        for attempt in range(settings.db_retry_attempts):
-            try:
-                await client.admin.command("ping")
-                logger.info(f"Connected to MongoDB: {settings.database_name} (attempt {attempt + 1})")
-                break
-            except Exception as retry_error:
-                if attempt < settings.db_retry_attempts - 1:
-                    logger.warning(f"MongoDB connection attempt {attempt + 1} failed, retrying... Error: {retry_error}")
-                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
-                else:
-                    raise retry_error
-                    
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB after {settings.db_retry_attempts} attempts, falling back to in-memory store: {e}")
-        client = MemoryClient()
-        db = client[settings.database_name]
-        logger.warning("Using in-memory database fallback. Data will not persist between restarts.")
+    print("[DB] Checking/creating database tables...")
+
+    async with pool.acquire() as conn:
+        # Check if tables have correct column types
+        tables_ok = True
+        try:
+            # Check if project_id column in tasks table is TEXT or UUID
+            result = await conn.fetchrow("""
+                SELECT data_type
+                FROM information_schema.columns
+                WHERE table_name = 'tasks' AND column_name = 'project_id'
+            """)
+
+            if result:
+                data_type = result['data_type'].lower()
+                print(f"[DB] tasks.project_id column type: {data_type}")
+                if data_type == 'uuid':
+                    print("[DB] Detected UUID column type - need to recreate tables with TEXT columns")
+                    tables_ok = False
+                elif data_type == 'text' or data_type == 'character varying':
+                    print("[DB] Column types are correct (TEXT)")
+                    tables_ok = True
+            else:
+                # Table doesn't exist
+                print("[DB] Tasks table doesn't exist - will create")
+                tables_ok = False
+
+        except Exception as e:
+            print(f"[DB] Error checking column types: {e}")
+            tables_ok = False
+
+        # Create users table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                full_name TEXT,
+                organization TEXT DEFAULT 'Private Workspace',
+                hashed_password TEXT NOT NULL,
+                is_active BOOLEAN DEFAULT true,
+                role TEXT DEFAULT 'viewer',
+                avatar_url TEXT,
+                banner_url TEXT,
+                bio TEXT,
+                job_title TEXT,
+                location TEXT,
+                timezone TEXT,
+                pronouns TEXT,
+                skills JSONB DEFAULT '[]',
+                interests JSONB DEFAULT '[]',
+                social_links JSONB DEFAULT '[]',
+                availability TEXT,
+                contact_email TEXT,
+                phone TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+
+        # Create refresh_tokens table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                token_hash TEXT UNIQUE NOT NULL,
+                user_agent TEXT,
+                ip_address TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                expires_at TIMESTAMPTZ NOT NULL,
+                revoked BOOLEAN DEFAULT false,
+                revoked_at TIMESTAMPTZ
+            )
+        ''')
+
+        if not tables_ok:
+            # Drop and recreate project-related tables to fix UUID column types
+            await conn.execute('DROP TABLE IF EXISTS artifacts CASCADE')
+            await conn.execute('DROP TABLE IF EXISTS requirements CASCADE')
+            await conn.execute('DROP TABLE IF EXISTS tasks CASCADE')
+            await conn.execute('DROP TABLE IF EXISTS ai_runs CASCADE')
+            await conn.execute('DROP TABLE IF EXISTS projects CASCADE')
+
+            await conn.execute('''
+                CREATE TABLE projects (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    template_type TEXT,
+                    brief_text TEXT,
+                    questionnaire_data JSONB DEFAULT '{}',
+                    owner_id TEXT NOT NULL,
+                    organization TEXT NOT NULL,
+                    status TEXT DEFAULT 'draft',
+                    feature_tier TEXT DEFAULT 'pro',
+                    phase_status JSONB DEFAULT '{}',
+                    roadmap JSONB,
+                    roadmap_summary JSONB,
+                    feasibility_studies JSONB,
+                    feasibility_sections JSONB,
+                    development_stack JSONB,
+                    development_notes JSONB,
+                    parent_project_id TEXT,
+                    scenario_label TEXT,
+                    scenario_metadata JSONB,
+                    ui_preferences JSONB,
+                    team_members JSONB DEFAULT '[]',
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            ''')
+
+            # Create artifacts table
+            await conn.execute('''
+                CREATE TABLE artifacts (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    title TEXT,
+                    content_json JSONB,
+                    version INTEGER DEFAULT 1,
+                    is_approved BOOLEAN DEFAULT false,
+                    metadata JSONB,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            ''')
+
+            # Create requirements table
+            await conn.execute('''
+                CREATE TABLE requirements (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    type TEXT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    priority TEXT DEFAULT 'medium',
+                    status TEXT DEFAULT 'draft',
+                    confidence_score FLOAT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            ''')
+
+            # Create tasks table
+            await conn.execute('''
+                CREATE TABLE tasks (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    requirement_id TEXT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    estimate_hours FLOAT,
+                    actual_hours FLOAT,
+                    start_date TIMESTAMPTZ,
+                    due_date TIMESTAMPTZ,
+                    status TEXT DEFAULT 'pending',
+                    priority TEXT DEFAULT 'medium',
+                    role TEXT,
+                    dependencies JSONB DEFAULT '[]',
+                    tags JSONB DEFAULT '[]',
+                    phase TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            ''')
+
+            # Create ai_runs table
+            await conn.execute('''
+                CREATE TABLE ai_runs (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    user_id TEXT,
+                    job_type TEXT,
+                    phase TEXT,
+                    provider TEXT,
+                    model TEXT,
+                    status TEXT DEFAULT 'pending',
+                    prompt TEXT,
+                    response_excerpt TEXT,
+                    duration_ms INTEGER,
+                    error_message TEXT,
+                    metadata JSONB,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    completed_at TIMESTAMPTZ
+                )
+            ''')
+
+            print("[DB] Creating indexes...")
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_projects_organization ON projects(organization)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_artifacts_project ON artifacts(project_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_artifacts_project_type ON artifacts(project_id, type)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_requirements_project ON requirements(project_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+            await conn.execute('CREATE INDEX IF NOT EXISTS idx_ai_runs_project ON ai_runs(project_id)')
+
+        # Always create workspace_invites (safe with IF NOT EXISTS)
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS workspace_invites (
+                id TEXT PRIMARY KEY,
+                organization TEXT NOT NULL,
+                email TEXT NOT NULL,
+                role TEXT DEFAULT 'viewer',
+                status TEXT DEFAULT 'pending',
+                invited_by TEXT NOT NULL,
+                message TEXT,
+                token TEXT UNIQUE,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                accepted_at TIMESTAMPTZ,
+                accepted_by TEXT
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_invites_org ON workspace_invites(organization)')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_invites_email ON workspace_invites(email)')
+
+    print("[DB] Database tables verified/created successfully!")
 
 
 async def close_db():
-    """Close database connection."""
-    global client
-    if client and hasattr(client, "close"):
-        client.close()
-        logger.info("Closed database connection")
+    """Close PostgreSQL database connection pool."""
+    global pool
+    if pool:
+        await pool.close()
+        pool = None
+        logger.info("Closed PostgreSQL database connection")
 
 
+def get_pool():
+    """Get the database pool."""
+    global pool
+    return pool
+
+
+# Kept for backwards compatibility with any code that calls get_db()
 def get_db():
-    """Get database instance. Falls back to in-memory if not initialized."""
-    global db, client
-    if db is None:
-        # Ensure we always have a working database
-        logger.warning("Database not initialized, using in-memory fallback")
-        client = MemoryClient()
-        db = client[settings.database_name]
-    return db
+    """Get the database pool (alias for get_pool)."""
+    return get_pool()
+
+
+class BaseRepository:
+    """Base repository class for PostgreSQL operations."""
+
+    def __init__(self, table_name: str):
+        self.table_name = table_name
+
+    def _get_pool(self):
+        global pool
+        if pool is None:
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
+        return pool
+
+    async def _execute_query(self, query: str, *args):
+        """Execute a query and return results."""
+        async with self._get_pool().acquire() as conn:
+            return await conn.fetch(query, *args)
+
+    async def _execute_single(self, query: str, *args):
+        """Execute a query and return single result."""
+        async with self._get_pool().acquire() as conn:
+            return await conn.fetchrow(query, *args)
+
+    async def _execute_command(self, query: str, *args):
+        """Execute a command (INSERT/UPDATE/DELETE)."""
+        async with self._get_pool().acquire() as conn:
+            return await conn.execute(query, *args)
+
+    async def find_by_id(self, id: str, organization: str = None) -> Optional[Dict]:
+        """Find record by ID."""
+        if organization:
+            query = f"SELECT * FROM {self.table_name} WHERE id = $1 AND organization = $2"
+            row = await self._execute_single(query, id, organization)
+        else:
+            query = f"SELECT * FROM {self.table_name} WHERE id = $1"
+            row = await self._execute_single(query, id)
+
+        return dict(row) if row else None
+
+    async def find_all(self, organization: str = None) -> List[Dict]:
+        """Find all records for organization."""
+        if organization:
+            query = f"SELECT * FROM {self.table_name} WHERE organization = $1 ORDER BY created_at DESC"
+            rows = await self._execute_query(query, organization)
+        else:
+            query = f"SELECT * FROM {self.table_name} ORDER BY created_at DESC"
+            rows = await self._execute_query(query)
+
+        return [dict(row) for row in rows]
+
+    async def create(self, data: Dict) -> Dict:
+        """Create a new record."""
+        now = datetime.utcnow()
+        data['created_at'] = now
+        data['updated_at'] = now
+
+        columns = list(data.keys())
+        placeholders = [f"${i+1}" for i in range(len(columns))]
+
+        query = f"""
+            INSERT INTO {self.table_name} ({', '.join(columns)})
+            VALUES ({', '.join(placeholders)})
+            RETURNING *
+        """
+
+        row = await self._execute_single(query, *data.values())
+        return dict(row)
+
+    async def update(self, id: str, data: Dict, organization: str = None) -> Optional[Dict]:
+        """Update a record by ID."""
+        data['updated_at'] = datetime.utcnow()
+
+        set_clauses = [f"{key} = ${i+2}" for i, key in enumerate(data.keys())]
+
+        if organization:
+            query = f"""
+                UPDATE {self.table_name}
+                SET {', '.join(set_clauses)}
+                WHERE id = $1 AND organization = ${len(data)+2}
+                RETURNING *
+            """
+            row = await self._execute_single(query, id, *data.values(), organization)
+        else:
+            query = f"""
+                UPDATE {self.table_name}
+                SET {', '.join(set_clauses)}
+                WHERE id = $1
+                RETURNING *
+            """
+            row = await self._execute_single(query, id, *data.values())
+
+        return dict(row) if row else None
+
+    async def delete(self, id: str, organization: str = None) -> bool:
+        """Delete a record by ID."""
+        if organization:
+            query = f"DELETE FROM {self.table_name} WHERE id = $1 AND organization = $2"
+            result = await self._execute_command(query, id, organization)
+        else:
+            query = f"DELETE FROM {self.table_name} WHERE id = $1"
+            result = await self._execute_command(query, id)
+
+        return result == "DELETE 1"
+
+
+class UserRepository(BaseRepository):
+    """User repository."""
+
+    def __init__(self):
+        super().__init__("users")
+
+    async def find_by_email(self, email: str) -> Optional[Dict]:
+        """Find user by email."""
+        query = "SELECT * FROM users WHERE email = $1"
+        row = await self._execute_single(query, email)
+        return dict(row) if row else None
+
+
+class ProjectRepository(BaseRepository):
+    """Project repository."""
+
+    def __init__(self):
+        super().__init__("projects")
+
+    async def find_by_owner(self, owner_id: str, organization: str) -> List[Dict]:
+        """Find projects by owner."""
+        query = "SELECT * FROM projects WHERE owner_id = $1 AND organization = $2 ORDER BY created_at DESC"
+        rows = await self._execute_query(query, owner_id, organization)
+        return [dict(row) for row in rows]
+
+
+class RequirementRepository(BaseRepository):
+    """Requirement repository."""
+
+    def __init__(self):
+        super().__init__("requirements")
+
+    async def find_by_project(self, project_id: str) -> List[Dict]:
+        """Find requirements by project."""
+        query = "SELECT * FROM requirements WHERE project_id = $1 ORDER BY created_at"
+        rows = await self._execute_query(query, project_id)
+        return [dict(row) for row in rows]
+
+
+class TaskRepository(BaseRepository):
+    """Task repository."""
+
+    def __init__(self):
+        super().__init__("tasks")
+
+    async def find_by_project(self, project_id: str) -> List[Dict]:
+        """Find tasks by project."""
+        query = "SELECT * FROM tasks WHERE project_id = $1 ORDER BY created_at"
+        rows = await self._execute_query(query, project_id)
+        return [dict(row) for row in rows]
+
+    async def find_by_status(self, project_id: str, status: str) -> List[Dict]:
+        """Find tasks by status."""
+        query = "SELECT * FROM tasks WHERE project_id = $1 AND status = $2 ORDER BY created_at"
+        rows = await self._execute_query(query, project_id, status)
+        return [dict(row) for row in rows]
+
+
+# Repository factory functions
+def get_user_repository():
+    return UserRepository()
+
+def get_project_repository():
+    return ProjectRepository()
+
+def get_requirement_repository():
+    return RequirementRepository()
+
+def get_task_repository():
+    return TaskRepository()

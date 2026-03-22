@@ -111,7 +111,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
 
   const priorityColors = {
     high: { bg: 'rgba(239,68,68,0.2)', text: '#f87171', border: 'rgba(239,68,68,0.3)' },
-    medium: { bg: 'rgba(212,175,55,0.2)', text: '#d4af37', border: 'rgba(212,175,55,0.3)' },
+    medium: { bg: 'rgba(212,175,55,0.2)', text: '#4ade80', border: 'rgba(212,175,55,0.3)' },
     low: { bg: 'rgba(59,130,246,0.2)', text: '#60a5fa', border: 'rgba(59,130,246,0.3)' }
   };
 
@@ -120,8 +120,8 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)', boxShadow: '0 10px 25px -5px rgba(212,175,55,0.3)' }}>
-            <Users className="w-7 h-7" style={{ color: '#0a0f1a' }} />
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(to bottom right, #4ade80, #b8962e)', boxShadow: '0 10px 25px -5px rgba(212,175,55,0.3)' }}>
+            <Users className="w-7 h-7" style={{ color: '#0a150e' }} />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white">Personas & User Stories</h2>
@@ -131,13 +131,13 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1 rounded-xl" style={{ backgroundColor: '#0d1525' }}>
+      <div className="flex gap-2 p-1 rounded-xl" style={{ backgroundColor: '#0a150e' }}>
         <button
           onClick={() => setActiveTab('personas')}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
-            activeTab === 'personas' ? 'text-[#0a0f1a] shadow-lg' : 'text-gray-400 hover:text-white'
+            activeTab === 'personas' ? 'text-[#0a150e] shadow-lg' : 'text-gray-400 hover:text-white'
           }`}
-          style={activeTab === 'personas' ? { background: 'linear-gradient(to right, #d4af37, #b8962e)' } : {}}
+          style={activeTab === 'personas' ? { background: 'linear-gradient(to right, #4ade80, #b8962e)' } : {}}
         >
           <UserCircle className="w-5 h-5" />
           User Personas
@@ -145,9 +145,9 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
         <button
           onClick={() => setActiveTab('stories')}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
-            activeTab === 'stories' ? 'text-[#0a0f1a] shadow-lg' : 'text-gray-400 hover:text-white'
+            activeTab === 'stories' ? 'text-[#0a150e] shadow-lg' : 'text-gray-400 hover:text-white'
           }`}
-          style={activeTab === 'stories' ? { background: 'linear-gradient(to right, #d4af37, #b8962e)' } : {}}
+          style={activeTab === 'stories' ? { background: 'linear-gradient(to right, #4ade80, #b8962e)' } : {}}
         >
           <Brain className="w-5 h-5" />
           User Stories
@@ -163,7 +163,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
                 value={count}
                 onChange={(e) => setCount(Number(e.target.value))}
                 className="px-4 py-2 rounded-lg text-white focus:outline-none"
-                style={{ backgroundColor: '#0d1525', border: '1px solid #1e3a5f' }}
+                style={{ backgroundColor: '#0a150e', border: '1px solid #1e4a28' }}
               >
                 <option value={2}>2 Personas</option>
                 <option value={3}>3 Personas</option>
@@ -176,7 +176,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
               onClick={handleGeneratePersonas}
               disabled={isGenerating}
               className="font-semibold shadow-lg"
-              style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a' }}
+              style={{ background: 'linear-gradient(to right, #4ade80, #b8962e)', color: '#0a150e' }}
               data-testid="generate-personas-btn"
             >
               {isGenerating ? (
@@ -200,16 +200,16 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
                 <div
                   key={persona.id}
                   className="rounded-2xl p-6 transition-all hover:scale-[1.02]"
-                  style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }}
+                  style={{ backgroundColor: '#0f1f15', border: '1px solid #1e4a28' }}
                   data-testid={`persona-card-${persona.id}`}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ background: 'linear-gradient(to bottom right, #d4af37, #b8962e)' }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ background: 'linear-gradient(to bottom right, #4ade80, #b8962e)' }}>
                       {persona.name.charAt(0)}
                     </div>
                     <div>
                       <h3 className="font-bold text-white">{persona.name}</h3>
-                      <p className="text-sm" style={{ color: '#d4af37' }}>{persona.role}</p>
+                      <p className="text-sm" style={{ color: '#4ade80' }}>{persona.role}</p>
                     </div>
                   </div>
 
@@ -224,7 +224,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
                       <ul className="space-y-1">
                         {persona.goals.map((goal, idx) => (
                           <li key={idx} className="text-sm text-gray-400 flex items-start gap-2">
-                            <span style={{ color: '#d4af37' }} className="mt-1">•</span>
+                            <span style={{ color: '#4ade80' }} className="mt-1">•</span>
                             <span>{goal}</span>
                           </li>
                         ))}
@@ -253,14 +253,14 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
 
           {/* Empty State */}
           {personas.length === 0 && !isGenerating && (
-            <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: '#111b2e', border: '2px dashed #1e3a5f' }}>
-              <Users className="w-16 h-16 mx-auto mb-4" style={{ color: '#d4af37' }} />
+            <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: '#0f1f15', border: '2px dashed #1e4a28' }}>
+              <Users className="w-16 h-16 mx-auto mb-4" style={{ color: '#4ade80' }} />
               <h3 className="text-lg font-semibold text-white mb-2">No Personas Yet</h3>
               <p className="text-gray-400 mb-4">Generate AI-powered user personas to understand your target audience</p>
               <Button
                 onClick={handleGeneratePersonas}
                 className="font-semibold"
-                style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a' }}
+                style={{ background: 'linear-gradient(to right, #4ade80, #b8962e)', color: '#0a150e' }}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Generate Your First Personas
@@ -278,7 +278,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
               onClick={handleGenerateUserStories}
               disabled={isGeneratingStories}
               className="font-semibold shadow-lg"
-              style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a' }}
+              style={{ background: 'linear-gradient(to right, #4ade80, #b8962e)', color: '#0a150e' }}
               data-testid="generate-stories-btn"
             >
               {isGeneratingStories ? (
@@ -302,7 +302,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
                 <div
                   key={story.id}
                   className="rounded-2xl p-6"
-                  style={{ backgroundColor: '#111b2e', border: '1px solid #1e3a5f' }}
+                  style={{ backgroundColor: '#0f1f15', border: '1px solid #1e4a28' }}
                   data-testid={`story-card-${story.id}`}
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
@@ -319,15 +319,15 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
                     </span>
                   </div>
                   
-                  <div className="p-4 rounded-xl mb-4" style={{ backgroundColor: '#0d1525' }}>
+                  <div className="p-4 rounded-xl mb-4" style={{ backgroundColor: '#0a150e' }}>
                     <p className="text-gray-300">
-                      <span className="font-semibold" style={{ color: '#d4af37' }}>As a</span> {story.as_a},
+                      <span className="font-semibold" style={{ color: '#4ade80' }}>As a</span> {story.as_a},
                     </p>
                     <p className="text-gray-300">
-                      <span className="font-semibold" style={{ color: '#d4af37' }}>I want</span> {story.i_want},
+                      <span className="font-semibold" style={{ color: '#4ade80' }}>I want</span> {story.i_want},
                     </p>
                     <p className="text-gray-300">
-                      <span className="font-semibold" style={{ color: '#d4af37' }}>So that</span> {story.so_that}.
+                      <span className="font-semibold" style={{ color: '#4ade80' }}>So that</span> {story.so_that}.
                     </p>
                   </div>
 
@@ -336,7 +336,7 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
                     <ul className="space-y-1">
                       {story.acceptance_criteria.map((criteria, idx) => (
                         <li key={idx} className="text-sm text-gray-400 flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: '#152238', color: '#d4af37' }}>{idx + 1}</span>
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: '#152238', color: '#4ade80' }}>{idx + 1}</span>
                           {criteria}
                         </li>
                       ))}
@@ -349,14 +349,14 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
 
           {/* Empty State */}
           {userStories.length === 0 && !isGeneratingStories && (
-            <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: '#111b2e', border: '2px dashed #1e3a5f' }}>
-              <Brain className="w-16 h-16 mx-auto mb-4" style={{ color: '#d4af37' }} />
+            <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: '#0f1f15', border: '2px dashed #1e4a28' }}>
+              <Brain className="w-16 h-16 mx-auto mb-4" style={{ color: '#4ade80' }} />
               <h3 className="text-lg font-semibold text-white mb-2">No User Stories Yet</h3>
               <p className="text-gray-400 mb-4">Generate user stories based on your project requirements</p>
               <Button
                 onClick={handleGenerateUserStories}
                 className="font-semibold"
-                style={{ background: 'linear-gradient(to right, #d4af37, #b8962e)', color: '#0a0f1a' }}
+                style={{ background: 'linear-gradient(to right, #4ade80, #b8962e)', color: '#0a150e' }}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Generate User Stories

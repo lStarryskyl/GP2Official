@@ -1,479 +1,668 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Sparkles, 
-  ArrowRight, 
-  Zap, 
-  Shield, 
-  BarChart3, 
-  Users, 
+import {
+  ArrowRight,
+  Sparkles,
+  TreePine,
+  Zap,
+  Shield,
+  BarChart3,
+  Users,
   FileText,
-  GitBranch,
-  Layers,
   CheckCircle2,
   Star,
-  Play,
-  ChevronRight,
-  Cpu,
-  Target,
   Rocket,
-  Building2,
-  Globe,
-  Lock,
   TrendingUp,
-  Award,
   Clock,
-  Briefcase
+  Award,
+  Cpu,
+  Layers,
+  GitBranch,
+  ChevronDown,
 } from 'lucide-react';
 
-const LandingPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
-  const [scrollY, setScrollY] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
+// ─── Acorn SVG ─────────────────────────────────────────────────────────────
+const AcornSVG: React.FC<{ cracked?: boolean; className?: string }> = ({ cracked = false, className = '' }) => (
+  <svg width="80" height="100" viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {cracked ? (
+      <>
+        {/* Left half of cracked acorn */}
+        <g transform="translate(-8, 4) rotate(-15, 40, 70)">
+          <ellipse cx="40" cy="72" rx="22" ry="28" fill="#8B5E3C" />
+          <ellipse cx="40" cy="44" rx="24" ry="14" fill="#5c4033" />
+          <ellipse cx="40" cy="44" rx="18" ry="10" fill="#3d2b1f" />
+          <rect x="37" y="30" width="6" height="16" rx="3" fill="#3d2b1f" />
+        </g>
+        {/* Right half */}
+        <g transform="translate(8, 4) rotate(15, 40, 70)">
+          <ellipse cx="40" cy="72" rx="22" ry="28" fill="#A0714E" />
+          <ellipse cx="40" cy="44" rx="24" ry="14" fill="#6b4c35" />
+          <ellipse cx="40" cy="44" rx="18" ry="10" fill="#4a3324" />
+          <rect x="37" y="30" width="6" height="16" rx="3" fill="#4a3324" />
+        </g>
+        {/* Sparkle rays */}
+        {[0,60,120,180,240,300].map((deg, i) => (
+          <line key={i}
+            x1="40" y1="70"
+            x2={40 + Math.cos(deg * Math.PI/180) * 38}
+            y2={70 + Math.sin(deg * Math.PI/180) * 38}
+            stroke="#fbbf24" strokeWidth="2" strokeLinecap="round"
+            style={{ opacity: 0.7 + i * 0.05 }}
+          />
+        ))}
+      </>
+    ) : (
+      <>
+        {/* Cap */}
+        <ellipse cx="40" cy="40" rx="28" ry="16" fill="#5c4033" />
+        <ellipse cx="40" cy="40" rx="22" ry="11" fill="#3d2b1f" />
+        {/* Stem */}
+        <rect x="37" y="24" width="6" height="18" rx="3" fill="#3d2b1f" />
+        {/* Body */}
+        <ellipse cx="40" cy="68" rx="26" ry="32" fill="#8B5E3C" />
+        <ellipse cx="40" cy="62" rx="22" ry="26" fill="#A0714E" />
+        {/* Shine */}
+        <ellipse cx="32" cy="55" rx="6" ry="8" fill="white" fillOpacity="0.12" />
+      </>
+    )}
+  </svg>
+);
 
-  useEffect(() => {
-    setIsVisible(true);
-    
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    
-    const interval = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % 4);
-    }, 5000);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearInterval(interval);
-    };
-  }, []);
-
-  const features = [
-    {
-      icon: Cpu,
-      title: 'AI-Powered Analysis',
-      description: 'Enterprise-grade AI generates comprehensive project documentation in minutes',
-      metrics: '10x faster planning'
-    },
-    {
-      icon: FileText,
-      title: 'SRS Generation',
-      description: 'Automatically generate Software Requirements Specifications with audit trails',
-      metrics: '100% compliance'
-    },
-    {
-      icon: Users,
-      title: 'Stakeholder Management',
-      description: 'Negotiate requirements and track stakeholder impact across teams',
-      metrics: 'Full visibility'
-    },
-    {
-      icon: BarChart3,
-      title: 'Analytics Dashboard',
-      description: 'Real-time insights into project health, progress, and team performance',
-      metrics: 'Data-driven'
-    }
+// ─── Full Tree SVG (landing page) ─────────────────────────────────────────
+const FullLandingTree: React.FC<{ onLeafClick: (id: string) => void; activeLeaf: string | null }> = ({
+  onLeafClick,
+  activeLeaf,
+}) => {
+  const contentLeaves = [
+    { id: 'what',     x: 160,  y: 320, r: 52, label: 'What is\nAcorn?',   color: '#2A9D8F', textColor: '#fff' },
+    { id: 'how',      x: 380,  y: 280, r: 52, label: 'How It\nWorks',      color: '#6B4C8A', textColor: '#fff' },
+    { id: 'features', x: 580,  y: 310, r: 52, label: 'Features',           color: '#D4A017', textColor: '#0a150e' },
+    { id: 'started',  x: 740,  y: 260, r: 52, label: 'Get\nStarted',       color: '#C1440E', textColor: '#fff' },
   ];
 
-  const stats = [
-    { value: '500+', label: 'Enterprise Clients', icon: Building2 },
-    { value: '10M+', label: 'Documents Generated', icon: FileText },
-    { value: '99.9%', label: 'Uptime SLA', icon: Shield },
-    { value: '24/7', label: 'Support', icon: Clock }
+  const phaseLeaves = [
+    { id: 'planning',              x: 110,  y: 190, r: 42, label: 'Planning',     color: '#D4A017', textColor: '#0a150e' },
+    { id: 'feasibility_study',     x: 255,  y: 155, r: 42, label: 'Feasibility',  color: '#7BA05B', textColor: '#0a150e' },
+    { id: 'requirements_gathering',x: 400,  y: 130, r: 42, label: 'Requirements', color: '#3d8a55', textColor: '#fff'    },
+    { id: 'design',                x: 530,  y: 155, r: 42, label: 'Design',       color: '#6B4C8A', textColor: '#fff'    },
+    { id: 'development',           x: 660,  y: 180, r: 42, label: 'Dev',          color: '#8B5E3C', textColor: '#fff'    },
+    { id: 'summary',               x: 400,  y: 55,  r: 48, label: '★ Summary',    color: '#D4A017', textColor: '#0a150e' },
   ];
 
-  const capabilities = [
-    { title: 'Persona Generation', desc: 'Create detailed user personas and stories', icon: Users },
-    { title: 'SRS Audit', desc: 'Automated compliance and quality checks', icon: CheckCircle2 },
-    { title: 'Impact Analysis', desc: 'Stakeholder negotiation tracking', icon: TrendingUp },
-    { title: 'Export Center', desc: 'PDF, DOCX, PowerPoint exports', icon: FileText },
-    { title: 'Kanban Board', desc: 'Visual task management', icon: Layers },
-    { title: 'Team Collaboration', desc: 'Real-time team features', icon: Users }
+  const branches = [
+    // trunk to content level
+    [400, 500, 160, 320], [400, 500, 380, 280],
+    [400, 500, 580, 310], [400, 500, 740, 260],
+    // content to phase level
+    [160, 320, 110, 190], [160, 320, 255, 155],
+    [380, 280, 400, 130], [580, 310, 530, 155],
+    [580, 310, 660, 180], [740, 260, 660, 180],
+    // phase level to crown
+    [255, 155, 400, 55], [530, 155, 400, 55],
+    [400, 130, 400, 55],
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] text-white overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-30" />
-        
-        {/* Floating Orbs */}
-        <div 
-          className="glow-orb glow-orb-gold w-[800px] h-[800px] animate-float"
-          style={{ 
-            top: '-20%', 
-            right: '-10%',
-            transform: `translateY(${scrollY * 0.1}px)`
-          }} 
+    <svg
+      width="100%" height="100%"
+      viewBox="0 0 880 560"
+      preserveAspectRatio="xMidYMid meet"
+      style={{ maxWidth: '900px', margin: '0 auto', display: 'block' }}
+    >
+      {/* Roots */}
+      <line x1="400" y1="560" x2="400" y2="500" stroke="#3d2b1f" strokeWidth="18" strokeLinecap="round" />
+      <line x1="400" y1="540" x2="340" y2="560" stroke="#2c1810" strokeWidth="10" strokeLinecap="round" opacity="0.5" />
+      <line x1="400" y1="540" x2="460" y2="560" stroke="#2c1810" strokeWidth="10" strokeLinecap="round" opacity="0.5" />
+      <ellipse cx="400" cy="558" rx="80" ry="6" fill="#1e4a28" fillOpacity="0.4" />
+
+      {/* Trunk */}
+      <line x1="400" y1="500" x2="400" y2="380" stroke="#5c4033" strokeWidth="14" strokeLinecap="round" />
+      <line x1="400" y1="500" x2="400" y2="380" stroke="#8B5E3C" strokeWidth="8" strokeLinecap="round" opacity="0.4" />
+
+      {/* Branches */}
+      {branches.map(([x1, y1, x2, y2], i) => (
+        <path key={i}
+          d={`M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2}, ${x2} ${(y1 + y2) / 2}, ${x2} ${y2}`}
+          stroke="#2d6a3f" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.7"
         />
-        <div 
-          className="glow-orb glow-orb-navy w-[600px] h-[600px]"
-          style={{ 
-            bottom: '10%', 
-            left: '-15%',
-            animationDelay: '3s',
-            transform: `translateY(${-scrollY * 0.05}px)`
-          }} 
+      ))}
+
+      {/* Content leaves */}
+      {contentLeaves.map(leaf => {
+        const isActive = activeLeaf === leaf.id;
+        return (
+          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}>
+            {isActive && <circle cx={leaf.x} cy={leaf.y} r={leaf.r + 16} fill={leaf.color} fillOpacity="0.18" />}
+            <circle cx={leaf.x} cy={leaf.y} r={leaf.r}
+              fill={leaf.color}
+              stroke={isActive ? '#fff' : 'rgba(255,255,255,0.2)'}
+              strokeWidth={isActive ? 3 : 1}
+              style={{ filter: isActive ? `drop-shadow(0 0 14px ${leaf.color}aa)` : 'none', transition: 'all 0.3s ease' }}
+            />
+            {leaf.label.split('\n').map((line, li) => (
+              <text key={li}
+                x={leaf.x} y={leaf.y + (li - (leaf.label.split('\n').length - 1) / 2) * 14}
+                textAnchor="middle" fill={leaf.textColor}
+                fontSize="11" fontWeight="700" fontFamily="Inter, sans-serif"
+                style={{ pointerEvents: 'none' }}
+              >
+                {line}
+              </text>
+            ))}
+          </g>
+        );
+      })}
+
+      {/* Phase leaves */}
+      {phaseLeaves.map(leaf => {
+        const isActive = activeLeaf === leaf.id;
+        return (
+          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}>
+            {isActive && <circle cx={leaf.x} cy={leaf.y} r={leaf.r + 14} fill={leaf.color} fillOpacity="0.2" />}
+            <circle cx={leaf.x} cy={leaf.y} r={leaf.r}
+              fill={leaf.color}
+              stroke={isActive ? '#fff' : 'rgba(255,255,255,0.15)'}
+              strokeWidth={isActive ? 2.5 : 1}
+              style={{ filter: isActive ? `drop-shadow(0 0 10px ${leaf.color}99)` : 'none', transition: 'all 0.3s ease' }}
+            />
+            <text x={leaf.x} y={leaf.y + 4} textAnchor="middle"
+              fill={leaf.textColor} fontSize="9.5" fontWeight="700"
+              fontFamily="Inter, sans-serif" style={{ pointerEvents: 'none' }}
+            >
+              {leaf.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Floating particles */}
+      {[0,1,2,3,4].map(i => (
+        <circle key={i}
+          cx={100 + i * 160} cy={20 + (i % 3) * 12} r="3"
+          fill="#4ade80" fillOpacity={0.25 + i * 0.08}
+          style={{ animation: `float ${3 + i * 0.7}s ease-in-out ${i * 0.4}s infinite` }}
         />
-        <div 
-          className="glow-orb glow-orb-gold w-[400px] h-[400px] animate-morph"
-          style={{ 
-            top: '60%', 
-            right: '20%',
-            opacity: 0.5
-          }} 
-        />
+      ))}
+    </svg>
+  );
+};
+
+// ─── Leaf tooltip panels ────────────────────────────────────────────────────
+const LEAF_PANELS: Record<string, { title: string; body: React.ReactNode }> = {
+  what: {
+    title: 'What is Acorn?',
+    body: (
+      <div className="space-y-3">
+        <p className="text-[#a8d5a8] text-sm leading-relaxed">
+          Acorn is an AI-powered project planning platform that grows your idea from a seed into a full
+          architectural plan — requirements, timelines, diagrams, and stakeholder analysis included.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {['SRS Generation','Risk Analysis','Phase Flow','Team Collab'].map(t => (
+            <span key={t} className="px-2 py-1 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(42,157,143,0.2)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.3)' }}>
+              {t}
+            </span>
+          ))}
+        </div>
       </div>
+    ),
+  },
+  how: {
+    title: 'How It Works',
+    body: (
+      <ol className="space-y-2 text-sm text-[#a8d5a8]">
+        {['Describe your project idea', 'AI generates all 10 planning phases', 'Review, edit, and export to PDF/SRS', 'Deploy with a complete architecture plan'].map((s, i) => (
+          <li key={i} className="flex items-start gap-3">
+            <span className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
+              style={{ background: '#6B4C8A', color: '#fff' }}>{i + 1}</span>
+            <span>{s}</span>
+          </li>
+        ))}
+      </ol>
+    ),
+  },
+  features: {
+    title: 'Features',
+    body: (
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          ['AI Board Room', '8 specialized agents debate your architecture'],
+          ['Conflict Detection', 'Scans requirements for contradictions'],
+          ['Code Scaffold', 'Generates boilerplate for your tech stack'],
+          ['Export Center', 'PDF, SRS, OpenAPI, ERD diagrams'],
+        ].map(([t, d]) => (
+          <div key={t} className="p-2 rounded-lg" style={{ background: 'rgba(212,160,23,0.08)', border: '1px solid rgba(212,160,23,0.2)' }}>
+            <p className="text-xs font-bold text-[#D4A017]">{t}</p>
+            <p className="text-xs text-[#6b9e7a] mt-0.5">{d}</p>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  started: {
+    title: 'Get Started',
+    body: (
+      <div className="space-y-3">
+        <p className="text-sm text-[#a8d5a8]">Free tier available — no credit card required.</p>
+        <div className="space-y-2">
+          <button className="w-full py-2.5 rounded-xl text-sm font-bold text-[#0a150e] transition-all"
+            style={{ background: 'linear-gradient(135deg, #C1440E, #e05a24)' }}
+            onClick={() => window.location.href = '/register'}>
+            Create Free Account →
+          </button>
+          <button className="w-full py-2 rounded-xl text-sm font-medium border transition-all"
+            style={{ borderColor: 'rgba(193,68,14,0.4)', color: '#C1440E' }}
+            onClick={() => window.location.href = '/login'}>
+            Sign In
+          </button>
+        </div>
+      </div>
+    ),
+  },
+};
 
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
-        scrollY > 50 ? 'bg-[#0a0f1a]/90 backdrop-blur-lg border-b border-[#1e3a5f]/30' : ''
+// ─── Main LandingPage ───────────────────────────────────────────────────────
+type Stage = 'falling' | 'cracking' | 'welcome' | 'tree';
+
+const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [stage, setStage] = useState<Stage>('falling');
+  const [activeLeaf, setActiveLeaf] = useState<string | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+  const hasEnteredRef = useRef(false);
+
+  useEffect(() => {
+    // Skip intro animation if user already passed through it
+    if (sessionStorage.getItem('acorn_intro_done')) {
+      setStage('tree');
+      return;
+    }
+    // Sequence timing
+    const t1 = setTimeout(() => setStage('cracking'), 2200);  // acorn hits ground
+    const t2 = setTimeout(() => setStage('welcome'), 2800);   // crack → welcome text
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleEnter = () => {
+    sessionStorage.setItem('acorn_intro_done', '1');
+    hasEnteredRef.current = true;
+    setStage('tree');
+    setActiveLeaf(null);
+  };
+
+  const handleLeafClick = (id: string) => {
+    if (['planning','feasibility_study','requirements_gathering','design','development','summary'].includes(id)) {
+      navigate('/register');
+    } else {
+      setActiveLeaf(prev => prev === id ? null : id);
+    }
+  };
+
+  // ── Intro / welcome stage ────────────────────────────────────────────────
+  if (stage === 'falling' || stage === 'cracking' || stage === 'welcome') {
+    return (
+      <div
+        className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
+        style={{ background: 'radial-gradient(ellipse at 50% 80%, #0f2a18 0%, #060e09 100%)' }}
+      >
+        {/* Background particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(18)].map((_, i) => (
+            <div key={i} className="absolute rounded-full"
+              style={{
+                width: `${2 + (i % 4)}px`, height: `${2 + (i % 4)}px`,
+                left: `${5 + i * 5.2}%`, top: `${10 + (i * 7.3) % 80}%`,
+                background: i % 3 === 0 ? '#4ade80' : i % 3 === 1 ? '#D4A017' : '#2A9D8F',
+                opacity: 0.15 + (i % 5) * 0.04,
+                animation: `float ${4 + i % 4}s ease-in-out ${i * 0.3}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Forest floor silhouette */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, #0a150e 60%, transparent)' }}
+        />
+
+        {/* Acorn + crack animation */}
+        <div className="relative flex flex-col items-center">
+          <div style={{
+            animation: stage === 'falling'
+              ? 'acornFall 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards'
+              : stage === 'cracking'
+              ? 'acornShake 0.4s ease-in-out'
+              : 'none',
+          }}>
+            <AcornSVG cracked={stage === 'cracking' || stage === 'welcome'} />
+          </div>
+
+          {/* Ground flash on impact */}
+          {stage === 'cracking' && (
+            <div className="absolute bottom-0 w-32 h-8 rounded-full"
+              style={{
+                background: 'radial-gradient(ellipse, rgba(212,160,23,0.6) 0%, transparent 70%)',
+                animation: 'impactFlash 0.5s ease-out forwards',
+              }}
+            />
+          )}
+
+          {/* Welcome text */}
+          {stage === 'welcome' && (
+            <div className="mt-10 text-center" style={{ animation: 'welcomeFadeIn 0.8s ease-out forwards' }}>
+              <h1 className="text-5xl font-bold mb-3"
+                style={{
+                  background: 'linear-gradient(135deg, #4ade80, #D4A017, #2A9D8F)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                Welcome to Acorn
+              </h1>
+              <p className="text-[#6b9e7a] text-lg mb-8">Grow your project from a seed of an idea</p>
+              <button
+                onClick={handleEnter}
+                className="group inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-lg font-bold transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, #2d6a3f, #4ade80)',
+                  color: '#0a150e',
+                  boxShadow: '0 0 40px rgba(74,222,128,0.3)',
+                }}
+              >
+                <TreePine className="w-5 h-5" />
+                Enter the Forest
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <style>{`
+          @keyframes acornFall {
+            0%   { transform: translateY(-220px) rotate(-20deg); opacity: 0; }
+            60%  { transform: translateY(0px) rotate(5deg); opacity: 1; }
+            75%  { transform: translateY(-30px) rotate(-3deg); }
+            88%  { transform: translateY(0px) rotate(2deg); }
+            95%  { transform: translateY(-8px) rotate(-1deg); }
+            100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+          }
+          @keyframes acornShake {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-6px) rotate(-5deg); }
+            40% { transform: translateX(6px) rotate(5deg); }
+            60% { transform: translateX(-4px) rotate(-3deg); }
+            80% { transform: translateX(4px) rotate(3deg); }
+          }
+          @keyframes impactFlash {
+            0%   { opacity: 1; transform: scale(0.5); }
+            100% { opacity: 0; transform: scale(2); }
+          }
+          @keyframes welcomeFadeIn {
+            0%   { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes float {
+            0%,100% { transform: translateY(0); }
+            50%     { transform: translateY(-12px); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ── Tree stage — main landing page ───────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-[#0a150e] text-[#e8f5e0] overflow-x-hidden">
+
+      {/* Nav */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrollY > 40 ? 'bg-[#0a150e]/90 backdrop-blur-md border-b border-[#1e4a28]/40' : ''
       }`}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className={`flex items-center justify-between h-20 transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-          }`}>
-            {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#d4af37] to-[#9a7b24] rounded-xl blur-lg opacity-50 group-hover:opacity-80 transition-all duration-500" />
-                <div className="relative w-12 h-12 bg-gradient-to-br from-[#d4af37] to-[#b8962e] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
-                  <Sparkles className="w-6 h-6 text-[#0a0f1a]" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gradient-gold">Acorn</span>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-18 py-4">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => { sessionStorage.removeItem('acorn_intro_done'); setStage('falling'); }}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4ade80] to-[#2d6a3f] flex items-center justify-center">
+              <TreePine className="w-5 h-5 text-[#0a150e]" />
             </div>
-
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-gray-400 hover:text-[#d4af37] transition-colors font-medium">Features</a>
-              <a href="#pricing" className="text-gray-400 hover:text-[#d4af37] transition-colors font-medium">Pricing</a>
-              <a href="#enterprise" className="text-gray-400 hover:text-[#d4af37] transition-colors font-medium">Enterprise</a>
-            </div>
-
-            {/* CTA */}
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => navigate('/login')}
-                className="px-5 py-2.5 text-gray-300 hover:text-white font-medium transition-colors"
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => navigate('/register')}
-                className="btn-primary"
-              >
-                Start Free Trial
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            <span className="text-xl font-bold text-gradient-forest">Acorn</span>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm">
+            {['Features', 'Pricing', 'Enterprise'].map(l => (
+              <a key={l} href={`#${l.toLowerCase()}`} className="text-[#6b9e7a] hover:text-[#4ade80] transition-colors font-medium">{l}</a>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/login')} className="px-4 py-2 text-[#a8d5a8] hover:text-[#e8f5e0] font-medium text-sm transition-colors">Sign In</button>
+            <button onClick={() => navigate('/register')} className="btn-primary text-sm px-5 py-2.5">
+              Start Free <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section ref={heroRef} className="relative pt-32 pb-24 px-6 lg:px-8 min-h-screen flex items-center">
-        <div className="max-w-7xl mx-auto w-full">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Content */}
-            <div className="relative z-10">
-              {/* Enterprise Badge */}
-              <div 
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 mb-8 animate-reveal-up`}
-              >
-                <Award className="w-4 h-4 text-[#d4af37]" />
-                <span className="text-[#d4af37] text-sm font-semibold tracking-wide">ENTERPRISE-GRADE AI PLATFORM</span>
+      {/* Hero — The Tree IS the landing page */}
+      <section className="relative pt-24 pb-16 min-h-screen flex flex-col">
+        <div className="max-w-5xl mx-auto px-6 w-full text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+            style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)' }}>
+            <Sparkles className="w-3.5 h-3.5 text-[#4ade80]" />
+            <span className="text-[#4ade80] text-xs font-bold tracking-widest">AI-POWERED PROJECT PLANNING</span>
+          </div>
+          <h1 className="text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+            <span className="text-[#e8f5e0]">Your Project,</span>{' '}
+            <span className="text-gradient-forest">Growing</span>
+          </h1>
+          <p className="text-[#6b9e7a] text-lg max-w-2xl mx-auto">
+            Click the leaves below to explore. Each leaf is a phase of your project lifecycle.
+          </p>
+        </div>
+
+        {/* Interactive Tree */}
+        <div className="relative flex-1 flex items-center justify-center px-4" style={{ minHeight: '520px' }}>
+          <div className="w-full" style={{ maxWidth: '880px' }}>
+            <FullLandingTree onLeafClick={handleLeafClick} activeLeaf={activeLeaf} />
+          </div>
+
+          {/* Leaf info panel */}
+          {activeLeaf && LEAF_PANELS[activeLeaf] && (
+            <div
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-72 rounded-2xl p-5 z-20"
+              style={{
+                background: '#0f1f15',
+                border: '1px solid #1e4a28',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                animation: 'panelSlide 0.25s ease-out',
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-[#e8f5e0] text-base">{LEAF_PANELS[activeLeaf].title}</h3>
+                <button onClick={() => setActiveLeaf(null)} className="text-[#4a7a56] hover:text-[#e8f5e0] text-lg leading-none transition-colors">×</button>
               </div>
-
-              {/* Headline */}
-              <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] mb-8 animate-reveal-up delay-100">
-                <span className="text-white">Transform Project</span>
-                <br />
-                <span className="text-gradient-gold">Planning Forever</span>
-              </h1>
-
-              {/* Subheadline */}
-              <p className="text-xl text-gray-400 mb-10 leading-relaxed max-w-xl animate-reveal-up delay-200">
-                Acorn leverages advanced AI to generate comprehensive project documentation, 
-                stakeholder analysis, and compliance-ready specifications in minutes.
-              </p>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-4 mb-12 animate-reveal-up delay-300">
-                <button 
-                  onClick={() => navigate('/register')}
-                  className="btn-primary text-lg px-10 py-5 group"
-                >
-                  <Rocket className="w-5 h-5" />
-                  Start Free Trial
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
-                </button>
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="btn-secondary text-lg px-10 py-5 group"
-                >
-                  <Play className="w-5 h-5" />
-                  Watch Demo
-                </button>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="flex items-center gap-8 animate-reveal-up delay-400">
-                <div className="flex -space-x-3">
-                  {[1,2,3,4,5].map((i) => (
-                    <div 
-                      key={i} 
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#0d1525] border-2 border-[#0a0f1a] flex items-center justify-center text-xs font-bold text-[#d4af37]"
-                    >
-                      {String.fromCharCode(64 + i)}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1 mb-1">
-                    {[1,2,3,4,5].map((i) => (
-                      <Star key={i} className="w-4 h-4 fill-[#d4af37] text-[#d4af37]" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-500">Trusted by 500+ enterprises</p>
-                </div>
-              </div>
+              {LEAF_PANELS[activeLeaf].body}
             </div>
+          )}
+        </div>
 
-            {/* Right Visual */}
-            <div className="relative hidden lg:block">
-              <div className="relative animate-dramatic delay-200">
-                {/* Main Card */}
-                <div className="card p-8 relative overflow-hidden">
-                  {/* Shimmer Effect */}
-                  <div className="absolute inset-0 animate-shimmer" />
-                  
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-white">Project Analysis</h3>
-                      <div className="badge">
-                        <Zap className="w-3 h-3" />
-                        AI Powered
-                      </div>
-                    </div>
-                    
-                    {/* Feature Cards */}
-                    <div className="space-y-4">
-                      {features.map((feature, index) => {
-                        const Icon = feature.icon;
-                        const isActive = activeFeature === index;
-                        
-                        return (
-                          <div 
-                            key={index}
-                            className={`p-4 rounded-xl transition-all duration-500 cursor-pointer ${
-                              isActive 
-                                ? 'bg-[#d4af37]/10 border border-[#d4af37]/30' 
-                                : 'bg-[#111b2e]/50 border border-transparent hover:border-[#1e3a5f]'
-                            }`}
-                            onClick={() => setActiveFeature(index)}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 ${
-                                isActive 
-                                  ? 'bg-gradient-to-br from-[#d4af37] to-[#9a7b24]' 
-                                  : 'bg-[#1e3a5f]'
-                              }`}>
-                                <Icon className={`w-5 h-5 ${isActive ? 'text-[#0a0f1a]' : 'text-gray-400'}`} />
-                              </div>
-                              <div className="flex-1">
-                                <h4 className={`font-semibold transition-colors ${isActive ? 'text-white' : 'text-gray-300'}`}>
-                                  {feature.title}
-                                </h4>
-                                <p className={`text-sm transition-colors ${isActive ? 'text-gray-300' : 'text-gray-500'}`}>
-                                  {feature.metrics}
-                                </p>
-                              </div>
-                              {isActive && (
-                                <CheckCircle2 className="w-5 h-5 text-[#d4af37] animate-elastic" />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="mt-6 pt-6 border-t border-[#1e3a5f]">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-gray-400">Analysis Progress</span>
-                        <span className="text-[#d4af37] font-semibold">87%</span>
-                      </div>
-                      <div className="h-2 bg-[#1e3a5f] rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-[#d4af37] to-[#f0d77a] rounded-full transition-all duration-1000"
-                          style={{ width: '87%' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-6 mt-4 pb-4 text-xs text-[#4a7a56]">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full inline-block" style={{ background: '#D4A017' }} />Content Sections</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full inline-block" style={{ background: '#7BA05B' }} />Project Phases</span>
+          <span className="flex items-center gap-1.5"><ChevronDown className="w-3 h-3" />Click leaves to explore</span>
+        </div>
 
-                {/* Floating Stats */}
-                <div className="absolute -top-6 -right-6 card p-4 animate-float" style={{ animationDelay: '0.5s' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">+147%</p>
-                      <p className="text-xs text-gray-500">Productivity</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute -bottom-4 -left-6 card p-4 animate-float" style={{ animationDelay: '1s' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#d4af37]/20 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-[#d4af37]" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">2.5h</p>
-                      <p className="text-xs text-gray-500">Avg. Time Saved</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Scroll CTA */}
+        <div className="flex justify-center mt-4 animate-bounce">
+          <div className="flex flex-col items-center gap-1 text-[#4a7a56] text-xs cursor-pointer" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}>
+            <span>Scroll to learn more</span>
+            <ChevronDown className="w-4 h-4" />
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 px-6 lg:px-8 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div 
-                  key={index}
-                  className="text-center animate-reveal-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/20 mb-4">
-                    <Icon className="w-6 h-6 text-[#d4af37]" />
-                  </div>
-                  <div className="text-4xl lg:text-5xl font-bold text-white mb-2">{stat.value}</div>
-                  <div className="text-gray-500 font-medium">{stat.label}</div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Stats Strip */}
+      <section className="py-16 px-6" style={{ background: 'linear-gradient(to bottom, #0a150e, #0f1f15)' }}>
+        <div className="max-w-5xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { v: '10x', l: 'Faster Planning', c: '#4ade80' },
+            { v: '500+', l: 'Enterprise Users', c: '#D4A017' },
+            { v: '99.9%', l: 'Uptime', c: '#2A9D8F' },
+            { v: '8', l: 'AI Agents', c: '#6B4C8A' },
+          ].map(({ v, l, c }) => (
+            <div key={l} className="text-center">
+              <p className="text-4xl font-bold mb-1" style={{ color: c }}>{v}</p>
+              <p className="text-[#6b9e7a] text-sm">{l}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Capabilities Grid */}
-      <section id="features" className="py-24 px-6 lg:px-8 relative">
-        <div className="max-w-7xl mx-auto">
+      {/* Features Section */}
+      <section id="features" className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="badge mb-6 animate-reveal-up">
-              <Layers className="w-4 h-4" />
-              COMPREHENSIVE FEATURES
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6 animate-reveal-up delay-100">
-              Everything You Need to
-              <span className="text-gradient-gold"> Succeed</span>
-            </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto animate-reveal-up delay-200">
-              Enterprise-grade tools designed for complex project requirements
-            </p>
+            <div className="badge mb-4"><Layers className="w-3.5 h-3.5" />PLATFORM CAPABILITIES</div>
+            <h2 className="text-4xl font-bold text-[#e8f5e0] mb-4">Everything Your Project Needs</h2>
+            <p className="text-[#6b9e7a] text-lg max-w-2xl mx-auto">From idea to architecture — all phases, all artifacts, all in one place</p>
           </div>
-
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {capabilities.map((cap, index) => {
-              const Icon = cap.icon;
-              return (
-                <div 
-                  key={index}
-                  className="card p-8 hover-lift group animate-reveal-up"
-                  style={{ animationDelay: `${(index + 3) * 100}ms` }}
-                >
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#1e3a5f] to-[#111b2e] flex items-center justify-center mb-6 group-hover:from-[#d4af37] group-hover:to-[#9a7b24] transition-all duration-500">
-                    <Icon className="w-6 h-6 text-[#d4af37] group-hover:text-[#0a0f1a] transition-colors duration-500" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">{cap.title}</h3>
-                  <p className="text-gray-400">{cap.desc}</p>
+            {[
+              { icon: Cpu,        title: 'AI Board Room',       desc: '8 specialized agents debate your architecture and reach consensus', color: '#2A9D8F' },
+              { icon: Shield,     title: 'Security Audit Agent', desc: 'Scans your requirements for security gaps and compliance issues', color: '#C1440E' },
+              { icon: GitBranch,  title: 'Conflict Detection',   desc: 'Automatically finds contradictions across your requirements', color: '#D4A017' },
+              { icon: FileText,   title: 'SRS Generation',       desc: 'IEEE 830-compliant Software Requirements Specifications', color: '#6B4C8A' },
+              { icon: BarChart3,  title: 'Analytics Dashboard',  desc: 'Real-time insights, burndown charts, risk heatmaps', color: '#7BA05B' },
+              { icon: Zap,        title: 'Code Scaffold Agent',  desc: 'Generates boilerplate code for your entire chosen tech stack', color: '#8B5E3C' },
+            ].map(({ icon: Icon, title, desc, color }) => (
+              <div key={title} className="card p-7 hover-lift group" style={{ borderColor: 'rgba(30,74,40,0.6)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
+                  style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
+                  <Icon className="w-5 h-5" style={{ color }} />
                 </div>
-              );
-            })}
+                <h3 className="font-semibold text-[#e8f5e0] mb-2">{title}</h3>
+                <p className="text-[#6b9e7a] text-sm">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-6 lg:px-8">
+      {/* Phase Flow visual */}
+      <section className="py-24 px-6" style={{ background: '#0f1f15' }}>
         <div className="max-w-5xl mx-auto">
-          <div className="border-animated p-12 lg:p-16 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#d4af37]/5 via-transparent to-[#3b82f6]/5" />
-            
-            <div className="relative">
-              <div className="badge mb-8 animate-reveal-scale">
-                <Rocket className="w-4 h-4" />
-                GET STARTED TODAY
+          <div className="text-center mb-14">
+            <div className="badge mb-4"><Award className="w-3.5 h-3.5" />10-PHASE WORKFLOW</div>
+            <h2 className="text-4xl font-bold text-[#e8f5e0] mb-4">From Seed to Architecture</h2>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            {[
+              { label: 'Planning',      color: '#D4A017' },
+              { label: 'Feasibility',   color: '#7BA05B' },
+              { label: 'Requirements',  color: '#3d8a55' },
+              { label: 'Validation',    color: '#5F7A8A' },
+              { label: 'Design',        color: '#6B4C8A' },
+              { label: 'Development',   color: '#8B5E3C' },
+              { label: 'Tasks',         color: '#D4A017' },
+              { label: 'Costs',         color: '#2A9D8F' },
+              { label: 'Risks',         color: '#C1440E' },
+              { label: 'Summary',       color: '#4ade80' },
+            ].map(({ label, color }, i) => (
+              <div key={label} className="flex items-center gap-2">
+                <div className="px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{ background: `${color}18`, border: `1px solid ${color}40`, color }}>
+                  {i + 1}. {label}
+                </div>
+                {i < 9 && <ArrowRight className="w-3 h-3 text-[#2d6a3f]" />}
               </div>
-              
-              <h2 className="text-4xl lg:text-5xl font-bold mb-6 animate-reveal-up delay-100">
-                Ready to Transform Your
-                <span className="text-gradient-gold"> Project Planning?</span>
-              </h2>
-              
-              <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto animate-reveal-up delay-200">
-                Join leading enterprises using Acorn to streamline their project documentation 
-                and stakeholder management.
-              </p>
-              
-              <div className="flex flex-wrap justify-center gap-4 animate-reveal-up delay-300">
-                <button 
-                  onClick={() => navigate('/register')}
-                  className="btn-primary text-lg px-12 py-5 group"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Start Free Trial
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-                </button>
-                <button 
-                  onClick={() => {}}
-                  className="btn-secondary text-lg px-12 py-5"
-                >
-                  <Briefcase className="w-5 h-5" />
-                  Contact Sales
-                </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials / Social Proof */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-4xl font-bold text-[#e8f5e0] mb-4">Trusted by builders worldwide</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { q: 'Acorn cut our SRS writing time from 3 weeks to 2 hours. The AI agents actually understand software architecture.', name: 'Sarah K.', role: 'CTO, FinTech Startup' },
+              { q: 'The conflict detection alone saved us from a $50k architecture mistake. It caught contradictions we missed in review.', name: 'James M.', role: 'Solutions Architect' },
+              { q: 'Every phase flows into the next perfectly. Having the tree visualization makes it easy to see where we are at a glance.', name: 'Priya T.', role: 'Product Manager' },
+            ].map(({ q, name, role }) => (
+              <div key={name} className="card p-6">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-[#D4A017] text-[#D4A017]" />)}
+                </div>
+                <p className="text-[#a8d5a8] text-sm mb-4 leading-relaxed">"{q}"</p>
+                <div>
+                  <p className="font-semibold text-[#e8f5e0] text-sm">{name}</p>
+                  <p className="text-[#6b9e7a] text-xs">{role}</p>
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section id="pricing" className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="card p-14 text-center relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.06) 0%, transparent 70%)' }} />
+            <Rocket className="w-12 h-12 mx-auto mb-6 text-[#4ade80]" />
+            <h2 className="text-4xl font-bold text-[#e8f5e0] mb-4">Plant Your First Project Today</h2>
+            <p className="text-[#6b9e7a] text-lg mb-10 max-w-xl mx-auto">
+              Free tier available. No credit card required. Start growing in under 2 minutes.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <button onClick={() => navigate('/register')} className="btn-primary text-lg px-12 py-5 group">
+                <Sparkles className="w-5 h-5" />
+                Get Started Free
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button onClick={() => navigate('/login')} className="btn-secondary text-lg px-10 py-5">
+                Sign In
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 lg:px-8 border-t border-[#1e3a5f]/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#9a7b24] rounded-xl flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-[#0a0f1a]" />
-              </div>
-              <span className="text-xl font-bold text-gradient-gold">Acorn</span>
+      <footer className="py-10 px-6 border-t border-[#1e4a28]/30">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4ade80] to-[#2d6a3f] flex items-center justify-center">
+              <TreePine className="w-4 h-4 text-[#0a150e]" />
             </div>
-            
-            <p className="text-gray-500 text-sm">
-              © 2025 Acorn Technologies. All rights reserved.
-            </p>
-            
-            <div className="flex items-center gap-8">
-              <a href="#" className="text-gray-400 hover:text-[#d4af37] transition-colors text-sm font-medium">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-[#d4af37] transition-colors text-sm font-medium">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-[#d4af37] transition-colors text-sm font-medium">Contact</a>
-            </div>
+            <span className="font-bold text-gradient-forest">Acorn</span>
+          </div>
+          <p className="text-[#6b9e7a] text-xs">© 2026 Acorn Technologies. All rights reserved.</p>
+          <div className="flex gap-6 text-xs">
+            {['Privacy','Terms','Contact'].map(l => (
+              <a key={l} href="#" className="text-[#6b9e7a] hover:text-[#4ade80] transition-colors">{l}</a>
+            ))}
           </div>
         </div>
       </footer>
+
+      <style>{`
+        @keyframes panelSlide {
+          from { opacity: 0; transform: translateY(-50%) translateX(20px); }
+          to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
+        @keyframes float {
+          0%,100% { transform: translateY(0); }
+          50%     { transform: translateY(-10px); }
+        }
+      `}</style>
     </div>
   );
 };

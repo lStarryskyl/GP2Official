@@ -5,18 +5,16 @@ from typing import List, Optional
 from datetime import datetime
 from database import get_db
 from models.artifact import Artifact
-from config import settings
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseArtifactRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseArtifactRepository()
+    except ImportError:
+        pass
     return _MongoArtifactRepository()
 
 
@@ -52,14 +50,25 @@ class ArtifactRepository:
     async def clone_project_artifacts(self, source_project_id: str, target_project_id: str) -> List[Artifact]:
         return await self._repo.clone_project_artifacts(source_project_id, target_project_id)
 
+    async def get_latest_by_type(self, project_id: str, artifact_type: str) -> Optional[Artifact]:
+        """Return the most recent artifact matching the given type, or None."""
+        artifacts = await self.list_by_project(project_id, artifact_type)
+        if not artifacts:
+            return None
+        # Sort by updated_at descending and return the first
+        try:
+            return sorted(artifacts, key=lambda a: a.updated_at or a.created_at or "", reverse=True)[0]
+        except Exception:
+            return artifacts[0]
+
 
 class _SupabaseArtifactRepository:
-    """Supabase PostgreSQL implementation for artifacts."""
+    """PostgreSQL implementation for artifacts."""
 
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
 
     async def upsert_artifact(

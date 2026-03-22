@@ -1,76 +1,89 @@
 /**
  * Acorn Design System - Design Tokens
- * Brand colors extracted from logo
+ * Forest / Living Tree Theme
  */
 
 export const colors = {
-  // Brand Colors (from Acorn logo)
-  orange: {
-    50: '#FFF5E6',
-    100: '#FFE8CC',
-    200: '#FFD199',
-    300: '#FFB84D',
-    400: '#F5A623', // Primary Acorn color
-    500: '#E69500',
-    600: '#CC7A00',
-    700: '#995C00',
-    800: '#663D00',
-    900: '#331F00',
+  // Forest Green Palette (primary)
+  forest: {
+    950: '#040a06',
+    900: '#0a150e',
+    850: '#0f1f15',
+    800: '#142b1a',
+    750: '#1a3520',
+    700: '#1e4a28',
+    600: '#2d6a3f',
+    500: '#3d8a55',
+    400: '#4ade80', // bright green - active/interactive
+    300: '#86efac', // lighter green
+    200: '#bbf7d0',
   },
-  blue: {
-    50: '#E8F1F8',
-    100: '#D1E3F1',
-    200: '#A3C7E3',
-    300: '#6B9FD1',
-    400: '#4A7BA7', // Secondary Arrow color
-    500: '#2E5090', // Deep Blue
-    600: '#234073',
-    700: '#1A3056',
-    800: '#112039',
-    900: '#09101D',
+
+  // Bark Brown Palette (tree trunk visual)
+  bark: {
+    900: '#1c0f09',
+    800: '#2c1810',
+    700: '#3d2b1f',
+    600: '#5c4033',
   },
-  navy: {
-    50: '#E6E9EC',
-    100: '#CCD3D9',
-    200: '#99A7B3',
-    300: '#667B8D',
-    400: '#334F67',
-    500: '#1B2D45', // Primary Text
-    600: '#162437',
-    700: '#0F1A2E', // Dark Mode BG
-    800: '#0B1220',
-    900: '#060910',
+
+  // Sage Palette (muted greens for text)
+  sage: {
+    900: '#1a2b1e',
+    800: '#2d4a35',
+    700: '#4a7a56',
+    600: '#6b9e7a',
+    500: '#8fbc8f',
+    400: '#a8d5a8',
   },
-  
+
+  // Amber / Warm Gold (highlights, warnings)
+  amber: {
+    700: '#92400e',
+    600: '#b45309',
+    500: '#d97706',
+    400: '#fbbf24',
+    300: '#fcd34d',
+    200: '#fde68a',
+  },
+
+  // Text colors
+  text: {
+    primary: '#e8f5e0',   // cream sage white
+    muted: '#6b9e7a',     // muted sage
+    faint: '#4a7a56',     // very muted
+  },
+
   // Semantic Colors
-  success: '#28A745',
-  warning: '#FFC107',
-  error: '#DC3545',
-  info: '#17A2B8',
-  
-  // Neutrals
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#4ade80',
+
+  // Neutrals (kept for compatibility)
   gray: {
-    50: '#F8F9FA',
-    100: '#E9ECEF',
-    200: '#DEE2E6',
-    300: '#CED4DA',
-    400: '#ADB5BD',
-    500: '#6C757D',
-    600: '#495057',
-    700: '#343A40',
-    800: '#212529',
-    900: '#0F1419',
+    50: '#f0f7f0',
+    100: '#e8f5e0',
+    200: '#c8e6c9',
+    300: '#a5d6a7',
+    400: '#8fbc8f',
+    500: '#6b9e7a',
+    600: '#4a7a56',
+    700: '#2d4a35',
+    800: '#1a2b1e',
+    900: '#0f1f15',
   },
-  
-  white: '#FFFFFF',
-  black: '#000000',
+
+  white: '#e8f5e0',
+  black: '#040a06',
 };
 
 export const gradients = {
-  primary: 'linear-gradient(135deg, #F5A623 0%, #4A7BA7 50%, #2E5090 100%)',
-  orange: 'linear-gradient(135deg, #F5A623 0%, #FFB84D 100%)',
-  blue: 'linear-gradient(135deg, #4A7BA7 0%, #2E5090 100%)',
-  navy: 'linear-gradient(135deg, #1B2D45 0%, #0F1A2E 100%)',
+  primary: 'linear-gradient(135deg, #4ade80 0%, #2d6a3f 100%)',
+  forest: 'linear-gradient(135deg, #4ade80 0%, #86efac 100%)',
+  canopy: 'linear-gradient(135deg, #86efac 0%, #4ade80 50%, #2d6a3f 100%)',
+  bark: 'linear-gradient(135deg, #3d2b1f 0%, #1c0f09 100%)',
+  amber: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
 };
 
 export const typography = {
@@ -148,8 +161,8 @@ export const shadows = {
   xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
   '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
-  acorn: '0 10px 30px rgba(245, 166, 35, 0.3)', // Orange glow
-  arrow: '0 10px 30px rgba(74, 123, 167, 0.3)', // Blue glow
+  forest: '0 10px 30px rgba(74, 222, 128, 0.25)',   // Forest green glow
+  amber: '0 10px 30px rgba(251, 191, 36, 0.25)',    // Amber glow
   none: 'none',
 };
 
@@ -182,4 +195,5 @@ export const transitions = {
   base: '200ms cubic-bezier(0.4, 0, 0.2, 1)',
   slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
   slower: '500ms cubic-bezier(0.4, 0, 0.2, 1)',
+  spring: '400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
 };

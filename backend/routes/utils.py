@@ -26,8 +26,7 @@ async def get_config_status():
     return {
         "llm_provider": settings.llm_provider,
         "llm_api_key_set": bool(settings.llm_api_key),
-        "openai_key_set": bool(settings.openai_api_key),
         "gemini_key_set": bool(settings.gemini_api_key),
-        "supabase_configured": settings.use_supabase,
+        "database_configured": bool(settings.database_url),
         "environment": settings.environment
     }

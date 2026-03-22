@@ -5,18 +5,16 @@ from typing import List, Optional
 from database import get_db
 from models.requirement import Requirement
 from datetime import datetime
-from config import settings
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseRequirementRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseRequirementRepository()
+    except ImportError:
+        pass
     return _MongoRequirementRepository()
 
 
@@ -67,12 +65,12 @@ class RequirementRepository:
 
 
 class _SupabaseRequirementRepository:
-    """Supabase PostgreSQL implementation."""
-    
+    """PostgreSQL implementation."""
+
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
     
     def _row_to_requirement(self, row) -> Requirement:

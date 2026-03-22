@@ -1,0 +1,57 @@
+{
+    "accessibility.signals.chatResponseReceived": {
+        "sound": "off"
+    },
+    "accessibility.signals.chatUserActionRequired": {
+        "announcement": "off",
+        "sound": "off"
+    },
+    "accessibility.signals.chatEditModifiedFile": {
+        "sound": "off"
+    },
+    "accessibility.signals.codeActionApplied": {
+        "sound": "off"
+    },
+    "accessibility.signals.codeActionTriggered": {
+        "sound": "off"
+    },
+    "accessibility.signals.diffLineInserted": {
+        "sound": "off"
+    },
+    "accessibility.signals.taskCompleted": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "accessibility.signals.progress": {
+        "sound": "off"
+    },
+    "accessibility.signals.positionHasWarning": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "accessibility.signals.lineHasWarning": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "accessibility.signals.lineHasInlineSuggestion": {
+        "sound": "off"
+    },
+    "accessibility.signals.lineHasError": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "accessibility.signals.editsKept": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "accessibility.signals.editsUndone": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "accessibility.signals.clear": {
+        "sound": "off"
+    },
+    "accessibility.signals.chatRequestSent": {
+        "sound": "off"
+    }
+}

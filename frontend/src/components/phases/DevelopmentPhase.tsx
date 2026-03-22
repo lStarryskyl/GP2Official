@@ -569,7 +569,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
               </CardHeader>
               <CardContent className="pt-0 space-y-2 text-xs text-gray-700">
                 {suggestedTechs.slice(0, 3).map((s) => (
-                  <div key={s.label} className="p-2 rounded-lg border border-[#1e3a5f] bg-white">
+                  <div key={s.label} className="p-2 rounded-lg border border-[#1e4a28] bg-white">
                     <div className="font-semibold mb-0.5">{s.label}</div>
                     <div className="text-[11px] leading-snug">{s.details}</div>
                   </div>
@@ -630,7 +630,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                     {visibleItems.map((item, idx) => (
                       <div
                         key={item.name}
-                        className="p-3 rounded-xl border border-[#1e3a5f] bg-white hover:border-emerald-300 hover:bg-emerald-50 transition-all"
+                        className="p-3 rounded-xl border border-[#1e4a28] bg-white hover:border-emerald-300 hover:bg-emerald-50 transition-all"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-gray-900 text-sm">{item.name}</span>

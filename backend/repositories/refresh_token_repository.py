@@ -4,20 +4,18 @@ from datetime import datetime
 from typing import Optional
 import uuid
 
-from config import settings
 from database import get_db
 from models.token import RefreshToken
 
 
 def _get_repository():
-    """Get the appropriate repository based on settings and actual pool availability."""
-    if settings.use_supabase:
-        try:
-            from database_supabase import pool
-            if pool is not None:
-                return _SupabaseRefreshTokenRepository()
-        except ImportError:
-            pass
+    """Get the appropriate repository based on pool availability."""
+    try:
+        from database import pool
+        if pool is not None:
+            return _SupabaseRefreshTokenRepository()
+    except ImportError:
+        pass
     return _MongoRefreshTokenRepository()
 
 
@@ -55,12 +53,12 @@ class RefreshTokenRepository:
 
 
 class _SupabaseRefreshTokenRepository:
-    """Supabase PostgreSQL implementation."""
-    
+    """PostgreSQL implementation."""
+
     def _get_pool(self):
-        from database_supabase import pool
+        from database import pool
         if pool is None:
-            raise Exception("Supabase database pool not initialized.")
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
         return pool
 
     async def create_token(self, *, user_id: str, token_hash: str, expires_at: datetime,

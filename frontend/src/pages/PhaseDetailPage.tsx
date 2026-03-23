@@ -1328,9 +1328,9 @@ export const PhaseDetailPage: React.FC = () => {
     const colors: Record<string, string> = {
       planning: '#D4A017', feasibility_study: '#7BA05B', requirements_gathering: '#3d8a55',
       validation: '#5F7A8A', design: '#6B4C8A', development: '#8B5E3C',
-      tasks: '#D4A017', cost_benefit: '#2A9D8F', risks: '#C1440E', summary: '#4ade80',
+      tasks: '#D4A017', cost_benefit: '#2A9D8F', risks: '#C1440E', summary: '#a0845c',
     };
-    return colors[phaseId || ''] || '#4ade80';
+    return colors[phaseId || ''] || '#D4A017';
   })();
 
   const PhaseWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -1343,7 +1343,7 @@ export const PhaseDetailPage: React.FC = () => {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
             <div className="space-y-5">
               {/* Phase Header */}
-              <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: '#0f1f15', border: `1px solid ${phaseAccentColor}30` }}>
+              <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: '#130c07', border: `1px solid ${phaseAccentColor}30` }}>
                 <div className="h-1" style={{ background: `linear-gradient(to right, ${phaseAccentColor}, ${phaseAccentColor}88)` }} />
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1367,7 +1367,7 @@ export const PhaseDetailPage: React.FC = () => {
                         variant="outline"
                         onClick={() => navigate(`/projects/${id}`)}
                         className="text-[#8a7055] bg-transparent"
-                        style={{ borderColor: 'rgba(30,74,40,0.6)' }}
+                        style={{ borderColor: 'rgba(61,36,18,0.6)' }}
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back
@@ -1377,7 +1377,7 @@ export const PhaseDetailPage: React.FC = () => {
                           variant="outline"
                           onClick={handleDownload}
                           className="text-[#8a7055] bg-transparent"
-                          style={{ borderColor: 'rgba(30,74,40,0.6)' }}
+                          style={{ borderColor: 'rgba(61,36,18,0.6)' }}
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Export
@@ -1386,9 +1386,9 @@ export const PhaseDetailPage: React.FC = () => {
                       <span className="px-3 py-1.5 rounded-full text-xs font-semibold"
                         style={
                           status === 'completed'
-                            ? { background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }
+                            ? { background: 'rgba(212,160,23,0.15)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.3)' }
                             : status === 'locked'
-                            ? { background: 'rgba(30,74,40,0.15)', color: '#4a7a56', border: '1px solid rgba(30,74,40,0.3)' }
+                            ? { background: 'rgba(61,36,18,0.5)', color: '#8a7055', border: '1px solid rgba(61,36,18,0.8)' }
                             : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
                         }>
                         {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● Active'}
@@ -1416,10 +1416,10 @@ export const PhaseDetailPage: React.FC = () => {
               {/* Next Phase Banner */}
               {nextPhase && (
                 <div className="rounded-xl p-4 flex flex-wrap items-center justify-between gap-4"
-                  style={{ background: '#0f1f15', border: '1px solid rgba(30,74,40,0.5)' }}>
+                  style={{ background: '#1a1008', border: '1px solid rgba(61,36,18,0.8)' }}>
                   <div className="flex items-center gap-3">
                     <span className="flex items-center justify-center w-9 h-9 rounded-lg font-bold text-sm"
-                      style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
+                      style={{ background: 'rgba(212,160,23,0.15)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.3)' }}>
                       {nextPhase.stepNumber}
                     </span>
                     <div>
@@ -1429,7 +1429,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                   <Button
                     className="font-semibold shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #2d6a3f, #4ade80)', color: '#0a150e', border: 'none' }}
+                    style={{ background: 'linear-gradient(135deg, #b8860b, #D4A017)', color: '#130c07', border: 'none' }}
                     onClick={() => navigate(`/projects/${id}/phases/${nextPhase.id}`)}
                   >
                     Continue
@@ -1898,7 +1898,7 @@ export const PhaseDetailPage: React.FC = () => {
       <PhaseWrapper>
         <div className="space-y-6">
           {/* AI Generate Card */}
-          <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, #0f1f15, #142b1a)', border: '1px solid rgba(107,76,138,0.4)' }}>
+          <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, #1a1008, #221508)', border: '1px solid rgba(107,76,138,0.4)' }}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold text-[#f0e4c8]">System Design</h2>

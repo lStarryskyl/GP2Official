@@ -759,7 +759,7 @@ export const ProjectDetailPage: React.FC = () => {
                     <button
                       onClick={() => setTreeView(true)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                        treeView ? 'bg-[#4ade80] text-[#130c07]' : 'text-[#8a7055] hover:text-[#f0e4c8]'
+                        treeView ? 'bg-[#D4A017] text-[#130c07]' : 'text-[#8a7055] hover:text-[#f0e4c8]'
                       }`}
                     >
                       Tree
@@ -767,7 +767,7 @@ export const ProjectDetailPage: React.FC = () => {
                     <button
                       onClick={() => setTreeView(false)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                        !treeView ? 'bg-[#4ade80] text-[#130c07]' : 'text-[#8a7055] hover:text-[#f0e4c8]'
+                        !treeView ? 'bg-[#D4A017] text-[#130c07]' : 'text-[#8a7055] hover:text-[#f0e4c8]'
                       }`}
                     >
                       List
@@ -793,7 +793,7 @@ export const ProjectDetailPage: React.FC = () => {
                   {/* Phase color legend */}
                   <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-[#3d2412]/30">
                     <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[#4ade80]" />
+                      <div className="w-3.5 h-3.5 rounded-full bg-[#D4A017]" />
                       <span className="text-xs text-[#8a7055]">Completed</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -801,11 +801,11 @@ export const ProjectDetailPage: React.FC = () => {
                       <span className="text-xs text-[#8a7055]">In Progress</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[#86efac]" />
+                      <div className="w-3.5 h-3.5 rounded-full bg-[#5a9e6a]" />
                       <span className="text-xs text-[#8a7055]">Ready</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[#3d2412] border border-[#2d6a3f]" />
+                      <div className="w-3.5 h-3.5 rounded-full bg-[#3d2412] border border-[#8a7055]" />
                       <span className="text-xs text-[#8a7055]">Locked</span>
                     </div>
                     <div className="flex items-center gap-2 ml-auto">
@@ -840,7 +840,7 @@ export const ProjectDetailPage: React.FC = () => {
                             navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`);
                           }
                         }}
-                        className={`w-full text-left ${phaseRowPadding} hover:bg-[#2c1b0e] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4ade80] rounded-xl`}
+                        className={`w-full text-left ${phaseRowPadding} hover:bg-[#2c1b0e] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4A017] rounded-xl`}
                       >
                         <div className="flex items-start gap-3 sm:gap-4">
                           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#D4A017]/20 text-[#D4A017] border border-[#D4A017]/30 flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">

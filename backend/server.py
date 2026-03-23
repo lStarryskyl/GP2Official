@@ -2,8 +2,11 @@
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import os
+import pathlib
 
 from database import init_db, close_db
 from routes import (
@@ -99,7 +102,9 @@ app.include_router(ai_chat.router, prefix="/api/ai-chat", tags=["AI Chat"])
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
-    """Root endpoint with API information."""
+    """Root endpoint — serves the React app in production, API info in dev."""
+    if _FRONTEND_DIST.is_dir():
+        return FileResponse(str(_FRONTEND_DIST / "index.html"))
     return {
         "service": "Acorn - AI Planning Platform",
         "version": "1.0.0",
@@ -139,3 +144,21 @@ async def health_check():
 async def health_check_head():
     """Explicit HEAD handler for health probes."""
     return Response(status_code=200)
+
+
+# ── Serve built React frontend in production ──────────────────────────────────
+_FRONTEND_DIST = pathlib.Path(__file__).parent.parent / "frontend" / "dist"
+
+if _FRONTEND_DIST.is_dir():
+    # Mount static assets (JS, CSS, images) at /assets
+    app.mount("/assets", StaticFiles(directory=str(_FRONTEND_DIST / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
+        """Catch-all: serve React SPA for any non-API path."""
+        # Try to serve the exact file first (e.g. favicon.ico, robots.txt)
+        file_path = _FRONTEND_DIST / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        # Fallback to index.html for client-side routing
+        return FileResponse(str(_FRONTEND_DIST / "index.html"))

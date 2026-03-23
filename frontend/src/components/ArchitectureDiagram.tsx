@@ -80,7 +80,8 @@ export const ArchitectureDiagram: React.FC<{ data: ArchitectureData }> = ({ data
 
   const getNode = (id: string) => nodes.find(n => n.id === id);
 
-  const getEdgePath = (from: ComponentNode & { cx: number; cy: number }, to: ComponentNode & { cx: number; cy: number }) => {
+  type LayoutNode = ComponentNode & { x: number; y: number; cx: number; cy: number };
+  const getEdgePath = (from: LayoutNode, to: LayoutNode) => {
     const startX = from.x + NODE_W;
     const startY = from.cy;
     const endX = to.x;

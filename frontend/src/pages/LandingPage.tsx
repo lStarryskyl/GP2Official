@@ -28,7 +28,7 @@ const AcornSVG: React.FC<{ cracked?: boolean; size?: number }> = ({ cracked = fa
             opacity={0.6 + i * 0.06}
           />
         ))}
-        <circle cx="45" cy="80" r="8" fill="#D4A017" fillOpacity="0.3" />
+        <ellipse cx="45" cy="80" rx="8" ry="8" fill="#D4A017" fillOpacity="0.3" />
       </>
     ) : (
       <>
@@ -43,25 +43,69 @@ const AcornSVG: React.FC<{ cracked?: boolean; size?: number }> = ({ cracked = fa
   </svg>
 );
 
+// ── Shared leaf/acorn path helpers ───────────────────────────────────────────
+
+/** Returns a leaf-shaped SVG path centered at (cx, cy) with given half-size.
+ *  The leaf points upward (tip at the top). */
+const leafPath = (cx: number, cy: number, rx: number, ry: number): string => {
+  const t = cy - ry;      // tip
+  const b = cy + ry * 0.55; // base
+  const ml = cx - rx * 0.92;
+  const mr = cx + rx * 0.92;
+  return (
+    `M ${cx} ${t} ` +
+    `C ${mr} ${t + ry * 0.35}, ${mr} ${b - ry * 0.2}, ${cx} ${b} ` +
+    `C ${ml} ${b - ry * 0.2}, ${ml} ${t + ry * 0.35}, ${cx} ${t} Z`
+  );
+};
+
+/** Acorn cap + body centered at (cx, cy), radius r */
+const AcornNode: React.FC<{
+  cx: number; cy: number; r: number;
+  active?: boolean; fill?: string;
+}> = ({ cx, cy, r, active, fill = '#c8870f' }) => (
+  <g>
+    <ellipse cx={cx} cy={cy + r * 0.38} rx={r * 0.82} ry={r * 0.75}
+      fill={fill}
+      style={{ filter: active ? `drop-shadow(0 0 10px ${fill}bb)` : 'none', transition: 'all 0.3s ease' }}
+    />
+    <ellipse cx={cx} cy={cy + r * 0.38} rx={r * 0.65} ry={r * 0.6}
+      fill={fill === '#c8870f' ? '#e8bf40' : fill}
+      fillOpacity="0.6"
+    />
+    <ellipse cx={cx} cy={cy - r * 0.35} rx={r * 0.9} ry={r * 0.42}
+      fill="#3d2412"
+    />
+    <ellipse cx={cx} cy={cy - r * 0.35} rx={r * 0.72} ry={r * 0.3}
+      fill="#221508"
+    />
+    <rect x={cx - r * 0.14} y={cy - r * 0.85} width={r * 0.28} height={r * 0.55}
+      rx={r * 0.1} fill="#221508"
+    />
+    <ellipse cx={cx - r * 0.28} cy={cy + r * 0.12} rx={r * 0.16} ry={r * 0.24}
+      fill="rgba(255,255,255,0.1)"
+    />
+  </g>
+);
+
 // ── Big Interactive Tree ──────────────────────────────────────────────────────
 const LandingTree: React.FC<{
   onLeafClick: (id: string) => void;
   activeLeaf: string | null;
 }> = ({ onLeafClick, activeLeaf }) => {
   const phases = [
-    { id: 'planning',       x: 100, y: 200, r: 44, label: 'Planning',      fill: '#D4A017', text: '#0c0702' },
-    { id: 'feasibility',    x: 250, y: 160, r: 44, label: 'Feasibility',    fill: '#5a9e6a', text: '#0c0702' },
-    { id: 'requirements',   x: 400, y: 130, r: 48, label: 'Requirements',   fill: '#3d7a4a', text: '#f0e4c8' },
-    { id: 'design',         x: 545, y: 158, r: 44, label: 'Design',         fill: '#6B4C8A', text: '#f0e4c8' },
-    { id: 'development',    x: 685, y: 195, r: 44, label: 'Development',    fill: '#8B5E3C', text: '#f0e4c8' },
-    { id: 'summary',        x: 400, y: 52,  r: 50, label: '🌰 Summary',     fill: '#c8870f', text: '#0c0702' },
+    { id: 'planning',       x: 100, y: 200, rx: 46, ry: 54, label: 'Planning',      fill: '#D4A017', text: '#0c0702' },
+    { id: 'feasibility',    x: 250, y: 160, rx: 44, ry: 52, label: 'Feasibility',    fill: '#5a9e6a', text: '#0c0702' },
+    { id: 'requirements',   x: 400, y: 130, rx: 50, ry: 58, label: 'Requirements',   fill: '#3d7a4a', text: '#f0e4c8' },
+    { id: 'design',         x: 545, y: 158, rx: 44, ry: 52, label: 'Design',         fill: '#6B4C8A', text: '#f0e4c8' },
+    { id: 'development',    x: 685, y: 195, rx: 44, ry: 52, label: 'Development',    fill: '#8B5E3C', text: '#f0e4c8' },
   ];
 
   const infoLeaves = [
-    { id: 'what',     x: 140,  y: 330, r: 52, label: 'What is\nAcorn?',   fill: '#2A9D8F', text: '#f0e4c8' },
-    { id: 'how',      x: 360,  y: 295, r: 52, label: 'How It\nWorks',     fill: '#5c3820', text: '#f0e4c8' },
-    { id: 'features', x: 580,  y: 320, r: 52, label: 'Features',          fill: '#3d2412', text: '#D4A017' },
-    { id: 'start',    x: 740,  y: 270, r: 52, label: 'Get\nStarted',      fill: '#c1440e', text: '#f0e4c8' },
+    { id: 'what',     x: 140,  y: 330, rx: 54, ry: 62, label: 'What is\nAcorn?',   fill: '#2A9D8F', text: '#f0e4c8' },
+    { id: 'how',      x: 360,  y: 295, rx: 54, ry: 62, label: 'How It\nWorks',     fill: '#5c3820', text: '#f0e4c8' },
+    { id: 'features', x: 580,  y: 320, rx: 54, ry: 62, label: 'Features',          fill: '#3d2412', text: '#D4A017' },
+    { id: 'start',    x: 740,  y: 270, rx: 54, ry: 62, label: 'Get\nStarted',      fill: '#c1440e', text: '#f0e4c8' },
   ];
 
   const branches = [
@@ -78,45 +122,84 @@ const LandingTree: React.FC<{
     <svg width="100%" height="100%" viewBox="0 0 880 570" preserveAspectRatio="xMidYMid meet"
       style={{ maxWidth: 920, margin: '0 auto', display: 'block' }}>
 
+      <style>{`
+        @keyframes leafRustle {
+          0%, 100% { transform-box: fill-box; transform-origin: center bottom; transform: rotate(0deg) scale(1); }
+          25%       { transform-box: fill-box; transform-origin: center bottom; transform: rotate(-4deg) scale(1.06); }
+          75%       { transform-box: fill-box; transform-origin: center bottom; transform: rotate(4deg) scale(1.05); }
+        }
+        .leaf-rustle:hover path, .leaf-rustle:hover ellipse {
+          animation: leafRustle 0.5s ease-in-out;
+        }
+      `}</style>
+
       {/* Shadow */}
       <ellipse cx="400" cy="568" rx="100" ry="8" fill="#0c0702" fillOpacity="0.8" />
 
       {/* Roots */}
       {[[400,555,330,568,12],[400,555,470,568,12],[400,560,280,568,8],[400,562,520,568,8],[400,565,230,568,6],[400,565,565,568,6]].map(
         ([x1,y1,x2,y2,w],i) => (
-          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke="#1a1008" strokeWidth={w} strokeLinecap="round" opacity={0.9-i*0.1} />
+          <path key={i}
+            d={`M ${x1} ${y1} Q ${(x1+x2)/2} ${y1+4} ${x2} ${y2}`}
+            stroke="#1a1008" strokeWidth={w} fill="none" strokeLinecap="round" opacity={0.9-i*0.1} />
         )
       )}
 
-      {/* Trunk */}
-      <path d="M 400 555 C 398 530, 402 500, 400 450 C 398 400, 402 370, 400 340 C 400 320, 400 510, 400 510"
+      {/* Trunk — tapered via two overlapping paths */}
+      <path d="M 385 555 C 388 530, 392 500, 390 450 C 388 420, 392 390, 390 340"
+        stroke="#2c1b0e" strokeWidth="28" fill="none" strokeLinecap="round" />
+      <path d="M 415 555 C 412 530, 408 500, 410 450 C 412 420, 408 390, 410 340"
         stroke="#2c1b0e" strokeWidth="22" fill="none" strokeLinecap="round" />
       <path d="M 400 555 C 398 530, 402 500, 400 450 C 398 400, 402 370, 400 340"
         stroke="#5c3820" strokeWidth="11" fill="none" strokeLinecap="round" opacity="0.5" />
       <path d="M 400 555 C 398 530, 402 500, 400 450"
         stroke="#8B5E3C" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.3" />
 
-      {/* Branches */}
-      {branches.map(([x1, y1, x2, y2], i) => (
-        <path key={i}
-          d={`M ${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}`}
-          stroke="#3d2412" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.8"
-        />
-      ))}
+      {/* Branches — organic S-curves */}
+      {branches.map(([x1, y1, x2, y2], i) => {
+        const cp1x = x1 + (x2 - x1) * 0.15;
+        const cp1y = y1 - 20;
+        const cp2x = x2 - (x2 - x1) * 0.15;
+        const cp2y = y2 + 20;
+        const thick = i < 4 ? 4.5 : 3;
+        return (
+          <path key={i}
+            d={`M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`}
+            stroke="#3d2412" strokeWidth={thick} fill="none" strokeLinecap="round" opacity="0.85"
+          />
+        );
+      })}
 
-      {/* Info leaves */}
+      {/* Info leaves — organic leaf shapes */}
       {infoLeaves.map(leaf => {
         const active = activeLeaf === leaf.id;
         return (
-          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}>
-            {active && <circle cx={leaf.x} cy={leaf.y} r={leaf.r + 16} fill={leaf.fill} fillOpacity="0.15" />}
-            <circle cx={leaf.x} cy={leaf.y} r={leaf.r}
+          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}
+            className="leaf-rustle">
+            {/* Glow halo */}
+            <ellipse cx={leaf.x} cy={leaf.y} rx={leaf.rx + 18} ry={leaf.ry + 18}
+              fill={leaf.fill} fillOpacity={active ? 0.18 : 0.05}
+              style={{ transition: 'all 0.35s ease' }}
+            />
+            {/* Leaf body */}
+            <path
+              d={leafPath(leaf.x, leaf.y, leaf.rx, leaf.ry)}
               fill={leaf.fill}
               stroke={active ? '#D4A017' : 'rgba(212,160,23,0.2)'}
-              strokeWidth={active ? 3 : 1}
+              strokeWidth={active ? 2.5 : 1}
               style={{ filter: active ? `drop-shadow(0 0 14px ${leaf.fill}aa)` : 'none', transition: 'all 0.3s ease' }}
             />
+            {/* Mid-rib */}
+            <line
+              x1={leaf.x} y1={leaf.y - leaf.ry * 0.8}
+              x2={leaf.x} y2={leaf.y + leaf.ry * 0.4}
+              stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round"
+            />
+            {/* Side veins */}
+            <line x1={leaf.x} y1={leaf.y - leaf.ry * 0.3} x2={leaf.x - leaf.rx * 0.55} y2={leaf.y + leaf.ry * 0.15}
+              stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
+            <line x1={leaf.x} y1={leaf.y - leaf.ry * 0.3} x2={leaf.x + leaf.rx * 0.55} y2={leaf.y + leaf.ry * 0.15}
+              stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
             {leaf.label.split('\n').map((line, li) => (
               <text key={li}
                 x={leaf.x} y={leaf.y + (li - (leaf.label.split('\n').length - 1) / 2) * 14}
@@ -130,19 +213,30 @@ const LandingTree: React.FC<{
         );
       })}
 
-      {/* Phase leaves (upper tree) */}
+      {/* Phase leaves (upper tree) — leaf shapes */}
       {phases.map(leaf => {
         const active = activeLeaf === leaf.id;
         return (
-          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}>
-            {active && <circle cx={leaf.x} cy={leaf.y} r={leaf.r + 14} fill={leaf.fill} fillOpacity="0.18" />}
-            <circle cx={leaf.x} cy={leaf.y} r={leaf.r}
+          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}
+            className="leaf-rustle">
+            <ellipse cx={leaf.x} cy={leaf.y} rx={leaf.rx + 16} ry={leaf.ry + 16}
+              fill={leaf.fill} fillOpacity={active ? 0.2 : 0.07}
+              style={{ transition: 'all 0.35s ease' }}
+            />
+            <path
+              d={leafPath(leaf.x, leaf.y, leaf.rx, leaf.ry)}
               fill={leaf.fill}
               stroke={active ? '#f5df90' : 'rgba(255,255,255,0.12)'}
               strokeWidth={active ? 2.5 : 1}
               style={{ filter: active ? `drop-shadow(0 0 12px ${leaf.fill}bb)` : 'none', transition: 'all 0.3s ease' }}
             />
-            <text x={leaf.x} y={leaf.y + 5} textAnchor="middle"
+            <line x1={leaf.x} y1={leaf.y - leaf.ry * 0.8} x2={leaf.x} y2={leaf.y + leaf.ry * 0.4}
+              stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1={leaf.x} y1={leaf.y - leaf.ry * 0.2} x2={leaf.x - leaf.rx * 0.5} y2={leaf.y + leaf.ry * 0.1}
+              stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeLinecap="round" />
+            <line x1={leaf.x} y1={leaf.y - leaf.ry * 0.2} x2={leaf.x + leaf.rx * 0.5} y2={leaf.y + leaf.ry * 0.1}
+              stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeLinecap="round" />
+            <text x={leaf.x} y={leaf.y + 6} textAnchor="middle"
               fill={leaf.text} fontSize="9.5" fontWeight="700"
               fontFamily="Inter, sans-serif" style={{ pointerEvents: 'none' }}>
               {leaf.label}
@@ -151,9 +245,23 @@ const LandingTree: React.FC<{
         );
       })}
 
+      {/* Summary — real acorn at the top */}
+      <g onClick={() => onLeafClick('summary')} style={{ cursor: 'pointer' }}>
+        <ellipse cx="400" cy="52" rx="66" ry="66"
+          fill="#c8870f" fillOpacity={activeLeaf === 'summary' ? 0.22 : 0.08}
+          style={{ transition: 'all 0.35s ease' }}
+        />
+        <AcornNode cx={400} cy={52} r={50} active={activeLeaf === 'summary'} fill="#c8870f" />
+        <text x="400" y="68" textAnchor="middle"
+          fill="#0c0702" fontSize="9" fontWeight="800" fontFamily="Inter, sans-serif"
+          style={{ pointerEvents: 'none' }}>
+          Summary
+        </text>
+      </g>
+
       {/* Floating dust motes */}
       {[0,1,2,3,4].map(i => (
-        <circle key={i} cx={80 + i * 175} cy={25 + (i%3)*15} r={2 + i%2}
+        <ellipse key={i} cx={80 + i * 175} cy={25 + (i%3)*15} rx={2 + i%2} ry={2 + i%2}
           fill="#D4A017" fillOpacity={0.15 + i*0.05}
           style={{ animation: `float ${4+i*0.7}s ease-in-out ${i*0.4}s infinite` }}
         />

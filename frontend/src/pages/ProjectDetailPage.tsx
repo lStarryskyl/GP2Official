@@ -119,7 +119,7 @@ const PhaseTree: React.FC<{
           const px = 120 + i * 130;
           const py = 30 + (i % 3) * 20;
           return (
-            <circle key={i} cx={px} cy={py} r="3"
+            <ellipse key={i} cx={px} cy={py} rx="3" ry="3"
               fill={i % 2 === 0 ? '#D4A017' : '#8B5E3C'} fillOpacity={0.15 + i * 0.05}
               style={{ animation: `float ${3 + i * 0.6}s ease-in-out ${i * 0.4}s infinite` }}
             />
@@ -133,7 +133,21 @@ const PhaseTree: React.FC<{
           const textColor   = getTextColor(node.id);
           const isHovered   = hoveredPhase === node.id;
           const hasOutput   = Boolean(phaseOutputs[node.id]);
-          const r = isHovered ? 50 : 44;
+          const status      = (phaseStatus[node.id] || 'locked').toLowerCase();
+          const isCompleted = status === 'completed';
+          const isActive    = status === 'active' || status === 'in_progress';
+          const isReady     = status === 'ready' || status === 'planning';
+
+          const rx = isHovered ? 50 : 44;
+          const ry = isHovered ? 58 : 52;
+
+          const leafP = (cx: number, cy: number, lrx: number, lry: number) => {
+            const t = cy - lry;
+            const b = cy + lry * 0.55;
+            const ml = cx - lrx * 0.92;
+            const mr = cx + lrx * 0.92;
+            return `M ${cx} ${t} C ${mr} ${t + lry*0.35}, ${mr} ${b - lry*0.2}, ${cx} ${b} C ${ml} ${b - lry*0.2}, ${ml} ${t + lry*0.35}, ${cx} ${t} Z`;
+          };
 
           return (
             <g
@@ -144,50 +158,97 @@ const PhaseTree: React.FC<{
               style={{ cursor: 'pointer' }}
               className="tree-node"
             >
-              {/* Outer glow ring (always subtle) */}
-              <circle cx={node.x} cy={node.y} r={r + 14}
+              {/* Glow halo */}
+              <ellipse cx={node.x} cy={node.y} rx={rx + 16} ry={ry + 16}
                 fill={nodeColor} fillOpacity={isHovered ? 0.18 : 0.06}
                 style={{ transition: 'all 0.35s ease' }}
               />
 
-              {/* Main phase node circle */}
-              <circle
-                cx={node.x} cy={node.y} r={r}
-                fill={nodeColor}
-                stroke={isHovered
-                  ? ((phaseStatus[node.id] || '').toLowerCase() === 'completed' ? '#f5df90' : '#5a9e6a')
-                  : 'rgba(255,255,255,0.08)'}
-                strokeWidth={isHovered ? 3 : 1.5}
-                style={{
-                  transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              {isCompleted ? (
+                /* Completed → acorn shape */
+                <g style={{
+                  transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  filter: isHovered ? 'drop-shadow(0 0 14px rgba(212,160,23,0.65))' : 'none',
+                }}>
+                  <ellipse cx={node.x} cy={node.y + ry * 0.22} rx={rx * 0.84} ry={ry * 0.76}
+                    fill="#D4A017"
+                    stroke={isHovered ? '#f5df90' : 'rgba(212,160,23,0.4)'}
+                    strokeWidth={isHovered ? 2.5 : 1.5}
+                  />
+                  <ellipse cx={node.x} cy={node.y + ry * 0.22} rx={rx * 0.67} ry={ry * 0.62}
+                    fill="#e8bf40" fillOpacity="0.5"
+                  />
+                  <ellipse cx={node.x} cy={node.y - ry * 0.42} rx={rx * 0.9} ry={ry * 0.35}
+                    fill="#3d2412"
+                  />
+                  <ellipse cx={node.x} cy={node.y - ry * 0.42} rx={rx * 0.72} ry={ry * 0.25}
+                    fill="#221508"
+                  />
+                  <rect x={node.x - rx * 0.1} y={node.y - ry * 0.85} width={rx * 0.2} height={ry * 0.46}
+                    rx={rx * 0.08} fill="#221508"
+                  />
+                  <ellipse cx={node.x - rx * 0.24} cy={node.y + ry * 0.05} rx={rx * 0.14} ry={ry * 0.2}
+                    fill="rgba(255,255,255,0.12)"
+                  />
+                </g>
+              ) : (isActive || isReady) ? (
+                /* Active/ready → filled leaf shape */
+                <g style={{
+                  transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
                   filter: isHovered ? `drop-shadow(0 0 14px ${nodeColor}99)` : 'none',
-                }}
-              />
-
-              {/* Acorn cap for completed phases */}
-              {(phaseStatus[node.id] || '').toLowerCase() === 'completed' && (
-                <ellipse cx={node.x} cy={node.y - r + 14} rx={r * 0.72} ry={10}
-                  fill="#3d2412" fillOpacity="0.9" />
+                }}>
+                  <path
+                    d={leafP(node.x, node.y, rx, ry)}
+                    fill={nodeColor}
+                    stroke={isHovered ? '#5a9e6a' : 'rgba(255,255,255,0.1)'}
+                    strokeWidth={isHovered ? 2.5 : 1.5}
+                  />
+                  <line x1={node.x} y1={node.y - ry * 0.8} x2={node.x} y2={node.y + ry * 0.4}
+                    stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1={node.x} y1={node.y - ry * 0.25} x2={node.x - rx * 0.52} y2={node.y + ry * 0.1}
+                    stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
+                  <line x1={node.x} y1={node.y - ry * 0.25} x2={node.x + rx * 0.52} y2={node.y + ry * 0.1}
+                    stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
+                </g>
+              ) : (
+                /* Locked → bare/outlined leaf */
+                <g style={{
+                  transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  filter: isHovered ? 'drop-shadow(0 0 10px rgba(44,27,14,0.5))' : 'none',
+                }}>
+                  <path
+                    d={leafP(node.x, node.y, rx, ry)}
+                    fill="#2c1b0e"
+                    stroke={isHovered ? '#5c3820' : 'rgba(92,56,32,0.45)'}
+                    strokeWidth={isHovered ? 2.5 : 1.5}
+                    strokeDasharray="4 3"
+                  />
+                  <line x1={node.x} y1={node.y - ry * 0.8} x2={node.x} y2={node.y + ry * 0.4}
+                    stroke="rgba(139,94,60,0.25)" strokeWidth="1.5" strokeLinecap="round" />
+                </g>
               )}
 
               {/* Step number */}
-              <text x={node.x} y={node.y - 9} textAnchor="middle"
-                fill={textColor} fontSize="10" fontWeight="700" fontFamily="Inter, sans-serif">
+              <text x={node.x} y={node.y - (isCompleted ? ry * 0.05 : 8)} textAnchor="middle"
+                fill={textColor} fontSize="10" fontWeight="700" fontFamily="Inter, sans-serif"
+                style={{ pointerEvents: 'none' }}>
                 {phaseConfig?.stepNumber || ''}
               </text>
 
               {/* Phase label */}
-              <text x={node.x} y={node.y + 7} textAnchor="middle"
-                fill={textColor} fontSize="9.5" fontWeight="700" fontFamily="Inter, sans-serif">
+              <text x={node.x} y={node.y + (isCompleted ? ry * 0.38 : 8)} textAnchor="middle"
+                fill={textColor} fontSize="9.5" fontWeight="700" fontFamily="Inter, sans-serif"
+                style={{ pointerEvents: 'none' }}>
                 {node.label}
               </text>
 
-              {/* Completed indicator */}
-              {hasOutput && (phaseStatus[node.id] || '').toLowerCase() !== 'completed' && (
+              {/* Has-output badge for non-completed */}
+              {hasOutput && !isCompleted && (
                 <g>
-                  <circle cx={node.x + r - 8} cy={node.y - r + 8} r={8} fill="#D4A017" />
-                  <text x={node.x + r - 8} y={node.y - r + 12}
-                    textAnchor="middle" fill="#130c07" fontSize="9" fontWeight="800">
+                  <ellipse cx={node.x + rx - 6} cy={node.y - ry + 8} rx={9} ry={9} fill="#D4A017" />
+                  <text x={node.x + rx - 6} y={node.y - ry + 12}
+                    textAnchor="middle" fill="#130c07" fontSize="9" fontWeight="800"
+                    style={{ pointerEvents: 'none' }}>
                     ✓
                   </text>
                 </g>

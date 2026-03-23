@@ -23,26 +23,41 @@ const AcornSVG: React.FC<{ size?: number; golden?: boolean; className?: string }
     <ellipse cx="18" cy="33" rx="4" ry="6" fill="rgba(255,255,255,0.12)" />
     {golden && (
       <>
-        <circle cx="36" cy="22" r="3" fill="#f5df90" opacity="0.8" style={{ animation: 'pulse 2s ease-in-out infinite' }} />
-        <circle cx="38" cy="28" r="2" fill="#f5df90" opacity="0.6" />
+        <ellipse cx="36" cy="22" rx="3" ry="3" fill="#f5df90" opacity="0.8" style={{ animation: 'pulse 2s ease-in-out infinite' }} />
+        <ellipse cx="38" cy="28" rx="2" ry="2" fill="#f5df90" opacity="0.6" />
       </>
     )}
   </svg>
 );
 
+// ── Shared leaf path helper ───────────────────────────────────────────────────
+const leafPathStr = (cx: number, cy: number, rx: number, ry: number): string => {
+  const t = cy - ry;
+  const b = cy + ry * 0.55;
+  const ml = cx - rx * 0.92;
+  const mr = cx + rx * 0.92;
+  return (
+    `M ${cx} ${t} ` +
+    `C ${mr} ${t + ry * 0.35}, ${mr} ${b - ry * 0.2}, ${cx} ${b} ` +
+    `C ${ml} ${b - ry * 0.2}, ${ml} ${t + ry * 0.35}, ${cx} ${t} Z`
+  );
+};
+
 // ── Leaf SVG (live project = green leaf) ─────────────────────────────────────
-const LeafSVG: React.FC<{ size?: number; color?: string }> = ({ size = 44, color = '#3d7a4a' }) => (
-  <svg width={size} height={size} viewBox="0 0 44 44" fill="none">
-    <path
-      d="M22 40 C22 40 8 30 6 18 C4 8 14 4 22 6 C30 4 40 8 38 18 C36 30 22 40 22 40Z"
-      fill={color} stroke="rgba(255,255,255,0.1)" strokeWidth="1"
-    />
-    <path d="M22 40 L22 10" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M22 28 L12 20" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinecap="round" />
-    <path d="M22 22 L30 16" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinecap="round" />
-    <path d="M22 34 L14 28" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeLinecap="round" />
-  </svg>
-);
+const LeafSVG: React.FC<{ size?: number; color?: string }> = ({ size = 44, color = '#3d7a4a' }) => {
+  const cx = size / 2, cy = size / 2, rx = size * 0.44, ry = size * 0.48;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none">
+      <path d={leafPathStr(cx, cy, rx, ry)} fill={color} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={cx} y1={cy - ry * 0.8} x2={cx} y2={cy + ry * 0.4}
+        stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1={cx} y1={cy - ry * 0.3} x2={cx - rx * 0.55} y2={cy + ry * 0.15}
+        stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinecap="round" />
+      <line x1={cx} y1={cy - ry * 0.3} x2={cx + rx * 0.55} y2={cy + ry * 0.15}
+        stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  );
+};
 
 // ── Living Projects Tree SVG ─────────────────────────────────────────────────
 interface ProjectNodeData {
@@ -113,13 +128,16 @@ const ProjectsTree: React.FC<{
           />
         ))}
 
-        {/* Trunk */}
-        <path d="M 400 560 C 400 540, 398 500, 400 450 C 402 400, 400 370, 400 340"
-          stroke="#3d2412" strokeWidth="22" fill="none" strokeLinecap="round" />
-        <path d="M 400 560 C 400 540, 398 500, 400 450 C 402 400, 400 370, 400 340"
-          stroke="#5c3820" strokeWidth="12" fill="none" strokeLinecap="round" opacity="0.5" />
-        <path d="M 400 560 C 400 540, 398 500, 400 450 C 402 400, 400 370, 400 340"
-          stroke="#8B5E3C" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.25" />
+        {/* Trunk — tapered closed polygon: wide at base, narrow at top */}
+        <path d="M 384 560 C 383 540, 387 500, 386 450 C 387 410, 390 375, 392 340
+                 L 408 340 C 410 375, 413 410, 414 450 C 413 500, 417 540, 416 560 Z"
+          fill="#3d2412" />
+        <path d="M 388 560 C 387 540, 390 500, 390 450 C 390 415, 392 380, 394 345
+                 L 406 345 C 408 380, 410 415, 410 450 C 410 500, 413 540, 412 560 Z"
+          fill="#5c3820" fillOpacity="0.5" />
+        <path d="M 394 560 C 394 540, 396 500, 396 450 C 396 425, 397 395, 398 355
+                 L 402 355 C 403 395, 404 425, 404 450 C 404 500, 406 540, 406 560 Z"
+          fill="#8B5E3C" fillOpacity="0.25" />
 
         {/* Branch to each project */}
         {nodeData.map((nd, i) => {
@@ -149,7 +167,8 @@ const ProjectsTree: React.FC<{
           onMouseEnter={() => setHovered('__new')}
           onMouseLeave={() => setHovered(null)}
         >
-          <circle cx="400" cy="320" r={hovered === '__new' ? 28 : 22}
+          <ellipse cx="400" cy="320"
+            rx={hovered === '__new' ? 30 : 24} ry={hovered === '__new' ? 34 : 28}
             fill={hovered === '__new' ? 'rgba(212,160,23,0.2)' : 'rgba(212,160,23,0.08)'}
             stroke="#D4A017" strokeWidth="2" strokeDasharray="5 3"
             style={{ transition: 'all 0.3s ease' }}
@@ -165,7 +184,8 @@ const ProjectsTree: React.FC<{
           const isHov = hovered === pid;
           const done  = isCompleted(proj);
           const active = isActive(proj);
-          const r     = isHov ? 46 : 40;
+          const rx = isHov ? 48 : 42;
+          const ry = isHov ? 56 : 50;
 
           return (
             <g key={pid}
@@ -174,54 +194,77 @@ const ProjectsTree: React.FC<{
               onMouseLeave={() => setHovered(null)}
               style={{ cursor: 'pointer' }}
             >
-              {/* Glow ring */}
-              <circle cx={nd.x} cy={nd.y} r={r + 16}
+              {/* Glow halo */}
+              <ellipse cx={nd.x} cy={nd.y} rx={rx + 18} ry={ry + 18}
                 fill={getNodeColor(proj)}
-                fillOpacity={isHov ? 0.18 : 0.06}
+                fillOpacity={isHov ? 0.18 : 0.05}
                 style={{ transition: 'all 0.35s ease' }}
               />
 
-              {/* Leaf or acorn visual background */}
               {done ? (
-                // Acorn shape for completed
-                <ellipse cx={nd.x} cy={nd.y} rx={r} ry={r}
-                  fill="#D4A017"
-                  stroke={isHov ? '#f5df90' : 'rgba(212,160,23,0.4)'}
-                  strokeWidth={isHov ? 3 : 1.5}
-                  style={{ transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    filter: isHov ? 'drop-shadow(0 0 16px rgba(212,160,23,0.6))' : 'none' }}
-                />
+                /* Completed → full acorn shape */
+                <g style={{ transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  filter: isHov ? 'drop-shadow(0 0 16px rgba(212,160,23,0.65))' : 'none' }}>
+                  {/* body */}
+                  <ellipse cx={nd.x} cy={nd.y + ry * 0.22} rx={rx * 0.85} ry={ry * 0.78}
+                    fill="#D4A017"
+                    stroke={isHov ? '#f5df90' : 'rgba(212,160,23,0.4)'}
+                    strokeWidth={isHov ? 2.5 : 1.5}
+                  />
+                  <ellipse cx={nd.x} cy={nd.y + ry * 0.22} rx={rx * 0.68} ry={ry * 0.63}
+                    fill="#e8bf40" fillOpacity="0.55"
+                  />
+                  {/* cap */}
+                  <ellipse cx={nd.x} cy={nd.y - ry * 0.42} rx={rx * 0.92} ry={ry * 0.36}
+                    fill="#3d2412"
+                  />
+                  <ellipse cx={nd.x} cy={nd.y - ry * 0.42} rx={rx * 0.74} ry={ry * 0.26}
+                    fill="#221508"
+                  />
+                  {/* stem */}
+                  <rect x={nd.x - rx * 0.1} y={nd.y - ry * 0.86} width={rx * 0.2} height={ry * 0.48}
+                    rx={rx * 0.08} fill="#221508"
+                  />
+                  {/* shine */}
+                  <ellipse cx={nd.x - rx * 0.26} cy={nd.y + ry * 0.0} rx={rx * 0.14} ry={ry * 0.22}
+                    fill="rgba(255,255,255,0.12)"
+                  />
+                </g>
               ) : active ? (
-                // Leaf-green for active
-                <ellipse cx={nd.x} cy={nd.y} rx={r} ry={r}
-                  fill="#2d5c35"
-                  stroke={isHov ? '#5a9e6a' : 'rgba(93,158,106,0.35)'}
-                  strokeWidth={isHov ? 3 : 1.5}
-                  style={{ transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    filter: isHov ? 'drop-shadow(0 0 14px rgba(90,158,106,0.5))' : 'none' }}
-                />
+                /* Active → filled leaf shape */
+                <g style={{ transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  filter: isHov ? 'drop-shadow(0 0 14px rgba(90,158,106,0.5))' : 'none' }}>
+                  <path
+                    d={leafPathStr(nd.x, nd.y, rx, ry)}
+                    fill="#2d5c35"
+                    stroke={isHov ? '#5a9e6a' : 'rgba(93,158,106,0.35)'}
+                    strokeWidth={isHov ? 2.5 : 1.5}
+                  />
+                  <line x1={nd.x} y1={nd.y - ry * 0.8} x2={nd.x} y2={nd.y + ry * 0.4}
+                    stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1={nd.x} y1={nd.y - ry * 0.25} x2={nd.x - rx * 0.52} y2={nd.y + ry * 0.12}
+                    stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
+                  <line x1={nd.x} y1={nd.y - ry * 0.25} x2={nd.x + rx * 0.52} y2={nd.y + ry * 0.12}
+                    stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
+                </g>
               ) : (
-                // Bark/brown for draft
-                <ellipse cx={nd.x} cy={nd.y} rx={r} ry={r}
-                  fill="#3d2412"
-                  stroke={isHov ? '#8B5E3C' : 'rgba(92,56,32,0.4)'}
-                  strokeWidth={isHov ? 3 : 1.5}
-                  style={{ transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    filter: isHov ? 'drop-shadow(0 0 12px rgba(139,94,60,0.4))' : 'none' }}
-                />
-              )}
-
-              {/* Icon inside */}
-              {done ? (
-                <text x={nd.x} y={nd.y - 4} textAnchor="middle" fontSize="18">🌰</text>
-              ) : active ? (
-                <text x={nd.x} y={nd.y - 4} textAnchor="middle" fontSize="18">🍃</text>
-              ) : (
-                <text x={nd.x} y={nd.y - 4} textAnchor="middle" fontSize="16">🌿</text>
+                /* Draft → outline/bare leaf */
+                <g style={{ transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  filter: isHov ? 'drop-shadow(0 0 12px rgba(139,94,60,0.4))' : 'none' }}>
+                  <path
+                    d={leafPathStr(nd.x, nd.y, rx, ry)}
+                    fill="#3d2412"
+                    stroke={isHov ? '#8B5E3C' : 'rgba(92,56,32,0.5)'}
+                    strokeWidth={isHov ? 2.5 : 1.5}
+                    strokeDasharray="4 3"
+                  />
+                  <line x1={nd.x} y1={nd.y - ry * 0.8} x2={nd.x} y2={nd.y + ry * 0.4}
+                    stroke="rgba(139,94,60,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+                </g>
               )}
 
               {/* Project name */}
-              <text x={nd.x} y={nd.y + 14} textAnchor="middle"
+              <text x={nd.x} y={nd.y + (done ? ry * 0.28 : 6)} textAnchor="middle"
                 fill={done ? '#0c0702' : active ? '#f0e4c8' : '#c8b090'}
                 fontSize="8" fontWeight="700" fontFamily="Inter, sans-serif"
                 style={{ pointerEvents: 'none' }}>
@@ -233,8 +276,8 @@ const ProjectsTree: React.FC<{
 
         {/* Ambient particles */}
         {[0,1,2,3,4,5].map(i => (
-          <circle key={i}
-            cx={100 + i * 110} cy={40 + (i % 3) * 25} r={2 + i % 2}
+          <ellipse key={i}
+            cx={100 + i * 110} cy={40 + (i % 3) * 25} rx={2 + i % 2} ry={2 + i % 2}
             fill="#D4A017" fillOpacity={0.12 + i * 0.04}
             style={{ animation: `float ${4 + i * 0.8}s ease-in-out ${i * 0.5}s infinite` }}
           />

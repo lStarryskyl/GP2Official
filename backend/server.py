@@ -1,6 +1,6 @@
 """FastAPI main application."""
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
@@ -12,7 +12,19 @@ from routes import (
     negotiation, payment, version, notifications, traceability, templates, explainability, utils
 )
 from routes import ai_chat
+from routes import ai_debate
 from config import settings
+
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+
+    limiter = Limiter(key_func=get_remote_address)
+    SLOWAPI_AVAILABLE = True
+except ImportError:
+    SLOWAPI_AVAILABLE = False
+    limiter = None
 
 
 @asynccontextmanager
@@ -41,6 +53,11 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Rate limiting
+if SLOWAPI_AVAILABLE and limiter:
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware - allow all origins
 app.add_middleware(
@@ -95,6 +112,7 @@ app.include_router(templates.router, prefix="/api", tags=["Templates"])
 app.include_router(explainability.router, prefix="/api", tags=["AI Explainability"])
 app.include_router(utils.router, prefix="/api/utils", tags=["Utilities"])
 app.include_router(ai_chat.router, prefix="/api/ai-chat", tags=["AI Chat"])
+app.include_router(ai_debate.router, prefix="/api", tags=["AI Debate"])
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ExportButtons } from '@/components/ExportButtons';
 import { api } from '@/lib/api';
 import type { Artifact, Project, Requirement, Task } from '@/types';
-import { phaseConfigs } from '@/constants/phases';
+import { phaseConfigs, phaseHexColors } from '@/constants/phases';
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import Joyride, { STATUS as JoyrideStatus, Step } from 'react-joyride';
 import { formatDate } from '@/lib/utils';
@@ -28,30 +28,34 @@ const PhaseTree: React.FC<{
   const [hoveredPhase, setHoveredPhase] = useState<string | null>(null);
 
   // Tree layout: trunk center-bottom, branches spreading up
-  // 9 phases arranged as a living tree
+  // All 10 phases arranged as a living tree
   const treeNodes = [
-    { id: 'feasibility_study',      x: 400, y: 480, label: 'Feasibility',  level: 1 },
-    { id: 'requirements_gathering', x: 250, y: 375, label: 'Requirements', level: 2 },
-    { id: 'system_design',          x: 560, y: 375, label: 'System Design', level: 2 },
-    { id: 'design',                 x: 140, y: 265, label: 'Design',       level: 3 },
-    { id: 'planning_roadmap',       x: 355, y: 255, label: 'Roadmap',      level: 3 },
-    { id: 'development',            x: 620, y: 265, label: 'Development',  level: 3 },
-    { id: 'gantt_chart',            x: 215, y: 152, label: 'Timeline',     level: 4 },
-    { id: 'validation',             x: 535, y: 152, label: 'Validation',   level: 4 },
-    { id: 'summary',                x: 375, y: 62,  label: 'Summary',      level: 5 },
+    { id: 'planning',               x: 400, y: 510, label: 'Planning',      level: 0 },
+    { id: 'feasibility_study',      x: 250, y: 420, label: 'Feasibility',   level: 1 },
+    { id: 'requirements_gathering', x: 550, y: 420, label: 'Requirements',  level: 1 },
+    { id: 'validation',             x: 150, y: 325, label: 'Validation',    level: 2 },
+    { id: 'design',                 x: 400, y: 325, label: 'Design',        level: 2 },
+    { id: 'development',            x: 650, y: 325, label: 'Development',   level: 2 },
+    { id: 'tasks',                  x: 200, y: 225, label: 'Tasks',         level: 3 },
+    { id: 'cost_benefit',           x: 450, y: 225, label: 'Costs',         level: 3 },
+    { id: 'risks',                  x: 600, y: 140, label: 'Risks',         level: 4 },
+    { id: 'summary',                x: 400, y: 55,  label: 'Summary',       level: 5 },
   ];
 
   // Branch connections (parent → child)
-  const branches = [
-    ['feasibility_study',      'requirements_gathering'],
-    ['feasibility_study',      'system_design'],
+  const branches: [string, string][] = [
+    ['planning',               'feasibility_study'],
+    ['planning',               'requirements_gathering'],
+    ['feasibility_study',      'validation'],
+    ['feasibility_study',      'design'],
     ['requirements_gathering', 'design'],
-    ['requirements_gathering', 'planning_roadmap'],
-    ['system_design',          'development'],
-    ['planning_roadmap',       'gantt_chart'],
-    ['development',            'validation'],
-    ['gantt_chart',            'summary'],
-    ['validation',             'summary'],
+    ['requirements_gathering', 'development'],
+    ['validation',             'tasks'],
+    ['design',                 'cost_benefit'],
+    ['development',            'cost_benefit'],
+    ['tasks',                  'risks'],
+    ['cost_benefit',           'risks'],
+    ['risks',                  'summary'],
   ];
 
   const getNodeColor = (phaseId: string) => {
@@ -79,9 +83,9 @@ const PhaseTree: React.FC<{
         <ellipse cx="400" cy="555" rx="70" ry="8" fill="#2c1810" fillOpacity="0.6" />
 
         {/* Tree trunk - thick bark brown */}
-        <line x1="400" y1="558" x2="400" y2="480"
+        <line x1="400" y1="558" x2="400" y2="510"
           stroke="#3d2b1f" strokeWidth="16" strokeLinecap="round" />
-        <line x1="400" y1="558" x2="400" y2="490"
+        <line x1="400" y1="558" x2="400" y2="515"
           stroke="#5c4033" strokeWidth="9" strokeLinecap="round" />
 
         {/* Ambient ground mist */}
@@ -829,7 +833,14 @@ export const ProjectDetailPage: React.FC = () => {
           projectId={(project.project_id || project.id) ?? ''}
           projectName={project.name}
           description={project.description}
-          requirements={[]}
+          requirements={requirements.map(r => ({
+            id: r.requirement_id || '',
+            title: r.title || '',
+            description: r.description || '',
+            type: r.type || '',
+            priority: r.priority || '',
+            status: r.status || '',
+          }))}
         />
       )}
     </Layout>

@@ -5,7 +5,7 @@ import json
 import asyncio
 import time
 import google.generativeai as genai
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -15,6 +15,14 @@ from routes.auth import get_current_user
 from services.phase_flow_service import PhaseFlowService, PHASE_ORDER, PHASE_TITLES
 from services.project_service import ProjectService
 from config import settings
+
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    limiter = Limiter(key_func=get_remote_address)
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

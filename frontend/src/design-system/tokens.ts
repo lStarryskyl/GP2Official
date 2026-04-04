@@ -1,107 +1,109 @@
 /**
- * Acorn Design System - Design Tokens
- * Forest / Living Tree Theme
+ * Acorn Design System — Design Tokens
+ * Brand: Blue (#1A6FD4) + Orange (#F97316) + Navy (#0D1B2A)
  */
 
 export const colors = {
-  // Forest Green Palette (primary)
-  forest: {
-    950: '#040a06',
-    900: '#0a150e',
-    850: '#0f1f15',
-    800: '#142b1a',
-    750: '#1a3520',
-    700: '#1e4a28',
-    600: '#2d6a3f',
-    500: '#3d8a55',
-    400: '#4ade80', // bright green - active/interactive
-    300: '#86efac', // lighter green
-    200: '#bbf7d0',
+  // Brand Navy Palette (primary backgrounds)
+  brand: {
+    950: '#050d16',
+    900: '#0D1B2A',
+    850: '#111f30',
+    800: '#152538',
+    750: '#1A2E45',
+    700: '#1e3552',
+    600: '#243B55',
+    500: '#2d4d6e',
+    400: '#4a7a9b',
+    300: '#7aacc8',
+    200: '#b8d4e8',
+    100: '#e0eef8',
   },
 
-  // Bark Brown Palette (tree trunk visual)
-  bark: {
-    900: '#1c0f09',
-    800: '#2c1810',
-    700: '#3d2b1f',
-    600: '#5c4033',
+  // Blue Palette (primary interactive / accent)
+  blue: {
+    950: '#020d1f',
+    900: '#0a1f3d',
+    800: '#0d2b52',
+    700: '#103a6e',
+    600: '#1452a0',
+    500: '#1A6FD4',
+    400: '#3d8fe0',
+    300: '#70b3ee',
+    200: '#a8d3f7',
+    100: '#daeeff',
   },
 
-  // Sage Palette (muted greens for text)
-  sage: {
-    900: '#1a2b1e',
-    800: '#2d4a35',
-    700: '#4a7a56',
-    600: '#6b9e7a',
-    500: '#8fbc8f',
-    400: '#a8d5a8',
-  },
-
-  // Amber / Warm Gold (highlights, warnings)
-  amber: {
-    700: '#92400e',
-    600: '#b45309',
-    500: '#d97706',
-    400: '#fbbf24',
-    300: '#fcd34d',
-    200: '#fde68a',
+  // Orange Palette (CTA / warning / accent)
+  orange: {
+    950: '#1a0800',
+    900: '#3d1200',
+    800: '#6b2200',
+    700: '#993400',
+    600: '#cc4900',
+    500: '#F97316',
+    400: '#fb9042',
+    300: '#fdb07a',
+    200: '#fed0ae',
+    100: '#fff0e6',
   },
 
   // Text colors
   text: {
-    primary: '#e8f5e0',   // cream sage white
-    muted: '#6b9e7a',     // muted sage
-    faint: '#4a7a56',     // very muted
+    primary: '#E8EDF5',
+    muted: '#8899AA',
+    faint: '#4a6070',
   },
 
   // Semantic Colors
   success: '#22c55e',
-  warning: '#f59e0b',
+  warning: '#F97316',
   error: '#ef4444',
-  info: '#4ade80',
+  info: '#1A6FD4',
 
-  // Neutrals (kept for compatibility)
+  // Neutrals
   gray: {
-    50: '#f0f7f0',
-    100: '#e8f5e0',
-    200: '#c8e6c9',
-    300: '#a5d6a7',
-    400: '#8fbc8f',
-    500: '#6b9e7a',
-    600: '#4a7a56',
-    700: '#2d4a35',
-    800: '#1a2b1e',
-    900: '#0f1f15',
+    50: '#f0f5f9',
+    100: '#E8EDF5',
+    200: '#c8d8e8',
+    300: '#a0bccc',
+    400: '#8899AA',
+    500: '#607080',
+    600: '#4a5a6a',
+    700: '#334455',
+    800: '#1A2E45',
+    900: '#0D1B2A',
   },
 
-  white: '#e8f5e0',
-  black: '#040a06',
+  white: '#E8EDF5',
+  black: '#050d16',
 };
 
 export const gradients = {
-  primary: 'linear-gradient(135deg, #4ade80 0%, #2d6a3f 100%)',
-  forest: 'linear-gradient(135deg, #4ade80 0%, #86efac 100%)',
-  canopy: 'linear-gradient(135deg, #86efac 0%, #4ade80 50%, #2d6a3f 100%)',
-  bark: 'linear-gradient(135deg, #3d2b1f 0%, #1c0f09 100%)',
-  amber: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
+  primary: 'linear-gradient(135deg, #1A6FD4 0%, #0a1f3d 100%)',
+  blue: 'linear-gradient(135deg, #3d8fe0 0%, #1A6FD4 100%)',
+  orange: 'linear-gradient(135deg, #F97316 0%, #cc4900 100%)',
+  navy: 'linear-gradient(135deg, #1A2E45 0%, #0D1B2A 100%)',
+  hero: 'linear-gradient(135deg, #0D1B2A 0%, #1A2E45 50%, #0D1B2A 100%)',
 };
 
 export const typography = {
   fontFamily: {
-    sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+    sans: ['Syne', 'DM Sans', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+    body: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
     mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
   },
   fontSize: {
-    xs: '0.75rem',    // 12px
-    sm: '0.875rem',   // 14px
-    base: '1rem',     // 16px
-    lg: '1.125rem',   // 18px
-    xl: '1.25rem',    // 20px
-    '2xl': '1.5rem',  // 24px
-    '3xl': '1.875rem',// 30px
-    '4xl': '2.25rem', // 36px
-    '5xl': '3rem',    // 48px
-    '6xl': '3.75rem', // 60px
+    xs: '0.75rem',
+    sm: '0.875rem',
+    base: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
+    '3xl': '1.875rem',
+    '4xl': '2.25rem',
+    '5xl': '3rem',
+    '6xl': '3.75rem',
   },
   fontWeight: {
     normal: 400,
@@ -122,47 +124,47 @@ export const typography = {
 
 export const spacing = {
   0: '0',
-  1: '0.25rem',  // 4px
-  2: '0.5rem',   // 8px
-  3: '0.75rem',  // 12px
-  4: '1rem',     // 16px
-  5: '1.25rem',  // 20px
-  6: '1.5rem',   // 24px
-  8: '2rem',     // 32px
-  10: '2.5rem',  // 40px
-  12: '3rem',    // 48px
-  16: '4rem',    // 64px
-  20: '5rem',    // 80px
-  24: '6rem',    // 96px
-  32: '8rem',    // 128px
-  40: '10rem',   // 160px
-  48: '12rem',   // 192px
-  56: '14rem',   // 224px
-  64: '16rem',   // 256px
+  1: '0.25rem',
+  2: '0.5rem',
+  3: '0.75rem',
+  4: '1rem',
+  5: '1.25rem',
+  6: '1.5rem',
+  8: '2rem',
+  10: '2.5rem',
+  12: '3rem',
+  16: '4rem',
+  20: '5rem',
+  24: '6rem',
+  32: '8rem',
+  40: '10rem',
+  48: '12rem',
+  56: '14rem',
+  64: '16rem',
 };
 
 export const borderRadius = {
   none: '0',
-  sm: '0.125rem',   // 2px
-  base: '0.25rem',  // 4px
-  md: '0.375rem',   // 6px
-  lg: '0.5rem',     // 8px
-  xl: '0.75rem',    // 12px
-  '2xl': '1rem',    // 16px
-  '3xl': '1.5rem',  // 24px
+  sm: '0.125rem',
+  base: '0.25rem',
+  md: '0.375rem',
+  lg: '0.5rem',
+  xl: '0.75rem',
+  '2xl': '1rem',
+  '3xl': '1.5rem',
   full: '9999px',
 };
 
 export const shadows = {
-  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-  base: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-  inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
-  forest: '0 10px 30px rgba(74, 222, 128, 0.25)',   // Forest green glow
-  amber: '0 10px 30px rgba(251, 191, 36, 0.25)',    // Amber glow
+  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.15)',
+  base: '0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.12)',
+  md: '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12)',
+  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
+  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08)',
+  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+  inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.1)',
+  blue: '0 10px 30px rgba(26, 111, 212, 0.3)',
+  orange: '0 10px 30px rgba(249, 115, 22, 0.3)',
   none: 'none',
 };
 

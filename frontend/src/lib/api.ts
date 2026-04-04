@@ -563,6 +563,13 @@ class ApiClient {
     });
     return response.data;
   }
+
+  async exportProjectMarkdown(projectId: string): Promise<Blob> {
+    const response = await this.client.get(`/projects/${projectId}/export/markdown`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();

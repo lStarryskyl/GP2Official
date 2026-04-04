@@ -11,8 +11,10 @@ import {
   CheckCircle2,
   FolderOpen,
   Settings,
-  Sparkles
+  Sparkles,
+  FileCode
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface ExportOption {
   id: string;
@@ -50,6 +52,13 @@ const exportOptions: ExportOption[] = [
     description: 'Technical and business feasibility analysis',
     icon: FileText,
     formats: ['PDF', 'DOCX']
+  },
+  {
+    id: 'markdown',
+    name: 'Full Project Markdown',
+    description: 'All phase outputs in a single Markdown document',
+    icon: FileCode,
+    formats: ['MD']
   }
 ];
 
@@ -61,18 +70,53 @@ export const ExportCenterPage: React.FC = () => {
     srs: 'PDF',
     requirements: 'XLSX',
     roadmap: 'PDF',
-    feasibility: 'PDF'
+    feasibility: 'PDF',
+    markdown: 'MD'
   });
 
+  const triggerBlobDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExport = async (optionId: string) => {
+    if (!id) return;
     setExporting(optionId);
-    // Simulate export delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setExported(prev => new Set(prev).add(optionId));
-    setExporting(null);
-    
-    // In a real app, this would trigger a download
-    alert(`${exportOptions.find(o => o.id === optionId)?.name} exported as ${selectedFormats[optionId]}!`);
+    try {
+      const format = selectedFormats[optionId];
+      let blob: Blob | null = null;
+      let filename = 'project_export';
+
+      if ((optionId === 'srs' || optionId === 'feasibility') && format === 'PDF') {
+        blob = await api.exportProjectPdf(id);
+        filename = `project_export.pdf`;
+      } else if ((optionId === 'srs' || optionId === 'feasibility') && format === 'DOCX') {
+        blob = await api.exportProjectDocx(id);
+        filename = `project_export.docx`;
+      } else if (optionId === 'markdown') {
+        blob = await api.exportProjectMarkdown(id);
+        filename = `project_export.md`;
+      }
+
+      if (blob) {
+        triggerBlobDownload(blob, filename);
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        alert(`${exportOptions.find(o => o.id === optionId)?.name} exported as ${format}!`);
+      }
+      setExported(prev => new Set(prev).add(optionId));
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('Export failed. Please try again.');
+    } finally {
+      setExporting(null);
+    }
   };
 
   const handleExportAll = async () => {

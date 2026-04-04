@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ArrowLeft, TreePine, Rocket, Zap, Target, Code, Smartphone, Cloud, Box, CheckCircle, Layers, FileText } from 'lucide-react';
+import { ArrowLeft, TreePine, Rocket, Zap, Target, Code, Smartphone, Cloud, Box, CheckCircle, Layers, FileText, Sparkles, X } from 'lucide-react';
 
 const templateTypes = [
   { value: 'web_app',     label: 'Web Application', icon: Code,        color: 'from-[#4ade80] to-[#2d6a3f]',    bgColor: 'bg-[#4ade80]/10',   borderColor: 'border-[#4ade80]/30',   description: 'Full-featured web platform with modern frontend' },
@@ -20,16 +20,45 @@ const stepInfo = [
   { number: 3, title: 'Brief',  icon: FileText },
 ];
 
+// Built-in quick-start templates
+const builtinTemplates = [
+  { id: 'web_app',    label: 'Web Application',  icon: Code,       template_type: 'web_app',    description: 'Full-featured web platform with modern frontend',        brief: 'A modern web application with user authentication, dashboard, and RESTful API backend.' },
+  { id: 'mobile_app', label: 'Mobile App',        icon: Smartphone, template_type: 'mobile_app', description: 'Native iOS & Android applications',                      brief: 'A cross-platform mobile app with push notifications, offline support, and cloud sync.' },
+  { id: 'api',        label: 'API Service',        icon: Zap,        template_type: 'api',        description: 'RESTful or GraphQL backend APIs',                         brief: 'A scalable API service with authentication, rate limiting, documentation, and monitoring.' },
+  { id: 'saas',       label: 'SaaS Platform',      icon: Rocket,     template_type: 'web_app',    description: 'Multi-tenant software-as-a-service platform',             brief: 'A multi-tenant SaaS platform with subscription billing, team management, and analytics.' },
+  { id: 'ecommerce',  label: 'E-commerce',         icon: Box,        template_type: 'web_app',    description: 'Online store with products and checkout',                  brief: 'An e-commerce store with product catalog, cart, checkout, payments, and order management.' },
+  { id: 'other',      label: 'Custom Project',     icon: Cloud,      template_type: 'other',      description: 'Start from scratch with a custom project type',           brief: '' },
+];
+
 export const NewProjectPage: React.FC = () => {
   const navigate                      = useNavigate();
+  const [searchParams]                = useSearchParams();
   const [loading, setLoading]         = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [formData, setFormData]       = useState({
     name:          '',
     description:   '',
     template_type: 'web_app',
     brief_text:    '',
   });
+
+  useEffect(() => {
+    if (searchParams.get('template') === 'true') {
+      setShowTemplatePicker(true);
+    }
+  }, [searchParams]);
+
+  const applyTemplate = (tpl: typeof builtinTemplates[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      template_type: tpl.template_type,
+      name: prev.name || tpl.label,
+      description: prev.description || tpl.description,
+      brief_text: prev.brief_text || tpl.brief,
+    }));
+    setShowTemplatePicker(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +123,53 @@ export const NewProjectPage: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Template Picker */}
+          {showTemplatePicker ? (
+            <div className="mb-8 bg-[#0f1f15] rounded-2xl border border-[#1e4a28]/50 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-[#4ade80]" />
+                  <h2 className="text-lg font-bold text-[#e8f5e0]">Choose a Template</h2>
+                </div>
+                <button onClick={() => setShowTemplatePicker(false)} className="text-[#6b9e7a] hover:text-[#e8f5e0] transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {builtinTemplates.map((tpl) => {
+                  const TplIcon = tpl.icon;
+                  return (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => applyTemplate(tpl)}
+                      className="flex flex-col items-start gap-2 p-4 rounded-xl bg-[#142b1a] border border-[#1e4a28] hover:border-[#4ade80]/50 hover:bg-[#1a3520] transition-all text-left group"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-[#4ade80]/15 border border-[#4ade80]/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <TplIcon className="w-4 h-4 text-[#4ade80]" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[#e8f5e0] text-sm">{tpl.label}</p>
+                        <p className="text-xs text-[#6b9e7a] line-clamp-2 mt-0.5">{tpl.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={() => setShowTemplatePicker(true)}
+                className="inline-flex items-center gap-2 text-sm text-[#6b9e7a] hover:text-[#4ade80] transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+                Start from a template
+              </button>
+            </div>
+          )}
 
           {/* Progress Steps */}
           <div className="flex items-center justify-between mb-8 bg-[#0f1f15] rounded-2xl p-2 border border-[#1e4a28]/50">

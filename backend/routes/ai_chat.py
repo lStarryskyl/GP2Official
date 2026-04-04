@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -11,6 +11,14 @@ from routes.auth import get_current_user
 from models.user import User
 from services.gemini_orchestrator import gemini_orchestrator
 from repositories.artifact_repository import ArtifactRepository
+
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    limiter = Limiter(key_func=get_remote_address)
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -62,6 +70,7 @@ async def _get_phase_content(project_id: str, phase: str) -> str:
 @router.post("/chat")
 async def chat_with_phase_ai(
     request: ChatRequest,
+    req: Request = None,
     current_user: User = Depends(get_current_user),
 ):
     """Send a message to the AI Chat Assistant for a specific phase."""
@@ -99,6 +108,7 @@ async def chat_with_phase_ai(
 @router.post("/agent-task")
 async def run_agent_task(
     request: AgentTaskRequest,
+    req: Request = None,
     current_user: User = Depends(get_current_user),
 ):
     """Run a specialized AI agent task (conflict detection, tech stack, security audit, etc.)."""

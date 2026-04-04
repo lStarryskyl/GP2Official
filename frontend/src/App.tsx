@@ -22,6 +22,7 @@ import { SRSAuditPage } from './pages/SRSAuditPage';
 import ExportCenterPage from './pages/ExportCenterPage';
 import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { BillingPageRoute } from './pages/BillingPageRoute';
+import DocsPage from './pages/DocsPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -181,6 +182,7 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route path="/docs" element={<DocsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

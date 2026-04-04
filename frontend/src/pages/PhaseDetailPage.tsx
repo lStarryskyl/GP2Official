@@ -12,6 +12,9 @@ import { workspacePresets } from '@/constants/workspacePresets';
 import { useAuthStore } from '@/store/authStore';
 import ReactMarkdown from 'react-markdown';
 import { PhaseNavigation } from '@/components/PhaseNavigation';
+import { VersionHistory } from '@/components/VersionHistory';
+import { TraceabilityMatrix } from '@/components/TraceabilityMatrix';
+import { NegotiationThread } from '@/components/NegotiationThread';
 import {
   FeasibilityStudyPhase,
   PlanningRoadmapPhase,
@@ -131,7 +134,10 @@ export const PhaseDetailPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phaseBottomTab, setPhaseBottomTab] = useState<'history' | 'traceability' | 'discussion'>('history');
   const [syncingCanvas, setSyncingCanvas] = useState(false);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [editingTask, setEditingTask] = useState<string | null>(null);
@@ -348,6 +354,22 @@ export const PhaseDetailPage: React.FC = () => {
     );
   };
 
+  const StreamingOverlay: React.FC = () => {
+    if (!isStreaming && !streamingText) return null;
+    if (!isStreaming && phaseMarkdown) return null;
+    return (
+      <div className="rounded-xl p-5 mt-4" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(74,222,128,0.2)' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <Loader2 className="w-4 h-4 animate-spin text-[#4ade80]" />
+          <span className="text-xs font-semibold text-[#4ade80]">AI is generating...</span>
+        </div>
+        <div className="prose prose-sm max-w-none text-[#a8d5a8]">
+          <ReactMarkdown>{streamingText + (isStreaming ? ' ▊' : '')}</ReactMarkdown>
+        </div>
+      </div>
+    );
+  };
+
   // Simple parser for Risks phase markdown so we can render real UI components
   const parsedRisks = useMemo(() => {
     if (!phaseMarkdown || phaseId !== 'risks') {
@@ -520,6 +542,44 @@ export const PhaseDetailPage: React.FC = () => {
     }
   };
 
+  const generateWithStreaming = (phase: string, prompt: string): Promise<void> => {
+    return new Promise((resolve) => {
+      setStreamingText('');
+      setIsStreaming(true);
+      const token = localStorage.getItem('access_token') || '';
+      const url = `/api/projects/${id}/phases/${phase}/generate/stream/?prompt=${encodeURIComponent(prompt)}&token=${encodeURIComponent(token)}`;
+      const es = new EventSource(url);
+
+      es.addEventListener('token', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setStreamingText((prev) => prev + (data.text || ''));
+        } catch {
+          setStreamingText((prev) => prev + (event.data || ''));
+        }
+      });
+
+      es.addEventListener('done', () => {
+        es.close();
+        setIsStreaming(false);
+        resolve();
+      });
+
+      es.addEventListener('error', (event) => {
+        es.close();
+        setIsStreaming(false);
+        setError('Streaming generation failed. Falling back to standard generation.');
+        resolve();
+      });
+
+      es.onerror = () => {
+        es.close();
+        setIsStreaming(false);
+        resolve();
+      };
+    });
+  };
+
   const handleGenerate = async (prompt?: string) => {
     if (!id || !phaseId) return;
     if (!canTriggerAi) {
@@ -586,6 +646,11 @@ export const PhaseDetailPage: React.FC = () => {
 
         userPrompt = `${userPrompt}\n${scenarioSummary}`;
       }
+
+      // Try streaming first for real-time feedback
+      await generateWithStreaming(phaseId, userPrompt);
+
+      // After streaming completes, fetch final structured data
       const response = await api.generatePhase(id, phaseId, userPrompt);
       setPhaseStatus(response.phase_status);
       const updatedArtifacts = await api.getArtifacts(id);
@@ -4308,6 +4373,58 @@ export const PhaseDetailPage: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
+      </div>
+      {/* Phase Bottom Tabs: History | Traceability | Discussion */}
+      <div className="mt-6 rounded-2xl overflow-hidden" style={{ background: '#0f1f15', border: '1px solid rgba(30,74,40,0.5)' }}>
+        <div className="flex border-b" style={{ borderColor: 'rgba(30,74,40,0.5)' }}>
+          {(['history', 'traceability', 'discussion'] as const).map((tab) => {
+            const labels: Record<string, string> = { history: 'History', traceability: 'Traceability', discussion: 'Discussion' };
+            const isActive = phaseBottomTab === tab;
+            if (tab === 'traceability' && phaseId !== 'requirements_gathering') return null;
+            return (
+              <button
+                key={tab}
+                onClick={() => setPhaseBottomTab(tab)}
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${
+                  isActive
+                    ? 'text-[#4ade80] border-b-2 border-[#4ade80] bg-[#142b1a]'
+                    : 'text-[#6b9e7a] hover:text-[#a8d5a8] hover:bg-[#142b1a]/50'
+                }`}
+              >
+                {labels[tab]}
+              </button>
+            );
+          })}
+        </div>
+        <div className="p-4">
+          {phaseBottomTab === 'history' && (
+            <VersionHistory
+              versions={[]}
+              onCompare={() => {}}
+              onRestore={() => {}}
+            />
+          )}
+          {phaseBottomTab === 'traceability' && phaseId === 'requirements_gathering' && (
+            <TraceabilityMatrix
+              requirements={requirements.map(r => ({ id: r.requirement_id || '', title: r.title || '', type: r.type || '' }))}
+              tasks={tasks.map(t => ({ id: t.task_id || '', title: t.title || '', status: t.status || '' }))}
+              links={[]}
+              coveragePercentage={0}
+              onCreateLink={() => {}}
+            />
+          )}
+          {phaseBottomTab === 'discussion' && (
+            <NegotiationThread
+              threadId={`${id}-${phaseId}`}
+              title={`${phaseConfig?.title || 'Phase'} Discussion`}
+              description="Discuss requirements, changes, and decisions for this phase."
+              status="open"
+              comments={[]}
+              onAddComment={() => {}}
+              onResolve={() => {}}
+            />
+          )}
         </div>
       </div>
     </Layout>

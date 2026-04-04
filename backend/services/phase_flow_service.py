@@ -129,8 +129,11 @@ class PhaseFlowService:
         status[phase] = "in_progress"
         await self.project_repo.update_phase_status(project_id, organization, status)
 
+        # Build prior context from completed phases
+        prior_context = await self._build_prior_context(project_id, phase)
+
         logger.info(f"Starting content generation for phase {phase}, project {project_id}")
-        raw_content = await self._run_phase_prompt(project.id, project.name, phase, prompt, user_id)
+        raw_content = await self._run_phase_prompt(project.id, project.name, phase, prompt, user_id, prior_context)
         
         # Debug logging to track content generation
         logger.info(f"Generated content for phase {phase}: {len(raw_content)} characters")
@@ -181,6 +184,43 @@ class PhaseFlowService:
             "metadata": artifact.metadata,
         }
 
+    async def _build_prior_context(self, project_id: str, current_phase: str) -> str:
+        """Fetch previously completed phase artifacts and build a context string."""
+        try:
+            current_index = PHASE_ORDER.index(current_phase)
+        except ValueError:
+            return ""
+
+        context_parts = []
+        for phase_id in PHASE_ORDER[:current_index]:
+            artifact_type = f"PHASE_{phase_id.upper()}"
+            try:
+                artifact = await self.artifact_repo.get_latest_by_type(project_id, artifact_type)
+                if artifact and artifact.content_json:
+                    markdown = (
+                        artifact.content_json.get("markdown")
+                        or artifact.content_json.get("raw_markdown")
+                        or ""
+                    )
+                    if markdown:
+                        title = PHASE_TITLES.get(phase_id, phase_id)
+                        # Limit each phase to 2000 chars to avoid token limits
+                        snippet = markdown[:2000]
+                        if len(markdown) > 2000:
+                            snippet += "\n...[truncated]"
+                        context_parts.append(f"[{title.upper()}]:\n{snippet}")
+            except Exception as exc:
+                logger.warning(f"Could not fetch prior context for phase {phase_id}: {exc}")
+
+        if not context_parts:
+            return ""
+
+        return (
+            "=== PREVIOUS PHASE OUTPUTS (for context) ===\n"
+            + "\n\n".join(context_parts)
+            + "\n=== END CONTEXT ===\n\n"
+        )
+
     async def _run_phase_prompt(
         self,
         project_id: str,
@@ -188,6 +228,7 @@ class PhaseFlowService:
         phase: str,
         user_prompt: str,
         user_id: Optional[str] = None,
+        prior_context: str = "",
     ) -> str:
         # Use placeholder content if no Gemini API key is configured
         if not self.api_key:
@@ -275,6 +316,7 @@ class PhaseFlowService:
         user_prompt = user_prompt.strip() or "Use available project context."
         phase_text = phase_instructions.get(phase, "")
         prompt = (
+            f"{prior_context}"
             f"Project: {project_name}\n"
             f"Phase: {PHASE_TITLES[phase]}\n"
             f"System expectations: {phase_text}\n"

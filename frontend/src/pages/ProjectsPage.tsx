@@ -217,17 +217,42 @@ export const ProjectsPage: React.FC = () => {
         {/* Projects */}
         {filteredProjects.length === 0 ? (
           <div className={`text-center py-20 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <div className="w-24 h-24 rounded-2xl bg-[#142b1a] flex items-center justify-center mx-auto mb-6 border border-[#1e4a28]/50">
-              <FolderOpen className="w-12 h-12 text-[#2d6a3f]" />
-            </div>
-            <h3 className="text-2xl font-bold text-[#e8f5e0] mb-3">No projects yet</h3>
-            <p className="text-[#6b9e7a] mb-8 max-w-md mx-auto">
-              Plant your first project seed and let AI help grow comprehensive documentation
-            </p>
-            <button onClick={() => navigate('/projects/new')} className="btn-primary">
-              <Plus className="w-5 h-5" />
-              Create First Project
-            </button>
+            {searchQuery ? (
+              <>
+                <div className="w-24 h-24 rounded-2xl bg-[#142b1a] flex items-center justify-center mx-auto mb-6 border border-[#1e4a28]/50">
+                  <FolderOpen className="w-12 h-12 text-[#2d6a3f]" />
+                </div>
+                <h3 className="text-2xl font-bold text-[#e8f5e0] mb-3">No projects match your search</h3>
+                <p className="text-[#6b9e7a] mb-8 max-w-md mx-auto">Try a different search term or clear the filter.</p>
+                <button onClick={() => setSearchQuery('')} className="btn-secondary">Clear Search</button>
+              </>
+            ) : (
+              <>
+                <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-[#1e4a28]/60 to-[#0f1f15] flex items-center justify-center mx-auto mb-8 border border-[rgba(30,74,40,0.5)] shadow-lg shadow-[#4ade80]/10">
+                  <Sparkles className="w-14 h-14 text-[#4ade80]" />
+                </div>
+                <h3 className="text-3xl font-bold text-[#e8f5e0] mb-4">Plant Your First Seed</h3>
+                <p className="text-[#6b9e7a] mb-10 max-w-lg mx-auto text-lg leading-relaxed">
+                  Create an AI-powered project plan in minutes. Start with a template or build from scratch.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <button
+                    onClick={() => navigate('/projects/new?template=true')}
+                    className="btn-primary px-8 py-3 text-base"
+                  >
+                    <TreePine className="w-5 h-5" />
+                    Start with a Template
+                  </button>
+                  <button
+                    onClick={() => navigate('/projects/new')}
+                    className="btn-secondary px-8 py-3 text-base"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Create from Scratch
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className={`transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>

@@ -1,15 +1,17 @@
 """Requirement traceability service."""
 
-import uuid
 from typing import List, Dict, Any
 from datetime import datetime
 
-from models.traceability import TraceabilityLink, TraceabilityMatrix, CoverageReport
+from repositories.traceability_repository import TraceabilityRepository
 
 
 class TraceabilityService:
     """Service for requirement traceability."""
-    
+
+    def __init__(self):
+        self.repo = TraceabilityRepository()
+
     async def create_link(
         self,
         project_id: str,
@@ -24,9 +26,8 @@ class TraceabilityService:
         rationale: str = None
     ) -> Dict[str, Any]:
         """Create a traceability link."""
-        
+
         link = {
-            "id": str(uuid.uuid4()),
             "project_id": project_id,
             "source_type": source_type,
             "source_id": source_id,
@@ -39,8 +40,13 @@ class TraceabilityService:
             "created_by": created_by,
             "created_at": datetime.utcnow()
         }
-        
-        return link
+
+        saved = await self.repo.create_link(link)
+        return saved.model_dump(by_alias=False)
+
+    async def list_links(self, project_id: str) -> List[Dict[str, Any]]:
+        links = await self.repo.list_by_project(project_id)
+        return [link.model_dump(by_alias=False) for link in links]
     
     async def generate_matrix(
         self,

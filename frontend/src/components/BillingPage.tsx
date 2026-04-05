@@ -1,179 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Check, Zap, Crown, Rocket, Loader2 } from 'lucide-react';
-import { api } from '@/lib/api';
-
-interface PricingPlan {
-  name: string;
-  price: number;
-  features: string[];
-  max_projects: number;
-  max_users: number;
-}
+import React from 'react';
+import { AlertTriangle, CreditCard, Settings } from 'lucide-react';
 
 interface BillingPageProps {
   userId: string;
 }
 
-export const BillingPage: React.FC<BillingPageProps> = ({ userId }) => {
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [subscribing, setSubscribing] = useState<string | null>(null);
+const billingEnabled = import.meta.env.VITE_ENABLE_BILLING === 'true';
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
-
-  const fetchPlans = async () => {
-    try {
-      const data = await api.getBillingPlans();
-      setPlans(data as PricingPlan[]);
-    } catch (error) {
-      console.error('Failed to fetch plans:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubscribe = async (planName: string) => {
-    setSubscribing(planName);
-    try {
-      await api.subscribeToPlan(planName);
-      alert(`Successfully subscribed to ${planName} plan!`);
-    } catch (error) {
-      console.error('Failed to subscribe:', error);
-      alert('Subscription failed. Please try again.');
-    } finally {
-      setSubscribing(null);
-    }
-  };
-
-  const getPlanIcon = (planName: string) => {
-    switch (planName) {
-      case 'free': return Zap;
-      case 'pro': return Rocket;
-      case 'enterprise': return Crown;
-      default: return Zap;
-    }
-  };
-
-  const getPlanColor = (planName: string) => {
-    switch (planName) {
-      case 'free': return 'from-gray-400 to-gray-600';
-      case 'pro': return 'from-orange-500 to-blue-500';
-      case 'enterprise': return 'from-blue-600 to-navy-700';
-      default: return 'from-gray-400 to-gray-600';
-    }
-  };
-
-  const isFeatured = (planName: string) => planName === 'pro';
-
-  if (loading) {
+export const BillingPage: React.FC<BillingPageProps> = () => {
+  if (!billingEnabled) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div
+          className="rounded-3xl p-8"
+          style={{
+            background: 'var(--brand-850)',
+            border: '1px solid rgba(26,111,212,0.2)',
+          }}
+        >
+          <div className="flex items-start gap-4">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(249,115,22,0.12)' }}
+            >
+              <AlertTriangle className="w-7 h-7 text-orange-400" />
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-3xl font-bold text-[var(--text-primary)]">Billing Unavailable</h1>
+              <p className="text-[var(--text-muted)] max-w-2xl">
+                Billing and checkout are disabled in this environment because no real payment provider is configured.
+                The previous UI was only a demo flow, so it has been intentionally turned off.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4 pt-2">
+                <div className="rounded-2xl p-4" style={{ background: 'rgba(26,46,69,0.45)', border: '1px solid rgba(26,111,212,0.14)' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="w-4 h-4 text-[var(--blue-400)]" />
+                    <span className="font-semibold text-[var(--text-primary)]">Why it is hidden</span>
+                  </div>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Subscriptions were backed by mock endpoints. Keeping them visible would be misleading.
+                  </p>
+                </div>
+                <div className="rounded-2xl p-4" style={{ background: 'rgba(26,46,69,0.45)', border: '1px solid rgba(26,111,212,0.14)' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Settings className="w-4 h-4 text-[var(--blue-400)]" />
+                    <span className="font-semibold text-[var(--text-primary)]">To enable later</span>
+                  </div>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Add a real payment integration and set `VITE_ENABLE_BILLING=true`.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Choose Your <span className="bg-gradient-to-r from-orange-600 to-blue-600 bg-clip-text text-transparent">Growth Plan</span>
-        </h1>
-        <p className="text-xl text-gray-600">Start free, upgrade as you grow 🌰</p>
-      </div>
-
-      {/* Pricing Cards */}
-      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {plans.map((plan) => {
-          const Icon = getPlanIcon(plan.name);
-          const featured = isFeatured(plan.name);
-          
-          return (
-            <div
-              key={plan.name}
-              className={`relative bg-white rounded-3xl p-8 transition-all ${
-                featured
-                  ? 'border-4 border-orange-400 shadow-2xl scale-105 z-10'
-                  : 'border-2 border-gray-200 hover:shadow-xl hover:scale-102'
-              }`}
-            >
-              {featured && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-blue-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                  MOST POPULAR
-                </div>
-              )}
-
-              <div className="text-center mb-6">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${getPlanColor(plan.name)} mb-4`}>
-                  <Icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 capitalize mb-2">{plan.name}</h3>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
-                  {plan.price > 0 && <span className="text-gray-600">/month</span>}
-                </div>
-              </div>
-
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${featured ? 'text-orange-500' : 'text-blue-500'}`} />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Button
-                onClick={() => handleSubscribe(plan.name)}
-                disabled={subscribing === plan.name}
-                className={`w-full py-3 font-semibold ${
-                  featured
-                    ? 'bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600 text-white shadow-lg'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
-                }`}
-              >
-                {subscribing === plan.name ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    {plan.name === 'free' ? 'Get Started' : 'Subscribe Now'}
-                  </>
-                )}
-              </Button>
-
-              <div className="mt-4 text-center text-sm text-gray-500">
-                {plan.max_projects === -1 ? 'Unlimited' : plan.max_projects} projects •{' '}
-                {plan.max_users === -1 ? 'Unlimited' : plan.max_users} users
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Trust Indicators */}
-      <div className="mt-16 text-center">
-        <p className="text-gray-600 mb-4">Trusted by 500+ teams worldwide</p>
-        <div className="flex items-center justify-center gap-8 text-gray-400">
-          <div className="flex items-center gap-2">
-            <Check className="w-5 h-5 text-green-500" />
-            <span>Cancel anytime</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-5 h-5 text-green-500" />
-            <span>Secure payments</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-5 h-5 text-green-500" />
-            <span>24/7 support</span>
-          </div>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="rounded-3xl p-8 text-[var(--text-primary)]" style={{ background: 'var(--brand-850)', border: '1px solid rgba(26,111,212,0.2)' }}>
+        Real billing is enabled for this environment, but the production checkout flow has not been implemented in this repository yet.
       </div>
     </div>
   );

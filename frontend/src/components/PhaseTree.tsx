@@ -44,13 +44,13 @@ function getNodeColors(phaseId: string, phaseStatus: Record<string, string>, isH
     return {
       fill: 'var(--brand-800)',
       stroke: isHovered ? (phaseColor?.fill || 'var(--blue-400)') : 'var(--brand-700)',
-      text: '#3d6b4a',
+      text: 'var(--text-muted)',
     };
   }
   if (status === 'completed') {
     return {
-      fill: phaseColor?.fill || '#22c55e',
-      stroke: isHovered ? '#fff' : (phaseColor?.fill || '#22c55e'),
+      fill: phaseColor?.fill || '#1A6FD4',
+      stroke: isHovered ? '#fff' : (phaseColor?.fill || '#1A6FD4'),
       text: phaseColor?.text || 'var(--brand-900)',
     };
   }
@@ -170,9 +170,9 @@ export const PhaseTree: React.FC<PhaseTreeProps> = ({ phaseStatus, phaseOutputs,
       </svg>
 
       {/* Color legend */}
-      <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-5 text-xs" style={{ color: '#4a7a56' }}>
+      <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-5 text-xs" style={{ color: 'var(--text-faint)' }}>
         {[
-          { color: '#22c55e', label: 'Completed' },
+          { color: '#1A6FD4', label: 'Completed' },
           { color: 'var(--orange-400)', label: 'Active' },
           { color: 'var(--brand-800)', label: 'Locked', border: 'var(--brand-700)' },
         ].map(({ color, label, border }) => (
@@ -210,7 +210,7 @@ export const PhaseTree: React.FC<PhaseTreeProps> = ({ phaseStatus, phaseOutputs,
               {hoveredPhaseConfig.title}
             </p>
           </div>
-          <p style={{ color: '#4a7a56', fontSize: '11px' }}>
+          <p style={{ color: 'var(--text-faint)', fontSize: '11px' }}>
             {hoveredPhaseConfig.description}
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '10px', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>

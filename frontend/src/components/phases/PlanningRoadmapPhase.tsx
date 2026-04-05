@@ -213,10 +213,10 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
     purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700', bar: 'bg-purple-500' },
     blue: { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-700', bar: 'bg-blue-500' },
     red: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700', bar: 'bg-red-500' },
-    green: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300', bar: 'bg-blue-900/200' },
+    green: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300', bar: 'bg-blue-500/40' },
     amber: { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-700', bar: 'bg-amber-500' },
     cyan: { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-700', bar: 'bg-cyan-500' },
-    emerald: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300', bar: 'bg-blue-900/200' },
+    emerald: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300', bar: 'bg-blue-500/40' },
   };
 
   const getStatusIcon = (status: string) => {

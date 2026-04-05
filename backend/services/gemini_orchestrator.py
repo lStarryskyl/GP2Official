@@ -99,19 +99,19 @@ class _BaseAgent:
     model_name: str = settings.gemini_flash_model
 
     async def run(self, context: dict) -> dict:
+        from services.openai_client import call_openai
         prompt = self._build_prompt(context)
         last_error: Optional[str] = None
 
         for attempt in range(_MAX_RETRIES):
             try:
-                response = await self.model.generate_content_async(prompt)
-                raw_text = response.text
+                raw_text = await call_openai(prompt)
                 parsed = self._parse_response(raw_text)
                 return _build_envelope(
                     success=True,
                     content=parsed,
                     agent=self.agent_name,
-                    model=self.model_name,
+                    model=settings.openai_model,
                 )
             except Exception as exc:
                 last_error = str(exc)
@@ -131,7 +131,7 @@ class _BaseAgent:
             success=False,
             content=None,
             agent=self.agent_name,
-            model=self.model_name,
+            model=settings.openai_model,
             error=f"All {_MAX_RETRIES} attempts failed. Last error: {last_error}",
         )
 

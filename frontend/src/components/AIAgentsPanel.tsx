@@ -234,9 +234,14 @@ export const AIAgentsPanel: React.FC<Props> = ({
       }));
       setExpanded(prev => ({ ...prev, [agent.type]: true }));
     } catch (e: any) {
+      const status = e?.response?.status;
+      const detail = e?.response?.data?.detail || e?.message || 'Agent failed';
+      const friendlyError = status === 429
+        ? 'Daily AI quota reached — resets at midnight PT. Try again tomorrow or upgrade your Gemini API plan.'
+        : detail;
       setResults(prev => ({
         ...prev,
-        [agent.type]: { type: agent.type, name: agent.name, data: null, error: e.message, color: agent.color },
+        [agent.type]: { type: agent.type, name: agent.name, data: null, error: friendlyError, color: agent.color },
       }));
     } finally {
       setRunningAgent(null);

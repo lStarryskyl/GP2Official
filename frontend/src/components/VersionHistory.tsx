@@ -13,7 +13,7 @@ interface Version {
 
 interface VersionHistoryProps {
   versions: Version[];
-  onCompare: (fromVersion: number, toVersion: number) => void;
+  onCompare: (fromVersion: number, toVersion: number) => Promise<any> | any;
   onRestore: (versionNumber: number) => void;
 }
 
@@ -24,6 +24,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 }) => {
   const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
   const [showDiff, setShowDiff] = useState(false);
+  const [compareResult, setCompareResult] = useState<any | null>(null);
 
   const handleVersionSelect = (versionNumber: number) => {
     if (selectedVersions.includes(versionNumber)) {
@@ -33,10 +34,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   };
 
-  const handleCompare = () => {
+  const handleCompare = async () => {
     if (selectedVersions.length === 2) {
       const [v1, v2] = selectedVersions.sort((a, b) => a - b);
-      onCompare(v1, v2);
+      const result = await onCompare(v1, v2);
+      setCompareResult(result || null);
       setShowDiff(true);
     }
   };
@@ -134,6 +136,30 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         <div className="p-12 text-center">
           <History className="w-12 h-12 text-acorn-gray-400 mx-auto mb-4" />
           <p className="text-acorn-gray-600">No version history available</p>
+        </div>
+      )}
+
+      {showDiff && compareResult && (
+        <div className="border-t border-acorn-gray-200 p-6 bg-acorn-gray-50">
+          <div className="flex items-center gap-2 mb-3">
+            <GitCompare className="w-4 h-4 text-acorn-blue-600" />
+            <h4 className="font-semibold text-acorn-gray-900">Comparison Result</h4>
+          </div>
+          <p className="text-sm text-acorn-gray-700 mb-4">{compareResult.summary || 'Comparison complete.'}</p>
+          <div className="grid md:grid-cols-3 gap-3 text-sm">
+            <div className="rounded-lg border border-acorn-gray-200 bg-white p-3">
+              <p className="font-semibold text-acorn-gray-900">Added</p>
+              <p className="text-acorn-gray-600">{Object.keys(compareResult.added || {}).length} field(s)</p>
+            </div>
+            <div className="rounded-lg border border-acorn-gray-200 bg-white p-3">
+              <p className="font-semibold text-acorn-gray-900">Removed</p>
+              <p className="text-acorn-gray-600">{Object.keys(compareResult.removed || {}).length} field(s)</p>
+            </div>
+            <div className="rounded-lg border border-acorn-gray-200 bg-white p-3">
+              <p className="font-semibold text-acorn-gray-900">Modified</p>
+              <p className="text-acorn-gray-600">{Object.keys(compareResult.modified || {}).length} field(s)</p>
+            </div>
+          </div>
         </div>
       )}
     </div>

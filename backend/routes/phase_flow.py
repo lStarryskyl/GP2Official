@@ -4,8 +4,8 @@ import logging
 import json
 import asyncio
 import time
-import google.generativeai as genai
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
+from openai import AsyncOpenAI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -145,20 +145,23 @@ async def stream_phase_generation(
                 "Produce a structured Markdown response with headings, bullet lists, and clear action items."
             )
 
-            model = genai.GenerativeModel(
-                model_name=settings.gemini_pro_model,
-                system_instruction=system_message,
-            )
+            openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
             collected_text = ""
-            async for chunk in await model.generate_content_async(
-                full_prompt,
-                generation_config=genai.GenerationConfig(max_output_tokens=4000, temperature=0.7),
+            stream = await openai_client.chat.completions.create(
+                model=settings.openai_model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": full_prompt},
+                ],
+                max_tokens=4000,
                 stream=True,
-            ):
-                if chunk.text:
-                    collected_text += chunk.text
-                    yield f"event: token\ndata: {json.dumps({'text': chunk.text})}\n\n"
+            )
+            async for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    text = chunk.choices[0].delta.content
+                    collected_text += text
+                    yield f"event: token\ndata: {json.dumps({'text': text})}\n\n"
                     await asyncio.sleep(0)  # yield control
 
             # Persist the result in the background

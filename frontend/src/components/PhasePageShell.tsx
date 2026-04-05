@@ -21,7 +21,7 @@ const PHASE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  completed:   '#22c55e',
+  completed:   '#1A6FD4',
   active:      '#1A6FD4',
   in_progress: '#1A6FD4',
   ready:       '#3d8fe0',

@@ -18,10 +18,34 @@ import type {
   DiagramEdge,
   UxFlowArtifact,
   AiRun,
+  VersionHistoryEntry,
+  VersionDiffResult,
+  TraceabilityLink,
+  TraceabilityMatrixData,
+  NegotiationThread,
+  NegotiationComment,
   ScenarioDiff,
   GuidedWorkspaceConfig,
   SandboxRunResult,
 } from '@/types';
+
+const normalizeId = <T extends Record<string, any>>(item: T): T => {
+  if (!item) return item;
+  if (item.id || !item._id) return item;
+  return { ...item, id: item._id };
+};
+
+const normalizeNegotiationComment = (comment: any): NegotiationComment =>
+  normalizeId(comment) as NegotiationComment;
+
+const normalizeNegotiationThread = (thread: any): NegotiationThread =>
+  normalizeId(thread) as NegotiationThread;
+
+const normalizeVersionEntry = (entry: any): VersionHistoryEntry =>
+  normalizeId(entry) as VersionHistoryEntry;
+
+const normalizeTraceabilityLink = (link: any): TraceabilityLink =>
+  normalizeId(link) as TraceabilityLink;
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -530,6 +554,116 @@ class ApiClient {
   async subscribeToPlan(planId: string, paymentMethodId?: string): Promise<any> {
     const response = await this.client.post('/billing/subscribe', { plan_id: planId, payment_method_id: paymentMethodId });
     return response.data;
+  }
+
+  // Version History
+  async getVersionHistory(projectId: string, entityType: string, entityId: string, limit = 20): Promise<VersionHistoryEntry[]> {
+    const response = await this.client.post(`/projects/${projectId}/version/history`, {
+      entity_type: entityType,
+      entity_id: entityId,
+      limit,
+    });
+    return (response.data.versions || []).map(normalizeVersionEntry);
+  }
+
+  async compareVersions(
+    projectId: string,
+    entityType: string,
+    entityId: string,
+    fromVersion: number,
+    toVersion: number
+  ): Promise<VersionDiffResult> {
+    const response = await this.client.post(`/projects/${projectId}/version/compare`, {
+      entity_type: entityType,
+      entity_id: entityId,
+      from_version: fromVersion,
+      to_version: toVersion,
+    });
+    return response.data;
+  }
+
+  async restoreVersion(projectId: string, entityType: string, entityId: string, versionNumber: number): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/version/restore`, null, {
+      params: {
+        entity_type: entityType,
+        entity_id: entityId,
+        version_number: versionNumber,
+      },
+    });
+    return response.data;
+  }
+
+  // Traceability
+  async getTraceabilityMatrix(projectId: string): Promise<TraceabilityMatrixData> {
+    const response = await this.client.get(`/projects/${projectId}/traceability/matrix`);
+    return {
+      ...response.data,
+      links: (response.data.links || []).map(normalizeTraceabilityLink),
+    };
+  }
+
+  async createTraceabilityLink(
+    projectId: string,
+    payload: {
+      source_type: string;
+      source_id: string;
+      source_name: string;
+      target_type: string;
+      target_id: string;
+      target_name: string;
+      link_type?: string;
+      rationale?: string;
+    }
+  ): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/traceability/link`, payload);
+    return normalizeTraceabilityLink(response.data);
+  }
+
+  // Negotiation
+  async getNegotiationThreads(projectId: string): Promise<NegotiationThread[]> {
+    const response = await this.client.get(`/projects/${projectId}/negotiation/threads`);
+    return (response.data || []).map(normalizeNegotiationThread);
+  }
+
+  async getNegotiationThread(projectId: string, threadId: string): Promise<{ thread: NegotiationThread; comments: NegotiationComment[] }> {
+    const response = await this.client.get(`/projects/${projectId}/negotiation/threads/${threadId}`);
+    return {
+      thread: normalizeNegotiationThread(response.data.thread),
+      comments: (response.data.comments || []).map(normalizeNegotiationComment),
+    };
+  }
+
+  async createNegotiationThread(
+    projectId: string,
+    payload: {
+      title: string;
+      description: string;
+      status?: string;
+      priority?: string;
+      requirement_id?: string;
+      stakeholder_ids?: string[];
+    }
+  ): Promise<NegotiationThread> {
+    const response = await this.client.post(`/projects/${projectId}/negotiation/threads`, {
+      project_id: projectId,
+      stakeholder_ids: [],
+      ...payload,
+    });
+    return normalizeNegotiationThread(response.data);
+  }
+
+  async addNegotiationComment(
+    projectId: string,
+    threadId: string,
+    payload: { content: string; parent_id?: string; requirement_id?: string }
+  ): Promise<NegotiationComment> {
+    const response = await this.client.post(`/projects/${projectId}/negotiation/threads/${threadId}/comments`, payload);
+    return normalizeNegotiationComment(response.data);
+  }
+
+  async resolveNegotiationThread(projectId: string, threadId: string, resolution: string): Promise<NegotiationThread> {
+    const response = await this.client.post(`/projects/${projectId}/negotiation/threads/${threadId}/resolve`, { resolution });
+    return normalizeNegotiationThread(response.data);
   }
 
   // Personas

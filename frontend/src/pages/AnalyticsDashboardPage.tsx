@@ -17,6 +17,7 @@ import {
   Zap,
   Shield,
   DollarSign,
+  Circle,
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -99,22 +100,59 @@ export const AnalyticsDashboardPage: React.FC = () => {
           }
         } catch { /* ignore */ }
 
-        // Estimate AI generations from artifacts count
+        // AI runs (real usage)
         let aiGens = 0;
+        let weeklyActivity: { day: string; count: number }[] = [];
         try {
           const projectId = targetProject?.id || targetProject?.project_id;
           if (projectId) {
-            const arts = await api.getArtifacts(projectId);
-            aiGens = arts.length;
-          }
-        } catch { /* ignore */ }
+            const aiRuns = await api.getAiRuns(projectId, 200);
+            aiGens = aiRuns.filter((run: any) => (run.status || '').toLowerCase() === 'completed').length || aiRuns.length;
 
-        // Weekly activity — use project count as a proxy, real changelog not yet aggregated
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const weeklyActivity = days.map((day, i) => ({
-          day,
-          count: Math.max(1, Math.round(totalProjects * (i < 5 ? 3 : 1) + aiGens * (0.5 + Math.random() * 0.5))),
-        }));
+            // Prefer recorded activity logs; fall back to AI runs if the project has none.
+            const start = new Date();
+            start.setHours(0, 0, 0, 0);
+            start.setDate(start.getDate() - 6);
+            let activityItems: any[] = [];
+            try {
+              activityItems = await api.getActivity(projectId, 200);
+            } catch {
+              activityItems = [];
+            }
+
+            const sourceItems = activityItems.length > 0 ? activityItems : aiRuns;
+            weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+              const dayStart = new Date(start);
+              dayStart.setDate(start.getDate() + i);
+              const dayEnd = new Date(dayStart);
+              dayEnd.setDate(dayStart.getDate() + 1);
+              const count = sourceItems.filter((item: any) => {
+                const raw = item.completed_at || item.created_at;
+                if (!raw) return false;
+                const when = new Date(raw);
+                return when >= dayStart && when < dayEnd;
+              }).length;
+              return {
+                day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
+                count,
+              };
+            });
+          }
+        } catch {
+          weeklyActivity = [];
+        }
+
+        if (weeklyActivity.length === 0) {
+          // Fallback empty week with zeros (keeps UI stable)
+          const fallbackStart = new Date();
+          fallbackStart.setHours(0, 0, 0, 0);
+          fallbackStart.setDate(fallbackStart.getDate() - 6);
+          weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+            const day = new Date(fallbackStart);
+            day.setDate(fallbackStart.getDate() + i);
+            return { day: day.toLocaleDateString('en-US', { weekday: 'short' }), count: 0 };
+          });
+        }
 
         const riskLevel: 'low' | 'medium' | 'high' = completedPhases >= 7 ? 'low' : completedPhases >= 4 ? 'medium' : 'high';
 
@@ -151,7 +189,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
     high:   { color: '#C1440E', bg: 'rgba(193,68,14,0.12)',   label: 'High Risk' },
   }[risk] || { color: 'var(--text-muted)', bg: 'rgba(107,158,122,0.12)', label: 'Unknown' });
 
-  const maxActivity = Math.max(...(analytics?.weeklyActivity.map(d => d.count) || [1]));
+  const maxActivity = Math.max(1, ...(analytics?.weeklyActivity.map(d => d.count) || []));
   const risk = getRiskConfig(analytics?.riskLevel || 'low');
 
   const cardStyle = {
@@ -334,51 +372,71 @@ export const AnalyticsDashboardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* AI Insights */}
+            {/* Phase Completion Donut */}
             <div className="p-6" style={cardStyle}>
               <div className="flex items-center gap-3 mb-6">
                 <Zap className="w-5 h-5 text-[var(--blue-400)]" />
-                <h3 className="text-lg font-bold text-[var(--text-primary)]">AI Insights</h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">Completion Overview</h3>
               </div>
-              <div className="space-y-3">
-                {[
-                  { icon: CheckCircle2, color: 'var(--blue-400)', text: 'Project is on track with 65% completion across all 10 phases' },
-                  { icon: Sparkles,     color: '#2A9D8F', text: 'AI has generated content for 5 out of 10 phases successfully' },
-                  { icon: TrendingUp,   color: '#D4A017', text: 'Requirement completion rate increased 15% this week' },
-                  { icon: AlertTriangle,color: '#C1440E', text: '2 potential requirement conflicts detected — review recommended' },
-                ].map(({ icon: Icon, color, text }) => (
-                  <div key={text} className="flex items-start gap-3 p-3 rounded-xl"
-                    style={{ background: 'rgba(15,31,21,0.8)', border: '1px solid rgba(26,46,69,0.4)' }}>
-                    <Icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color }} />
-                    <p className="text-xs text-[var(--text-muted)]">{text}</p>
+              {(() => {
+                const pct = analytics?.projectProgress || 0;
+                const r = 52, cx = 70, cy = 70;
+                const circ = 2 * Math.PI * r;
+                const dash = (pct / 100) * circ;
+                const scoreColor = pct >= 70 ? '#1A6FD4' : pct >= 40 ? '#F97316' : '#4a6070';
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                    <svg width="140" height="140" style={{ flexShrink: 0 }}>
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(26,46,69,0.5)" strokeWidth="10" />
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={scoreColor} strokeWidth="10"
+                        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+                        transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: 'stroke-dasharray 0.8s ease' }} />
+                      <text x={cx} y={cy - 6} textAnchor="middle" fill="#E8EDF5" fontSize="22" fontWeight="800" fontFamily="Syne,sans-serif">{pct}%</text>
+                      <text x={cx} y={cy + 14} textAnchor="middle" fill="#4a6070" fontSize="10" fontFamily="DM Sans,sans-serif">complete</text>
+                    </svg>
+                    <div style={{ flex: 1 }}>
+                      {[
+                        { label: 'Completed', count: analytics?.completedPhases || 0, color: scoreColor },
+                        { label: 'Remaining', count: (analytics?.totalPhases || 10) - (analytics?.completedPhases || 0), color: 'rgba(26,46,69,0.5)' },
+                        { label: 'Requirements', count: analytics?.totalRequirements || 0, color: '#2A9D8F' },
+                        { label: 'AI Artifacts', count: analytics?.aiGenerations || 0, color: '#6B4C8A' },
+                      ].map(item => (
+                        <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }} />
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'DM Sans,sans-serif' }}>{item.label}</span>
+                          </div>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#E8EDF5', fontFamily: 'Syne,sans-serif' }}>{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
           </div>
 
-          {/* AI Agent Performance */}
+          {/* Phase Status Summary */}
           <div className="mt-6 p-6" style={cardStyle}>
             <div className="flex items-center gap-3 mb-6">
               <Users className="w-5 h-5 text-[#6B4C8A]" />
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">AI Agent Performance</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Phase Status Summary</h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { name: 'RequirementsAgent', calls: 12, success: 100, color: 'var(--blue-500)' },
-                { name: 'FeasibilityAgent',  calls: 4,  success: 100, color: '#7BA05B' },
-                { name: 'SystemDesignAgent', calls: 8,  success: 87,  color: '#6B4C8A' },
-                { name: 'RiskAgent',         calls: 6,  success: 100, color: '#C1440E' },
-              ].map(({ name, calls, success, color }) => (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {analytics?.phaseBreakdown.map(({ name, status, color }) => (
                 <div key={name} className="p-4 rounded-xl text-center"
                   style={{ background: `${color}0d`, border: `1px solid ${color}25` }}>
-                  <p className="text-xs text-[var(--text-muted)] mb-2">{name.replace('Agent','')}</p>
-                  <p className="text-2xl font-bold" style={{ color }}>{calls}</p>
-                  <p className="text-xs text-[var(--text-muted)]">calls</p>
-                  <div className="mt-2 h-1 rounded-full" style={{ background: 'rgba(26,46,69,0.3)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${success}%`, background: color }} />
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: `${color}22`, border: `2px solid ${status === 'completed' ? color : 'rgba(26,46,69,0.4)'}`, margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {status === 'completed'
+                      ? <CheckCircle2 size={14} color={color} />
+                      : status === 'in_progress'
+                      ? <Activity size={14} color={color} />
+                      : <Circle size={14} color="rgba(26,46,69,0.5)" />}
                   </div>
-                  <p className="text-xs text-[var(--text-muted)] mt-1">{success}% success</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">{name}</p>
+                  <p className="text-xs capitalize" style={{ color: status === 'completed' ? color : status === 'in_progress' ? '#F97316' : 'var(--text-faint)' }}>
+                    {status === 'completed' ? 'Done' : status === 'in_progress' ? 'Active' : 'Pending'}
+                  </p>
                 </div>
               ))}
             </div>

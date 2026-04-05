@@ -67,7 +67,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
 
   const diagrams: DiagramType[] = [
     { id: 'architecture', name: 'Architecture Diagram', description: 'High-level system components', icon: <Layers className="h-5 w-5" />, status: 'complete', color: 'blue' },
-    { id: 'erd', name: 'Database ERD', description: 'Entity relationships', icon: <Database className="h-5 w-5" />, status: 'complete', color: 'emerald' },
+    { id: 'erd', name: 'Database ERD', description: 'Entity relationships', icon: <Database className="h-5 w-5" />, status: 'complete', color: 'blue' },
     { id: 'class', name: 'Class Diagram', description: 'Object-oriented structure', icon: <Box className="h-5 w-5" />, status: 'partial', color: 'purple' },
     { id: 'sequence', name: 'Sequence Diagram', description: 'Object interactions', icon: <ArrowRight className="h-5 w-5" />, status: 'partial', color: 'amber' },
     { id: 'state', name: 'State Machine', description: 'State transitions', icon: <GitBranch className="h-5 w-5" />, status: 'empty', color: 'red' },

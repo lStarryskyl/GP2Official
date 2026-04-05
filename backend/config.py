@@ -4,6 +4,16 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 import os
 
+def _coerce_bool_env(key: str) -> None:
+    value = os.getenv(key)
+    if not value:
+        return
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on", "0", "false", "no", "n", "off"}:
+        return
+    os.environ[key] = "false"
+
+_coerce_bool_env("DEBUG")
 
 class Settings(BaseSettings):
     """Application settings."""
@@ -25,9 +35,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24  # 24 hours
     refresh_token_expire_days: int = 14
 
-    # AI - Gemini only
+    # AI - OpenAI (primary) + Gemini (fallback)
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+
     gemini_api_key: str = "AIzaSyCqHJnleUy8ZWpmzoKulcKLXHECmAB-UOw"
-    gemini_pro_model: str = "gemini-2.5-pro"      # For complex tasks (SRS, requirements)
+    gemini_pro_model: str = "gemini-2.0-flash"     # Flash has higher quota (2.5-pro hits limits fast)
     gemini_flash_model: str = "gemini-2.0-flash"  # For fast tasks
     gemini_fallback_model: str = "gemini-2.0-flash"  # Fallback
 
@@ -78,8 +91,12 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Ensure llm_api_key mirrors gemini_api_key so any legacy code that reads it still works
-if not settings.llm_api_key:
+# Prefer OpenAI when available; keep legacy Gemini keys as fallback
+if settings.openai_api_key:
+    settings.llm_provider = "openai"
+    settings.llm_api_key = settings.openai_api_key
+    settings.llm_model_name = settings.openai_model
+elif not settings.llm_api_key:
     settings.llm_api_key = settings.gemini_api_key
 
 # Log settings for debugging (no sensitive data)

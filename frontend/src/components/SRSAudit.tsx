@@ -44,49 +44,19 @@ export const SRSAudit: React.FC<SRSAuditProps> = ({ projectId, onAuditComplete }
   const [isAuditing, setIsAuditing] = useState(false);
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [error, setError] = useState<string | null>(null);
 
   const handleRunAudit = async () => {
     setIsAuditing(true);
+    setError(null);
     try {
       const data = await api.runSrsAudit(projectId);
       setAuditResult(data);
       onAuditComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to run audit:', error);
-      // Generate mock audit result for demo
-      const mockResult: AuditResult = {
-        score: 78,
-        total_items: 15,
-        passed: 10,
-        failed: 2,
-        warnings: 3,
-        audit_date: new Date().toISOString(),
-        items: [
-          { id: '1', category: 'Completeness', requirement: 'All functional requirements documented', status: 'pass', message: 'All core features are documented', severity: 'critical' },
-          { id: '2', category: 'Completeness', requirement: 'Non-functional requirements specified', status: 'warning', message: 'Performance requirements need more detail', severity: 'major' },
-          { id: '3', category: 'Consistency', requirement: 'No conflicting requirements', status: 'pass', message: 'No conflicts detected', severity: 'critical' },
-          { id: '4', category: 'Consistency', requirement: 'Terminology is consistent', status: 'pass', message: 'Consistent terminology throughout', severity: 'minor' },
-          { id: '5', category: 'Clarity', requirement: 'Requirements are unambiguous', status: 'warning', message: 'Some requirements need clarification', severity: 'major' },
-          { id: '6', category: 'Clarity', requirement: 'Acceptance criteria defined', status: 'pass', message: 'Most requirements have acceptance criteria', severity: 'major' },
-          { id: '7', category: 'Testability', requirement: 'Requirements are testable', status: 'pass', message: 'All requirements can be verified', severity: 'critical' },
-          { id: '8', category: 'Testability', requirement: 'Test scenarios documented', status: 'fail', message: 'Missing test scenarios for 3 requirements', severity: 'major' },
-          { id: '9', category: 'Traceability', requirement: 'Requirements traced to objectives', status: 'pass', message: 'Business objectives linked', severity: 'major' },
-          { id: '10', category: 'Traceability', requirement: 'Dependencies identified', status: 'warning', message: 'Some dependencies not fully mapped', severity: 'minor' },
-          { id: '11', category: 'Feasibility', requirement: 'Technical feasibility assessed', status: 'pass', message: 'All requirements are technically feasible', severity: 'critical' },
-          { id: '12', category: 'Feasibility', requirement: 'Resource requirements estimated', status: 'pass', message: 'Resource estimates provided', severity: 'major' },
-          { id: '13', category: 'Priority', requirement: 'Requirements prioritized', status: 'pass', message: 'MoSCoW prioritization applied', severity: 'major' },
-          { id: '14', category: 'Security', requirement: 'Security requirements defined', status: 'fail', message: 'Missing authentication requirements', severity: 'critical' },
-          { id: '15', category: 'Security', requirement: 'Data privacy considered', status: 'pass', message: 'GDPR compliance addressed', severity: 'critical' },
-        ],
-        recommendations: [
-          'Add detailed performance benchmarks for non-functional requirements',
-          'Define test scenarios for all requirements before development',
-          'Clarify ambiguous requirements in sections 3.2 and 4.1',
-          'Document security requirements including authentication and authorization',
-          'Complete dependency mapping for all modules'
-        ]
-      };
-      setAuditResult(mockResult);
+      setError(error?.response?.data?.detail || 'Audit failed. Check the backend and try again.');
+      setAuditResult(null);
     } finally {
       setIsAuditing(false);
     }
@@ -158,6 +128,12 @@ export const SRSAudit: React.FC<SRSAuditProps> = ({ projectId, onAuditComplete }
           )}
         </Button>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
 
       {/* Audit Results */}
       {auditResult && (

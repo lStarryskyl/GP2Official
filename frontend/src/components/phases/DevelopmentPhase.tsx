@@ -80,7 +80,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     { id: 1, name: 'Client Request', description: 'User initiates action in browser', icon: Globe, color: 'blue' },
     { id: 2, name: 'API Gateway', description: 'Request routing & authentication', icon: Shield, color: 'amber' },
     { id: 3, name: 'Load Balancer', description: 'Distribute traffic across instances', icon: Zap, color: 'purple' },
-    { id: 4, name: 'Application Server', description: 'Business logic processing', icon: Server, color: 'emerald' },
+    { id: 4, name: 'Application Server', description: 'Business logic processing', icon: Server, color: 'blue' },
     { id: 5, name: 'Database', description: 'Data persistence layer', icon: Database, color: 'red' },
     { id: 6, name: 'Cache Layer', description: 'Fast data retrieval', icon: Zap, color: 'orange' },
     { id: 7, name: 'Response', description: 'JSON response to client', icon: ArrowRight, color: 'cyan' },
@@ -97,7 +97,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       layer: 'Services',
       description: 'Business logic and orchestration',
       items: ['AuthService', 'ProjectService', 'AIService', 'NotificationService'],
-      color: 'emerald',
+      color: 'blue',
     },
     {
       layer: 'Repositories',
@@ -142,8 +142,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   `.trim();
 
   const colorMap: Record<string, { bg: string; border: string; text: string }> = {
-    blue: { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-700' },
-    emerald: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300' },
+    blue: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300' },
     purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700' },
     amber: { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-700' },
     red: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700' },
@@ -463,7 +462,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
           name,
           description,
           icon: GitBranch,
-          color: 'emerald' as const,
+          color: 'blue' as const,
         };
       });
     }

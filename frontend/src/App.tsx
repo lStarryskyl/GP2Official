@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './contexts/ToastContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -23,6 +24,7 @@ import ExportCenterPage from './pages/ExportCenterPage';
 import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { BillingPageRoute } from './pages/BillingPageRoute';
 import DocsPage from './pages/DocsPage';
+import SDLCGuidePage from './pages/SDLCGuidePage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -41,6 +43,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 function App() {
   return (
     <ThemeProvider>
+      <ToastProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -183,9 +186,11 @@ function App() {
           }
         />
         <Route path="/docs" element={<DocsPage />} />
+        <Route path="/sdlc-guide" element={<SDLCGuidePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

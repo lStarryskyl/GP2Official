@@ -1,5 +1,6 @@
 """Service for development change logs."""
 
+import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import io
@@ -8,10 +9,15 @@ import zipfile
 from models.user import User
 from models.change_log import ChangeLogEntryResponse, ChangeLogCreateRequest
 from repositories.change_log_repository import ChangeLogRepository
+from repositories.activity_repository import ActivityRepository
 from repositories.task_repository import TaskRepository
 from repositories.requirement_repository import RequirementRepository
 from services.project_service import ProjectService
 from services.plantuml_service import build_plantuml_image_url
+from services.notification_service import NotificationService
+from models.notification import NotificationCreate
+
+logger = logging.getLogger(__name__)
 
 
 class ChangeLogService:
@@ -19,9 +25,11 @@ class ChangeLogService:
 
     def __init__(self) -> None:
         self.repo = ChangeLogRepository()
+        self.activity_repo = ActivityRepository()
         self.task_repo = TaskRepository()
         self.requirement_repo = RequirementRepository()
         self.project_service = ProjectService()
+        self.notification_service = NotificationService()
 
     async def list_entries(self, project_id: str) -> List[ChangeLogEntryResponse]:
         entries = await self.repo.list_by_project(project_id)
@@ -73,6 +81,32 @@ class ChangeLogService:
 
         # Hook into diagram generation and timeline updates
         await self._trigger_diagram_updates(project_id, payload.entry_type, valid_task_ids)
+        await self.activity_repo.record(
+            project_id=project_id,
+            user_id=current_user.id,
+            event_type="change_log_created",
+            details_json={
+                "entry_id": entry.id,
+                "entry_type": entry.entry_type,
+                "files": entry.files,
+                "task_ids": entry.task_ids,
+                "requirement_ids": entry.requirement_ids,
+            },
+        )
+        await self.notification_service.create_notification(
+            NotificationCreate(
+                user_id=current_user.id,
+                project_id=project_id,
+                type="project_update",
+                title="Development update saved",
+                message=payload.description[:140],
+                priority="normal",
+                entity_type="change_log",
+                entity_id=entry.id,
+                action_url=f"/projects/{project_id}/updates",
+                metadata={"entry_id": entry.id, "entry_type": entry.entry_type},
+            )
+        )
         return self._as_response(entry)
 
     async def _filter_valid_tasks(self, project_id: str, task_ids: List[str]) -> List[str]:
@@ -154,6 +188,32 @@ class ChangeLogService:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
             }
+        )
+        await self.activity_repo.record(
+            project_id=project_id,
+            user_id=current_user.id,
+            event_type="change_log_uploaded",
+            details_json={
+                "entry_id": entry.id,
+                "filename": filename,
+                "files": entry.files,
+                "task_ids": entry.task_ids,
+                "requirement_ids": entry.requirement_ids,
+            },
+        )
+        await self.notification_service.create_notification(
+            NotificationCreate(
+                user_id=current_user.id,
+                project_id=project_id,
+                type="project_update",
+                title="Development file uploaded",
+                message=(description or f"Uploaded {filename}")[:140],
+                priority="normal",
+                entity_type="change_log",
+                entity_id=entry.id,
+                action_url=f"/projects/{project_id}/updates",
+                metadata={"entry_id": entry.id, "filename": filename},
+            )
         )
         return self._as_response(entry)
 

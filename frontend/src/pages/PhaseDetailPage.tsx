@@ -1,12 +1,24 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { Layout } from '@/components/Layout';
+import { useToast } from '@/contexts/ToastContext';
+import { AISuggestionsPanel } from '@/components/AISuggestionsPanel';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
-import type { Artifact, Project, Task, Requirement, SandboxRunResult } from '@/types';
+import type {
+  Artifact,
+  Project,
+  Task,
+  Requirement,
+  SandboxRunResult,
+  VersionHistoryEntry,
+  TraceabilityMatrixData,
+  NegotiationThread as NegotiationThreadData,
+  NegotiationComment,
+} from '@/types';
 import { phaseConfigs, getPhaseConfig, getNextPhase, phaseColors } from '@/constants/phases';
 import { workspacePresets } from '@/constants/workspacePresets';
 import { useAuthStore } from '@/store/authStore';
@@ -64,6 +76,8 @@ import {
   Undo2,
   Printer,
   Play,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 type RiskRegisterRow = {
@@ -111,6 +125,7 @@ const createDefaultRiskDraft = (): RiskDraft => ({
 export const PhaseDetailPage: React.FC = () => {
   const { id, phaseId } = useParams<{ id: string; phaseId: string }>();
   const navigate = useNavigate();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [phaseStatus, setPhaseStatus] = useState<Record<string, string>>({});
@@ -138,6 +153,10 @@ export const PhaseDetailPage: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phaseBottomTab, setPhaseBottomTab] = useState<'history' | 'traceability' | 'discussion'>('history');
+  const [versionEntries, setVersionEntries] = useState<VersionHistoryEntry[]>([]);
+  const [traceabilityMatrix, setTraceabilityMatrix] = useState<TraceabilityMatrixData | null>(null);
+  const [discussionThread, setDiscussionThread] = useState<NegotiationThreadData | null>(null);
+  const [discussionComments, setDiscussionComments] = useState<NegotiationComment[]>([]);
   const [syncingCanvas, setSyncingCanvas] = useState(false);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [editingTask, setEditingTask] = useState<string | null>(null);
@@ -225,6 +244,155 @@ export const PhaseDetailPage: React.FC = () => {
     }
   };
 
+  const latestArtifact = useMemo(() => {
+    if (!phaseId) return null;
+    return artifacts.find((art) => art.type === `PHASE_${phaseId.toUpperCase()}`);
+  }, [artifacts, phaseId]);
+
+  const phaseMarkdown = latestArtifact?.content_json?.markdown || '';
+  const phaseRawMarkdown = latestArtifact?.content_json?.raw_markdown || '';
+
+  const loadVersionHistory = useCallback(async () => {
+    if (!id || !latestArtifact?.artifact_id) {
+      setVersionEntries([]);
+      return;
+    }
+    try {
+      const versions = await api.getVersionHistory(id, 'artifact', latestArtifact.artifact_id, 20);
+      setVersionEntries(versions);
+    } catch (err) {
+      console.error('Failed to load version history', err);
+      setVersionEntries([]);
+    }
+  }, [id, latestArtifact]);
+
+  const loadTraceability = useCallback(async () => {
+    if (!id || phaseId !== 'requirements_gathering') {
+      setTraceabilityMatrix(null);
+      return;
+    }
+    try {
+      const matrix = await api.getTraceabilityMatrix(id);
+      setTraceabilityMatrix(matrix);
+    } catch (err) {
+      console.error('Failed to load traceability matrix', err);
+      setTraceabilityMatrix(null);
+    }
+  }, [id, phaseId]);
+
+  const loadDiscussion = useCallback(async () => {
+    if (!id || !phaseId) {
+      setDiscussionThread(null);
+      setDiscussionComments([]);
+      return;
+    }
+    try {
+      const threads = await api.getNegotiationThreads(id);
+      let thread = threads.find((item) => item.requirement_id === phaseId);
+      if (!thread) {
+        thread = await api.createNegotiationThread(id, {
+          title: `${phaseConfig?.title || 'Phase'} Discussion`,
+          description: 'Discuss requirements, changes, and decisions for this phase.',
+          requirement_id: phaseId,
+          status: 'open',
+          priority: 'medium',
+        });
+      }
+      const details = await api.getNegotiationThread(id, thread.id);
+      setDiscussionThread(details.thread);
+      setDiscussionComments(details.comments);
+    } catch (err) {
+      console.error('Failed to load discussion thread', err);
+      setDiscussionThread(null);
+      setDiscussionComments([]);
+    }
+  }, [id, phaseId, phaseConfig]);
+
+  const handleCompareVersions = useCallback(async (fromVersion: number, toVersion: number) => {
+    if (!id || !latestArtifact?.artifact_id) return null;
+    try {
+      const diff = await api.compareVersions(id, 'artifact', latestArtifact.artifact_id, fromVersion, toVersion);
+      toastSuccess(diff.summary || 'Version comparison complete');
+      return diff;
+    } catch (err) {
+      console.error('Failed to compare versions', err);
+      toastError('Failed to compare versions');
+      return null;
+    }
+  }, [id, latestArtifact, toastError, toastSuccess]);
+
+  const handleRestoreVersion = useCallback(async (versionNumber: number) => {
+    if (!id || !latestArtifact?.artifact_id) return;
+    try {
+      await api.restoreVersion(id, 'artifact', latestArtifact.artifact_id, versionNumber);
+      toastSuccess(`Restored version ${versionNumber}`);
+      const [arts, versions] = await Promise.all([
+        api.getArtifacts(id),
+        api.getVersionHistory(id, 'artifact', latestArtifact.artifact_id, 20),
+      ]);
+      setArtifacts(arts);
+      setVersionEntries(versions);
+    } catch (err) {
+      console.error('Failed to restore version', err);
+      toastError('Failed to restore version');
+    }
+  }, [id, latestArtifact, toastError, toastSuccess]);
+
+  const handleCreateTraceabilityLink = useCallback(async (sourceId: string, targetId: string) => {
+    if (!id) return;
+    const requirement = requirements.find((item) => item.requirement_id === sourceId);
+    const task = tasks.find((item) => item.task_id === targetId);
+    if (!requirement || !task) return;
+
+    try {
+      await api.createTraceabilityLink(id, {
+        source_type: 'requirement',
+        source_id: sourceId,
+        source_name: requirement.title,
+        target_type: 'task',
+        target_id: targetId,
+        target_name: task.title,
+        link_type: 'implements',
+      });
+      toastSuccess('Traceability link created');
+      await loadTraceability();
+    } catch (err) {
+      console.error('Failed to create traceability link', err);
+      toastError('Failed to create traceability link');
+    }
+  }, [id, loadTraceability, requirements, tasks, toastError, toastSuccess]);
+
+  const handleAddDiscussionComment = useCallback(async (content: string, parentId?: string) => {
+    if (!id || !discussionThread) return;
+    try {
+      await api.addNegotiationComment(id, discussionThread.id, {
+        content,
+        parent_id: parentId,
+        requirement_id: phaseId,
+      });
+      const details = await api.getNegotiationThread(id, discussionThread.id);
+      setDiscussionThread(details.thread);
+      setDiscussionComments(details.comments);
+    } catch (err) {
+      console.error('Failed to add comment', err);
+      toastError('Failed to add comment');
+    }
+  }, [discussionThread, id, phaseId, toastError]);
+
+  const handleResolveDiscussion = useCallback(async (resolution: string) => {
+    if (!id || !discussionThread) return;
+    try {
+      const thread = await api.resolveNegotiationThread(id, discussionThread.id, resolution);
+      setDiscussionThread(thread);
+      const details = await api.getNegotiationThread(id, discussionThread.id);
+      setDiscussionComments(details.comments);
+      toastSuccess('Discussion resolved');
+    } catch (err) {
+      console.error('Failed to resolve discussion', err);
+      toastError('Failed to resolve discussion');
+    }
+  }, [discussionThread, id, toastError, toastSuccess]);
+
   useEffect(() => {
     if (!id) return;
     const loadProjectData = async () => {
@@ -291,6 +459,20 @@ export const PhaseDetailPage: React.FC = () => {
     loadProjectData();
   }, [id, teamSizeMultiplier, roleMix]);
 
+  useEffect(() => {
+    if (phaseBottomTab === 'history') {
+      loadVersionHistory();
+      return;
+    }
+    if (phaseBottomTab === 'traceability') {
+      loadTraceability();
+      return;
+    }
+    if (phaseBottomTab === 'discussion') {
+      loadDiscussion();
+    }
+  }, [phaseBottomTab, loadVersionHistory, loadTraceability, loadDiscussion]);
+
   // Auto-generate phase content on first visit if no content exists
   const autoGenerateTriggeredRef = useRef<Set<string>>(new Set());
   useEffect(() => {
@@ -330,13 +512,34 @@ export const PhaseDetailPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  const latestArtifact = useMemo(() => {
-    if (!phaseId) return null;
-    return artifacts.find((art) => art.type === `PHASE_${phaseId.toUpperCase()}`);
-  }, [artifacts, phaseId]);
+  const nestedDiscussionComments = useMemo(() => {
+    const byId = new Map(discussionComments.map((comment) => [comment.id, { ...comment, replies: [] as any[] }]));
+    const roots: any[] = [];
 
-  const phaseMarkdown = latestArtifact?.content_json?.markdown || '';
-  const phaseRawMarkdown = latestArtifact?.content_json?.raw_markdown || '';
+    discussionComments.forEach((comment) => {
+      const current = byId.get(comment.id);
+      if (!current) return;
+      if (comment.parent_id && byId.has(comment.parent_id)) {
+        byId.get(comment.parent_id)!.replies.push(current);
+      } else {
+        roots.push(current);
+      }
+    });
+
+    return roots;
+  }, [discussionComments]);
+
+  // Copy-to-clipboard helper
+  const [copied, setCopied] = useState(false);
+  const handleCopyContent = useCallback(() => {
+    const text = phaseMarkdown || phaseRawMarkdown;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      toastSuccess('Content copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [phaseMarkdown, phaseRawMarkdown, toastSuccess]);
 
   const RawMarkdownDisclosure: React.FC = () => {
     if (!phaseRawMarkdown || phaseRawMarkdown === phaseMarkdown) {
@@ -655,6 +858,7 @@ export const PhaseDetailPage: React.FC = () => {
       setPhaseStatus(response.phase_status);
       const updatedArtifacts = await api.getArtifacts(id);
       setArtifacts(updatedArtifacts);
+      toastSuccess(`${phaseId.replace(/_/g, ' ')} phase generated successfully`);
 
       // Auto-sync AI outputs into structured project fields for certain phases
       const latestPhaseArtifact = updatedArtifacts.find(
@@ -1061,7 +1265,7 @@ export const PhaseDetailPage: React.FC = () => {
             const defaultSections = [
               { id: 'market', title: 'Market Feasibility', color: 'purple' },
               { id: 'technical', title: 'Technical Feasibility', color: 'blue' },
-              { id: 'economic', title: 'Economic Feasibility', color: 'green' },
+              { id: 'economic', title: 'Economic Feasibility', color: 'blue' },
               { id: 'operational', title: 'Operational Feasibility', color: 'amber' },
               { id: 'legal', title: 'Legal / Compliance Feasibility', color: 'red' },
             ];
@@ -1102,7 +1306,9 @@ export const PhaseDetailPage: React.FC = () => {
       }
       if (prompt) setInput(''); // Clear input if prompt was provided externally
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to generate phase output');
+      const msg = err.response?.data?.detail || 'Failed to generate phase output';
+      setError(msg);
+      toastError(msg);
     } finally {
       setIsGenerating(false);
     }
@@ -1326,7 +1532,7 @@ export const PhaseDetailPage: React.FC = () => {
       const x = Math.max(0, ((t.start.getTime() - min.getTime()) / totalMs) * 100);
       const width = Math.max(4, ((t.end.getTime() - t.start.getTime()) / totalMs) * 100);
       const status = (localTaskStatus[t.task_id] || t.status || '').toLowerCase();
-      const color = status === 'completed' ? '#16a34a' : status === 'in_progress' ? '#2563eb' : '#c084fc';
+      const color = status === 'completed' ? '#1A6FD4' : status === 'in_progress' ? '#F97316' : '#8899AA';
       const isMilestone = (t.tags || []).includes('milestone');
       return { id: t.task_id, title: t.title, x, width, y: 50 + idx * (barHeight + 16), color, isMilestone };
     });
@@ -1357,12 +1563,32 @@ export const PhaseDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64 bg-slate-50">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
-            <span className="text-slate-400 text-sm">Loading phase...</span>
+        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+          {/* Header skeleton */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(26,46,69,0.6)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ width: '180px', height: '28px', borderRadius: '6px', background: 'rgba(26,46,69,0.6)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           </div>
+          {/* Phase header skeleton */}
+          <div style={{ padding: '24px', borderRadius: '16px', background: 'var(--brand-850)', border: '1px solid rgba(26,46,69,0.5)', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(26,46,69,0.6)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ width: '200px', height: '22px', borderRadius: '6px', background: 'rgba(26,46,69,0.6)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: '8px' }} />
+                <div style={{ width: '300px', height: '14px', borderRadius: '6px', background: 'rgba(26,46,69,0.4)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              </div>
+            </div>
+          </div>
+          {/* Content skeletons */}
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ padding: '20px', borderRadius: '14px', background: 'var(--brand-850)', border: '1px solid rgba(26,46,69,0.4)', marginBottom: '16px' }}>
+              <div style={{ width: `${60 + i * 10}%`, height: '16px', borderRadius: '6px', background: 'rgba(26,46,69,0.6)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: '12px' }} />
+              <div style={{ width: '100%', height: '12px', borderRadius: '6px', background: 'rgba(26,46,69,0.4)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: '8px' }} />
+              <div style={{ width: '80%', height: '12px', borderRadius: '6px', background: 'rgba(26,46,69,0.3)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            </div>
+          ))}
         </div>
+        <style>{`@keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }`}</style>
       </Layout>
     );
   }
@@ -1527,6 +1753,22 @@ export const PhaseDetailPage: React.FC = () => {
                           <span className="text-sm text-gray-400">Content auto-generated</span>
                         </div>
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleCopyContent}
+                            disabled={!phaseMarkdown && !phaseRawMarkdown}
+                            title="Copy content to clipboard"
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              padding: '6px 10px', borderRadius: '8px',
+                              background: copied ? 'rgba(26,111,212,0.15)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${copied ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.6)'}`,
+                              color: copied ? '#3d8fe0' : '#4a6070',
+                              fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                            }}
+                          >
+                            {copied ? <Check size={13} /> : <Copy size={13} />}
+                            {copied ? 'Copied' : 'Copy'}
+                          </button>
                           <input
                             ref={regenerateInputRef}
                             type="text"
@@ -1549,6 +1791,17 @@ export const PhaseDetailPage: React.FC = () => {
                     )}
                   </div>
                 </div>
+              )}
+
+              {/* AI Suggestions Panel */}
+              {phaseId && project && (
+                <AISuggestionsPanel
+                  projectId={id || ''}
+                  phase={phaseId}
+                  phaseContent={phaseMarkdown}
+                  projectName={project.name}
+                  projectDescription={project.description || ''}
+                />
               )}
 
               {/* Phase Content */}
@@ -2050,14 +2303,14 @@ export const PhaseDetailPage: React.FC = () => {
         <div className="space-y-6">
           {/* Header */}
           <div className="relative">
-            <div className="absolute -top-10 -left-10 w-32 h-32 bg-red-200/30 rounded-full blur-3xl"></div>
+            <div className="absolute -top-10 -left-10 w-32 h-32 rounded-full blur-3xl" style={{ background: 'var(--orange-500, #F97316)', opacity: 0.08 }}></div>
             <div className="relative flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Project
                 </Button>
-                <span className="text-xs uppercase text-red-500 font-semibold tracking-widest">Active Risk Review</span>
+                <span className="text-xs uppercase font-semibold tracking-widest" style={{ color: '#fb923c' }}>Active Risk Review</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {isEditingRisks ? (
@@ -2068,7 +2321,7 @@ export const PhaseDetailPage: React.FC = () => {
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-gradient-to-r from-red-500 to-amber-500 text-white border-none"
+                      style={{ background: 'linear-gradient(135deg, #1A6FD4, #F97316)', color: '#fff', border: 'none' }}
                       onClick={handleSaveRisks}
                       disabled={savingRisks || !latestArtifact}
                     >
@@ -2099,17 +2352,17 @@ export const PhaseDetailPage: React.FC = () => {
                 )}
               </div>
               <div className="text-right flex-1 min-w-[220px]">
-                <p className="text-xs uppercase text-gray-500 tracking-wider">Phase</p>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-amber-600 bg-clip-text text-transparent">
+                <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Phase</p>
+                <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                   Risks & Mitigations
                 </h1>
-                <p className="text-sm text-gray-500">{project?.name}</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{project?.name}</p>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+            <div className="px-4 py-3 rounded-lg flex items-center gap-2" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
               <AlertTriangle className="h-4 w-4" />
               {error}
             </div>
@@ -2120,8 +2373,8 @@ export const PhaseDetailPage: React.FC = () => {
             {/* Overview card */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <AlertTriangle className="h-4 w-4" style={{ color: '#F97316' }} />
                   Risk Overview
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -2189,8 +2442,8 @@ export const PhaseDetailPage: React.FC = () => {
               {/* Risk Register table */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Grid2X2 className="h-4 w-4 text-red-500" />
+                  <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <Grid2X2 className="h-4 w-4" style={{ color: '#F97316' }} />
                     Risk Register
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -2345,10 +2598,10 @@ export const PhaseDetailPage: React.FC = () => {
                             const chip = (level: string) => {
                               const lower = level.toLowerCase();
                               if (lower.startsWith('high')) {
-                                return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] font-medium">🔴 {level}</span>;
+                                return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>🔴 {level}</span>;
                               }
                               if (lower.startsWith('medium')) {
-                                return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">🟡 {level}</span>;
+                                return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: 'rgba(249,115,22,0.15)', color: '#fdba74' }}>🟡 {level}</span>;
                               }
                               if (lower.startsWith('low')) {
                                 return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-900/20 text-blue-300 text-[10px] font-medium">🟢 {level}</span>;
@@ -2607,507 +2860,262 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'tasks' || phaseId === 'tasks_legacy') {
     const completedCount = tasks.filter((t) => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === 'completed').length;
-    const progressPct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
+    const inProgressCount = tasks.filter((t) => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === 'in_progress').length;
+    const todoCount = tasks.filter((t) => {
+      const s = (localTaskStatus[t.task_id] || t.status || '').toLowerCase();
+      return s === 'planned' || s === 'todo' || s === '';
+    }).length;
     const totalHours = tasks.reduce((sum, t) => sum + (t.estimate_hours || 0), 0);
+
+    const kanbanColumns: { key: string; label: string; accentColor: string; headerBg: string }[] = [
+      { key: 'todo', label: 'To Do', accentColor: '#1A6FD4', headerBg: 'rgba(26,111,212,0.15)' },
+      { key: 'in_progress', label: 'In Progress', accentColor: '#F97316', headerBg: 'rgba(249,115,22,0.15)' },
+      { key: 'done', label: 'Done', accentColor: '#4B7EA3', headerBg: 'rgba(75,126,163,0.12)' },
+    ];
+
+    const getColumnTasks = (colKey: string) =>
+      tasks.filter((t) => {
+        const s = (localTaskStatus[t.task_id] || t.status || '').toLowerCase();
+        if (colKey === 'todo') return s === 'planned' || s === 'todo' || s === '';
+        if (colKey === 'in_progress') return s === 'in_progress';
+        if (colKey === 'done') return s === 'completed';
+        return false;
+      });
+
+    const priorityBorder: Record<string, string> = {
+      high: '3px solid #ef4444',
+      medium: '3px solid #F97316',
+      low: '3px solid #1A6FD4',
+    };
+    const priorityPill: Record<string, { bg: string; color: string }> = {
+      high: { bg: 'rgba(239,68,68,0.15)', color: '#fca5a5' },
+      medium: { bg: 'rgba(249,115,22,0.15)', color: '#fdba74' },
+      low: { bg: 'rgba(26,111,212,0.15)', color: '#93c5fd' },
+    };
 
     return (
       <PhaseWrapper>
         <>
           <div className="space-y-6">
 
-            {/* Stats Overview */}
+            {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <ListChecks className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">{tasks.length}</p>
-                      <p className="text-xs text-gray-500">Total Tasks</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-blue-900/20 to-white border-blue-700/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-900/30 rounded-lg">
-                      <CheckCircle2 className="h-5 w-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">{completedCount}</p>
-                      <p className="text-xs text-gray-500">Completed</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">{totalHours}h</p>
-                      <p className="text-xs text-gray-500">Est. Hours</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">{progressPct}%</p>
-                      <p className="text-xs text-gray-500">Progress</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
+                  <ListChecks className="h-5 w-5" style={{ color: '#1A6FD4' }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: '#1A6FD4' }}>{tasks.length}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Tasks</p>
+                </div>
+              </div>
+              <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
+                  <CheckCircle2 className="h-5 w-5" style={{ color: '#60a5fa' }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{todoCount}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>To Do</p>
+                </div>
+              </div>
+              <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--brand-800)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(249,115,22,0.12)' }}>
+                  <Clock className="h-5 w-5" style={{ color: '#F97316' }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: '#F97316' }}>{inProgressCount}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>In Progress</p>
+                </div>
+              </div>
+              <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.1)' }}>
+                  <TrendingUp className="h-5 w-5" style={{ color: '#4ade80' }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: '#4ade80' }}>{completedCount}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Done</p>
+                </div>
+              </div>
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Left Column - Task Management */}
-              <div className="lg:col-span-1 space-y-4">
-                {/* Add Task Card */}
-                <Card className="border-2 border-dashed border-purple-200 hover:border-purple-400 transition-colors">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Plus className="h-4 w-4 text-purple-500" />
-                      Add New Task
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <input
-                      className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                      placeholder="Task title..."
-                      value={newTask.title}
-                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                    />
-                    <textarea
-                      className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
-                      placeholder="Description..."
-                      value={newTask.description}
-                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                      rows={2}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
-                        <input
-                          type="date"
-                          className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
-                          value={newTask.start_date}
-                          onChange={(e) => setNewTask({ ...newTask, start_date: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 mb-1 block">Due Date</label>
-                        <input
-                          type="date"
-                          className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer hover:border-purple-300 transition-colors"
-                          value={newTask.due_date}
-                          onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-                          min={newTask.start_date || undefined}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <select
-                        className="border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-sm"
-                        value={newTask.priority}
-                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                      >
-                        <option value="low">🟢 Low</option>
-                        <option value="medium">🟡 Medium</option>
-                        <option value="high">🔴 High</option>
-                      </select>
-                      <select
-                        className="border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-sm"
-                        value={newTask.status}
-                        onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
-                      >
-                        <option value="planned">📋 Planned</option>
-                        <option value="in_progress">🔄 In Progress</option>
-                        <option value="completed">✅ Completed</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Dependencies (task titles or IDs, comma separated)</label>
-                      <input
-                        className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                        placeholder="e.g. Design UI, Implement API"
-                        value={newTask.dependencies}
-                        onChange={(e) => setNewTask({ ...newTask, dependencies: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-                        onClick={async () => {
-                          if (!id || !newTask.title.trim()) return;
-                          setCreatingTask(true);
-                          try {
-                            const dependencies = (newTask.dependencies || '')
-                              .split(',')
-                              .map((d) => d.trim())
-                              .filter(Boolean);
+            {/* Action Row */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                style={{ background: '#1A6FD4', color: '#fff', border: 'none' }}
+                onClick={() => setNewTask({ ...newTask, status: 'planned' })}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Add Task
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  if (!id) return;
+                  setAiAddingTasks(true);
+                  try {
+                    await api.generateProject(id, {
+                      detail_level: 'light',
+                      include_tasks: true,
+                      regenerate_requirements: false,
+                      generate_srs: false,
+                      generate_risks: false,
+                      generate_costs: false,
+                    });
+                    const refreshed = await api.getTasks(id);
+                    setTasks(refreshed);
+                  } catch (err) {
+                    console.error('AI task gen failed', err);
+                  } finally {
+                    setAiAddingTasks(false);
+                  }
+                }}
+                disabled={aiAddingTasks}
+              >
+                {aiAddingTasks ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Wand2 className="h-4 w-4 mr-1" />}
+                AI Generate
+              </Button>
+              <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>{totalHours}h estimated · {completedCount}/{tasks.length} done</span>
+            </div>
 
-                            const payload: any = {
-                              title: newTask.title,
-                              description: newTask.description,
-                              start_date: newTask.start_date || undefined,
-                              due_date: newTask.due_date || undefined,
-                              priority: newTask.priority,
-                              status: newTask.status,
-                              dependencies,
-                              tags: newTask.milestone ? ['milestone'] : [],
-                            };
-                            const created = await api.createTask(id, payload);
-                            setTasks((prev) => [created, ...prev]);
-                            setNewTask({
-                              title: '',
-                              description: '',
-                              start_date: '',
-                              due_date: '',
-                              priority: 'medium',
-                              status: 'planned',
-                              dependencies: '',
-                              milestone: false,
-                            });
-                          } catch (err) {
-                            console.error('Create task failed', err);
-                          } finally {
-                            setCreatingTask(false);
-                          }
-                        }}
-                        disabled={creatingTask || !newTask.title.trim()}
-                      >
-                        {creatingTask ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Task'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          if (!id) return;
-                          setAiAddingTasks(true);
-                          try {
-                            await api.generateProject(id, {
-                              detail_level: 'light',
-                              include_tasks: true,
-                              regenerate_requirements: false,
-                              generate_srs: false,
-                              generate_risks: false,
-                              generate_costs: false,
-                            });
-                            const refreshed = await api.getTasks(id);
-                            setTasks(refreshed);
-                          } catch (err) {
-                            console.error('AI task gen failed', err);
-                          } finally {
-                            setAiAddingTasks(false);
-                          }
-                        }}
-                        disabled={aiAddingTasks}
-                      >
-                        {aiAddingTasks ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Wand2 className="h-4 w-4 mr-1" /> AI
-                          </>
-                        )}
-                      </Button>
+            {/* 3-Column Kanban Board */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {kanbanColumns.map((col) => {
+                const colTasks = getColumnTasks(col.key);
+                return (
+                  <div key={col.key} className="rounded-xl flex flex-col" style={{ background: 'var(--brand-800)', border: '1px solid var(--brand-700)' }}>
+                    {/* Column Header */}
+                    <div className="flex items-center justify-between px-4 py-3 rounded-t-xl" style={{ background: col.headerBg, borderBottom: `1px solid var(--brand-700)` }}>
+                      <span className="font-semibold text-sm" style={{ color: col.accentColor }}>{col.label}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: col.accentColor + '22', color: col.accentColor }}>{colTasks.length}</span>
                     </div>
-                  </CardContent>
-                </Card>
 
-                {/* Task List */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">Task List</CardTitle>
-                      <select
-                        className="text-xs border border-[var(--brand-700)] rounded px-2 py-1"
-                        value={taskFilter}
-                        onChange={(e) => setTaskFilter(e.target.value as any)}
-                      >
-                        <option value="all">All</option>
-                        <option value="planned">Planned</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                    </div>
-                    <div className="mt-2">
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all" style={{ width: `${progressPct}%` }} />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{completedCount} of {tasks.length} completed</p>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="max-h-[400px] overflow-y-auto space-y-2">
-                    {tasks.filter((task) => taskFilter === 'all' || (localTaskStatus[task.task_id] || task.status || '').toLowerCase() === taskFilter).map((task) => {
-                      const taskStatus = (localTaskStatus[task.task_id] || task.status || '').toLowerCase();
-                      const done = taskStatus === 'completed';
-                      const priorityColors: Record<string, string> = { high: 'border-l-red-500', medium: 'border-l-amber-500', low: 'border-l-blue-500' };
-                      return (
-                        <div
-                          key={task.task_id}
-                          className={`p-3 rounded-lg border-l-4 ${priorityColors[task.priority] || 'border-l-gray-300'} bg-[#152238] border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${done ? 'opacity-60' : ''}`}
-                          onClick={() => setSelectedTask(task)}
-                        >
-                          <div className="flex items-start gap-2">
+                    {/* Task Cards */}
+                    <div className="flex-1 p-3 space-y-2 overflow-y-auto" style={{ maxHeight: 480 }}>
+                      {colTasks.map((task) => {
+                        const prio = (task.priority || 'low').toLowerCase() as keyof typeof priorityBorder;
+                        const pill = priorityPill[prio] || priorityPill.low;
+                        return (
+                          <div
+                            key={task.task_id}
+                            className="rounded-lg p-3 cursor-pointer hover:brightness-110 transition-all"
+                            style={{
+                              background: 'var(--brand-750, #152238)',
+                              borderLeft: priorityBorder[prio] || '3px solid #1A6FD4',
+                              border: '1px solid var(--brand-700)',
+                              borderLeftWidth: '3px',
+                            }}
+                            onClick={() => toggleLocalTaskStatus(task.task_id)}
+                            title="Click to advance status"
+                          >
+                            <p className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
+                            {task.description && (
+                              <p className="text-xs truncate mb-2" style={{ color: 'var(--text-muted)' }}>{task.description}</p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize" style={{ background: pill.bg, color: pill.color }}>{prio}</span>
+                              {task.estimate_hours > 0 && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(26,111,212,0.1)', color: '#93c5fd' }}>{task.estimate_hours}h</span>
+                              )}
+                              {task.due_date && (
+                                <span className="text-[10px] flex items-center gap-0.5" style={{ color: 'var(--text-muted)' }}>
+                                  <Calendar className="h-2.5 w-2.5" />
+                                  {new Date(task.due_date).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {colTasks.length === 0 && (
+                        <p className="text-xs text-center py-6" style={{ color: 'var(--text-muted)' }}>No tasks here</p>
+                      )}
+
+                      {/* Inline Add Form — only in To Do column */}
+                      {col.key === 'todo' && (
+                        <div className="mt-3 rounded-lg p-3 space-y-2" style={{ background: 'var(--brand-750, #152238)', border: '1px dashed rgba(26,111,212,0.3)' }}>
+                          <input
+                            className="w-full rounded-lg px-3 py-1.5 text-sm"
+                            style={{ background: 'var(--brand-800)', border: '1px solid var(--brand-700)', color: 'var(--text-primary)' }}
+                            placeholder="New task title..."
+                            value={newTask.title}
+                            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              className="rounded-lg px-2 py-1.5 text-xs"
+                              style={{ background: 'var(--brand-800)', border: '1px solid var(--brand-700)', color: 'var(--text-primary)' }}
+                              value={newTask.priority}
+                              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                            >
+                              <option value="low">Low</option>
+                              <option value="medium">Medium</option>
+                              <option value="high">High</option>
+                            </select>
                             <input
-                              type="checkbox"
-                              checked={done}
-                              onChange={(e) => { e.stopPropagation(); toggleLocalTaskStatus(task.task_id); }}
-                              className="mt-1 rounded"
+                              type="number"
+                              className="rounded-lg px-2 py-1.5 text-xs"
+                              style={{ background: 'var(--brand-800)', border: '1px solid var(--brand-700)', color: 'var(--text-primary)' }}
+                              placeholder="Hours est."
+                              value={newTask.due_date}
+                              onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
                             />
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium text-sm ${done ? 'line-through text-gray-400' : 'text-white'}`}>{task.title}</p>
-                              <p className="text-xs text-gray-500 truncate">{task.description}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {task.due_date && (
-                                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(task.due_date).toLocaleDateString()}
-                                  </span>
-                                )}
-                                {task.estimate_hours > 0 && (
-                                  <span className="text-xs text-gray-400">{task.estimate_hours}h</span>
-                                )}
-                              </div>
-                            </div>
-                            <Edit3 className="h-4 w-4 text-gray-300 hover:text-gray-500" onClick={(e) => { e.stopPropagation(); setEditingTask(task.task_id); }} />
                           </div>
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            style={{ background: '#1A6FD4', color: '#fff', border: 'none' }}
+                            onClick={async () => {
+                              if (!id || !newTask.title.trim()) return;
+                              setCreatingTask(true);
+                              try {
+                                const payload: any = {
+                                  title: newTask.title,
+                                  description: newTask.description,
+                                  start_date: newTask.start_date || undefined,
+                                  due_date: newTask.due_date || undefined,
+                                  priority: newTask.priority,
+                                  status: 'planned',
+                                  dependencies: [],
+                                  tags: [],
+                                };
+                                const created = await api.createTask(id, payload);
+                                setTasks((prev) => [created, ...prev]);
+                                setNewTask({ title: '', description: '', start_date: '', due_date: '', priority: 'medium', status: 'planned', dependencies: '', milestone: false });
+                              } catch (err) {
+                                console.error('Create task failed', err);
+                              } finally {
+                                setCreatingTask(false);
+                              }
+                            }}
+                            disabled={creatingTask || !newTask.title.trim()}
+                          >
+                            {creatingTask ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-3 w-3 mr-1" />Add</>}
+                          </Button>
                         </div>
-                      );
-                    })}
-                    {!tasks.length && <p className="text-sm text-gray-500 text-center py-4">No tasks yet. Add one above!</p>}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Gantt Chart & Matrix */}
-              <div className="lg:col-span-2 space-y-4">
-                {/* Enhanced Gantt Chart */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-purple-500" />
-                        <CardTitle>Project Timeline</CardTitle>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                          <button onClick={() => setGanttViewMode('chart')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'chart' ? 'bg-[#152238] shadow' : ''}`}>Chart</button>
-                          <button onClick={() => setGanttViewMode('list')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'list' ? 'bg-[#152238] shadow' : ''}`}>List</button>
-                          <button onClick={() => setGanttViewMode('board')} className={`px-2 py-1 rounded text-xs ${ganttViewMode === 'board' ? 'bg-[#152238] shadow' : ''}`}>Board</button>
-                        </div>
-                        <select className="text-xs border border-[var(--brand-700)] rounded-lg px-2 py-1" value={ganttScale} onChange={(e) => setGanttScale(e.target.value as any)}>
-                          <option value="auto">Auto</option>
-                          <option value="2w">2 Weeks</option>
-                          <option value="1m">1 Month</option>
-                          <option value="3m">3 Months</option>
-                          <option value="6m">6 Months</option>
-                        </select>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => setGanttZoom(Math.max(50, ganttZoom - 25))} className="p-1 hover:bg-gray-100 rounded"><ZoomOut className="h-4 w-4" /></button>
-                          <span className="text-xs text-gray-500 w-10 text-center">{ganttZoom}%</span>
-                          <button onClick={() => setGanttZoom(Math.min(200, ganttZoom + 25))} className="p-1 hover:bg-gray-100 rounded"><ZoomIn className="h-4 w-4" /></button>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {ganttViewMode === 'chart' && (
-                      <div className="relative border border-[var(--brand-700)] rounded-xl bg-gradient-to-b from-gray-50 to-white p-4 overflow-x-auto" style={{ minHeight: Math.max(300, ganttData.height), transform: `scale(${ganttZoom / 100})`, transformOrigin: 'top left' }}>
-                        <div className="min-w-[800px]">
-                          {/* Timeline Header */}
-                          <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-2 border-b border-[var(--brand-700)]">
-                            {Array.from({ length: 7 }).map((_, idx) => {
-                              const date = new Date(ganttData.start.getTime() + ((ganttData.end.getTime() - ganttData.start.getTime()) * idx) / 6);
-                              return <span key={idx} className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>;
-                            })}
-                          </div>
-                          {/* Task Bars */}
-                          <div className="space-y-3">
-                            {ganttData.bars.map((bar, idx) => {
-                              const task = tasks.find(t => t.task_id === bar.id);
-                              return (
-                                <div key={bar.id} className="flex items-center gap-3">
-                                  <div className="w-32 flex-shrink-0">
-                                    <p className="text-xs font-medium text-gray-300 truncate">{bar.title}</p>
-                                    <p className="text-[10px] text-gray-400">{task?.estimate_hours || 0}h</p>
-                                  </div>
-                                  <div className="flex-1 relative h-8 bg-gray-100 rounded-lg overflow-hidden">
-                                    <div
-                                      className="absolute h-full rounded-lg transition-all duration-300 cursor-pointer hover:opacity-80"
-                                      style={{ left: `${bar.x}%`, width: `${Math.max(8, bar.width)}%`, background: `linear-gradient(135deg, ${bar.color}, ${bar.color}dd)` }}
-                                      onClick={() => setSelectedTask(task || null)}
-                                    >
-                                      <div className="h-full flex items-center justify-center">
-                                        <span className="text-[10px] text-white font-medium truncate px-2">{bar.title}</span>
-                                      </div>
-                                    </div>
-                                    {bar.isMilestone && (
-                                      <div className="absolute top-1/2 -translate-y-1/2" style={{ left: `${bar.x + bar.width}%` }}>
-                                        <div className="w-3 h-3 bg-orange-500 rotate-45 transform"></div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {!ganttData.bars.length && (
-                            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                              <Calendar className="h-12 w-12 mb-2 opacity-50" />
-                              <p className="text-sm">No tasks with dates yet</p>
-                              <p className="text-xs">Add tasks with start/due dates to see the timeline</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {ganttViewMode === 'board' && (
-                      <div className="grid grid-cols-3 gap-4">
-                        {['planned', 'in_progress', 'completed'].map((status) => (
-                          <div key={status} className="bg-[var(--brand-700)]/50 rounded-xl p-3">
-                            <h4 className="font-medium text-sm text-gray-300 mb-3 capitalize">{status.replace('_', ' ')}</h4>
-                            <div className="space-y-2">
-                              {tasks.filter(t => (localTaskStatus[t.task_id] || t.status || '').toLowerCase() === status).map(task => (
-                                <div key={task.task_id} className="bg-[#152238] p-3 rounded-lg border border-[var(--brand-700)] shadow-sm">
-                                  <p className="text-sm font-medium">{task.title}</p>
-                                  <p className="text-xs text-gray-500 truncate">{task.description}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {ganttViewMode === 'list' && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-[var(--brand-700)]/50">
-                            <tr>
-                              <th className="text-left p-2 font-medium text-gray-600">Task</th>
-                              <th className="text-left p-2 font-medium text-gray-600">Status</th>
-                              <th className="text-left p-2 font-medium text-gray-600">Priority</th>
-                              <th className="text-left p-2 font-medium text-gray-600">Start</th>
-                              <th className="text-left p-2 font-medium text-gray-600">Due</th>
-                              <th className="text-left p-2 font-medium text-gray-600">Hours</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {tasks.map(task => (
-                              <tr key={task.task_id} className="border-b border-gray-100 hover:bg-[var(--brand-700)]/50">
-                                <td className="p-2">{task.title}</td>
-                                <td className="p-2"><Badge variant={task.status === 'completed' ? 'success' : task.status === 'in_progress' ? 'warning' : 'secondary'}>{task.status}</Badge></td>
-                                <td className="p-2 capitalize">{task.priority}</td>
-                                <td className="p-2 text-gray-500">{task.start_date ? new Date(task.start_date).toLocaleDateString() : '-'}</td>
-                                <td className="p-2 text-gray-500">{task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}</td>
-                                <td className="p-2 text-gray-500">{task.estimate_hours || 0}h</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Eisenhower Matrix */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Grid2X2 className="h-4 w-4 text-blue-500" />
-                      Priority Matrix
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: 'Do First', color: 'bg-red-50 border-red-200', tasks: matrixBuckets.urgentImportant, icon: '🔥' },
-                        { label: 'Schedule', color: 'bg-blue-50 border-blue-200', tasks: matrixBuckets.notUrgentImportant, icon: '📅' },
-                        { label: 'Delegate', color: 'bg-amber-50 border-amber-200', tasks: matrixBuckets.urgentNotImportant, icon: '👥' },
-                        { label: 'Eliminate', color: 'bg-[var(--brand-700)]/50 border-[var(--brand-700)]', tasks: matrixBuckets.notUrgentNotImportant, icon: '🗑️' },
-                      ].map(({ label, color, tasks: bucketTasks, icon }) => (
-                        <div key={label} className={`${color} border rounded-xl p-3`}>
-                          <p className="font-medium text-sm mb-2">{icon} {label}</p>
-                          <div className="space-y-1 max-h-24 overflow-y-auto">
-                            {bucketTasks.length ? bucketTasks.map(task => (
-                              <p key={task.task_id} className="text-xs text-gray-600 truncate">• {task.title}</p>
-                            )) : <p className="text-xs text-gray-400">No tasks</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* AI Actions */}
-                <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="h-4 w-4 text-purple-500" />
-                      <span className="font-medium text-sm text-purple-900">AI Quick Actions</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" className="bg-[#152238]" onClick={() => {
-                        const updated = tasks.map((t, idx) => {
-                          const start = t.start_date ? new Date(t.start_date) : new Date(Date.now() + idx * 86400000);
-                          const end = t.due_date ? new Date(t.due_date) : new Date(start.getTime() + 86400000 * 2);
-                          return { ...t, start_date: start.toISOString(), due_date: end.toISOString() };
-                        });
-                        setTasks(updated as any);
-                      }}>
-                        <Calendar className="h-3 w-3 mr-1" /> Auto-fill Dates
-                      </Button>
-                      <Button size="sm" variant="outline" className="bg-[#152238]" onClick={() => {
-                        const sorted = [...tasks].sort((a, b) => {
-                          const order = { high: 0, medium: 1, low: 2 };
-                          return (order[a.priority as keyof typeof order] || 2) - (order[b.priority as keyof typeof order] || 2);
-                        });
-                        setTasks(sorted);
-                      }}>
-                        <TrendingUp className="h-3 w-3 mr-1" /> Sort by Priority
-                      </Button>
-                      <Button size="sm" variant="outline" className="bg-[#152238]" onClick={() => {
-                        const deduped: Record<string, Task> = {};
-                        tasks.forEach((t) => { deduped[t.task_id] = t; });
-                        setTasks(Object.values(deduped));
-                      }}>
-                        <Trash2 className="h-3 w-3 mr-1" /> Remove Duplicates
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+            {/* AI Task Insights */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base text-purple-900">
-                  <Sparkles className="h-4 w-4 text-purple-500" />
+                <CardTitle className="flex items-center gap-2 text-base" style={{ color: 'var(--text-primary)' }}>
+                  <Sparkles className="h-4 w-4" style={{ color: '#1A6FD4' }} />
                   AI Task Insights
                 </CardTitle>
-                <CardDescription className="text-sm text-purple-700">
+                <CardDescription style={{ color: 'var(--text-muted)' }}>
                   Ask the assistant to summarize execution risks, propose a new sprint, or refine dependencies.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <textarea
-                  className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent min-h-[90px] bg-[#152238]"
-                  placeholder="E.g., “Summarize task dependencies”, “Highlight schedule risks”, “Draft QA tasks for sprint 2”"
+                  className="w-full rounded-lg px-3 py-2 text-sm min-h-[90px]"
+                  style={{ background: 'var(--brand-750, #152238)', border: '1px solid var(--brand-700)', color: 'var(--text-primary)' }}
+                  placeholder="E.g., Summarize task dependencies, highlight schedule risks, draft QA tasks for sprint 2"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                 />
@@ -3115,31 +3123,27 @@ export const PhaseDetailPage: React.FC = () => {
                   <Button
                     onClick={() => handleGenerate()}
                     disabled={isGenerating || status === 'locked'}
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+                    style={{ background: '#1A6FD4', color: '#fff', border: 'none' }}
                   >
                     {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Thinking...
-                      </>
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Thinking...</>
                     ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" /> Generate Insight
-                      </>
+                      <><Sparkles className="mr-2 h-4 w-4" /> Generate Insight</>
                     )}
                   </Button>
                   <Button variant="outline" onClick={handleDownload} disabled={!phaseMarkdown}>
                     <Download className="mr-2 h-4 w-4" /> Export
                   </Button>
                 </div>
-                <div className="border border-purple-100 rounded-xl bg-[#152238]/80 p-4 min-h-[160px]">
+                <div className="rounded-xl p-4 min-h-[120px]" style={{ border: '1px solid var(--brand-700)', background: 'var(--brand-750, #152238)' }}>
                   {phaseMarkdown ? (
-                    <div className="prose prose-sm max-w-none text-gray-300">
+                    <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
                       <RawMarkdownDisclosure />
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-sm text-gray-500 gap-1 py-6">
-                      <Sparkles className="h-6 w-6 text-purple-400" />
+                    <div className="flex flex-col items-center justify-center text-sm gap-1 py-6" style={{ color: 'var(--text-muted)' }}>
+                      <Sparkles className="h-6 w-6" style={{ color: '#1A6FD4' }} />
                       <p>No AI output yet for this phase.</p>
                       <p className="text-xs">Describe what you need above to generate a summary.</p>
                     </div>
@@ -3154,21 +3158,21 @@ export const PhaseDetailPage: React.FC = () => {
                 <Card className="w-full max-w-lg m-4" onClick={(e) => e.stopPropagation()}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle>{selectedTask.title}</CardTitle>
+                      <CardTitle style={{ color: 'var(--text-primary)' }}>{selectedTask.title}</CardTitle>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedTask(null)}>
                         <XCircle className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">{selectedTask.description || 'No description'}</p>
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{selectedTask.description || 'No description'}</p>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div><span className="text-gray-500">Status:</span> <Badge>{selectedTask.status}</Badge></div>
-                      <div><span className="text-gray-500">Priority:</span> <span className="capitalize">{selectedTask.priority}</span></div>
-                      <div><span className="text-gray-500">Start:</span> {selectedTask.start_date ? new Date(selectedTask.start_date).toLocaleDateString() : 'Not set'}</div>
-                      <div><span className="text-gray-500">Due:</span> {selectedTask.due_date ? new Date(selectedTask.due_date).toLocaleDateString() : 'Not set'}</div>
-                      <div><span className="text-gray-500">Estimate:</span> {selectedTask.estimate_hours || 0} hours</div>
-                      <div><span className="text-gray-500">Actual:</span> {selectedTask.actual_hours || 0} hours</div>
+                      <div><span style={{ color: 'var(--text-muted)' }}>Status:</span> <Badge>{selectedTask.status}</Badge></div>
+                      <div><span style={{ color: 'var(--text-muted)' }}>Priority:</span> <span className="capitalize" style={{ color: 'var(--text-primary)' }}>{selectedTask.priority}</span></div>
+                      <div><span style={{ color: 'var(--text-muted)' }}>Start:</span> <span style={{ color: 'var(--text-primary)' }}>{selectedTask.start_date ? new Date(selectedTask.start_date).toLocaleDateString() : 'Not set'}</span></div>
+                      <div><span style={{ color: 'var(--text-muted)' }}>Due:</span> <span style={{ color: 'var(--text-primary)' }}>{selectedTask.due_date ? new Date(selectedTask.due_date).toLocaleDateString() : 'Not set'}</span></div>
+                      <div><span style={{ color: 'var(--text-muted)' }}>Estimate:</span> <span style={{ color: 'var(--text-primary)' }}>{selectedTask.estimate_hours || 0} hours</span></div>
+                      <div><span style={{ color: 'var(--text-muted)' }}>Actual:</span> <span style={{ color: 'var(--text-primary)' }}>{selectedTask.actual_hours || 0} hours</span></div>
                     </div>
                   </CardContent>
                 </Card>
@@ -3286,7 +3290,7 @@ export const PhaseDetailPage: React.FC = () => {
 
             {/* Scenario Presets + Team Size Controls */}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs text-gray-600">Scenario presets:</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Scenario presets:</div>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Button
                   size="xs"
@@ -3436,15 +3440,15 @@ export const PhaseDetailPage: React.FC = () => {
 
                 {customCostItems.length > 0 && (
                   <div className="mt-3 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-gray-600">
+                    <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
                       <span>Total custom cost:</span>
                       <span className="font-mono">{totalCustomCost.toLocaleString()} (mixed currencies)</span>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] text-gray-600">
+                    <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
                       <span>Total custom benefit:</span>
                       <span className="font-mono">{totalCustomBenefit.toLocaleString()} (mixed currencies)</span>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] text-gray-600">
+                    <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-muted)' }}>
                       <span>Custom ROI:</span>
                       <span className="font-mono">{isFinite(customRoi) ? `${customRoi.toFixed(0)}%` : 'N/A'}</span>
                     </div>
@@ -3455,7 +3459,7 @@ export const PhaseDetailPage: React.FC = () => {
                         return (
                           <div key={item.id} className="flex items-center justify-between text-[11px] bg-[var(--brand-700)]/50 rounded-lg px-2 py-1.5">
                             <div className="min-w-0">
-                              <p className="font-medium text-gray-800 truncate">{item.description}</p>
+                              <p className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>{item.description}</p>
                               <p className="text-[10px] text-gray-500">
                                 Cost: {item.cost.toLocaleString()} {item.currency} · Benefit: {item.benefit.toLocaleString()} {item.currency}
                               </p>
@@ -3482,54 +3486,54 @@ export const PhaseDetailPage: React.FC = () => {
 
             {/* Cost Overview Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-blue-900/20 to-white border-blue-700/30">
+              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-900/30 rounded-lg">
+                    <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
                       <DollarSign className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-white">${effectiveCostForRoi.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">Total Estimated Cost</p>
+                      <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>${effectiveCostForRoi.toLocaleString()}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Estimated Cost</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
+              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Clock className="h-5 w-5 text-blue-600" />
+                    <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
+                      <Clock className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-white">{totalHours}h</p>
-                      <p className="text-xs text-gray-500">Total Hours</p>
+                      <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{totalHours}h</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Hours</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
+              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(249,115,22,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <Target className="h-5 w-5 text-purple-600" />
+                    <div className="p-2 rounded-lg" style={{ background: 'rgba(249,115,22,0.12)' }}>
+                      <Target className="h-5 w-5" style={{ color: '#F97316' }} />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-white">${effectiveBenefit.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">Estimated Benefit ({useCustomRoi ? 'custom totals' : '2× assumption'})</p>
+                      <p className="text-2xl font-bold" style={{ color: '#fb923c' }}>${effectiveBenefit.toLocaleString()}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Estimated Benefit ({useCustomRoi ? 'custom totals' : '2× assumption'})</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
+              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-amber-600" />
+                    <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
+                      <TrendingUp className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-white">{roi.toFixed(0)}%</p>
-                      <p className="text-xs text-gray-500">ROI (Benefit vs Cost)</p>
+                      <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{roi.toFixed(0)}%</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>ROI (Benefit vs Cost)</p>
                     </div>
                   </div>
                 </CardContent>
@@ -3566,12 +3570,12 @@ export const PhaseDetailPage: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-xs text-gray-300">
+                  <div className="space-y-3 text-xs" style={{ color: 'var(--text-primary)' }}>
                     <div className="flex items-center justify-between">
                       <span className="font-medium">Total Cost</span>
                       <span className="font-mono">${effectiveCostForRoi.toLocaleString()}</span>
                     </div>
-                    <div className="h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
+                    <div className="h-4 rounded-full overflow-hidden mb-2" style={{ background: 'var(--brand-700)' }}>
                       <div
                         className="h-full bg-rose-500"
                         style={{ width: '50%' }}
@@ -3581,13 +3585,13 @@ export const PhaseDetailPage: React.FC = () => {
                       <span className="font-medium">Estimated Benefit</span>
                       <span className="font-mono">${effectiveBenefit.toLocaleString()}</span>
                     </div>
-                    <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-4 rounded-full overflow-hidden" style={{ background: 'var(--brand-700)' }}>
                       <div
-                        className="h-full bg-blue-900/200"
-                        style={{ width: `${effectiveCostForRoi > 0 ? Math.min(100, (effectiveBenefit / effectiveCostForRoi) * 50) : 0}%` }}
+                        className="h-full"
+                        style={{ background: '#1A6FD4', width: `${effectiveCostForRoi > 0 ? Math.min(100, (effectiveBenefit / effectiveCostForRoi) * 50) : 0}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-gray-500 mt-2">
+                    <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
                       Bars are normalized for display; focus on the relative size between cost and benefit.
                     </p>
                   </div>
@@ -3732,10 +3736,10 @@ export const PhaseDetailPage: React.FC = () => {
                       return (
                         <div key={slice.id} className="space-y-1">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium capitalize">{slice.label}</span>
-                            <span className="text-gray-500">${Math.round(slice.cost).toLocaleString()} ({Math.round(slice.hours)}h)</span>
+                            <span className="font-medium capitalize" style={{ color: 'var(--text-primary)' }}>{slice.label}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>${Math.round(slice.cost).toLocaleString()} ({Math.round(slice.hours)}h)</span>
                           </div>
-                          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-3 rounded-full overflow-hidden" style={{ background: 'var(--brand-700)' }}>
                             <div className={`h-full ${colors[colorIdx]} transition-all`} style={{ width: `${Math.min(100, Math.max(percentage, 0))}%` }} />
                           </div>
                         </div>
@@ -3771,9 +3775,9 @@ export const PhaseDetailPage: React.FC = () => {
                             <span className="font-medium flex items-center gap-2">
                               {icons[priority as keyof typeof icons]} {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
                             </span>
-                            <span className="text-gray-500">${data.cost.toLocaleString()}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>${data.cost.toLocaleString()}</span>
                           </div>
-                          <div className="h-6 bg-gray-100 rounded-lg overflow-hidden flex items-center">
+                          <div className="h-6 rounded-lg overflow-hidden flex items-center" style={{ background: 'var(--brand-700)' }}>
                             <div className={`h-full ${colors[priority as keyof typeof colors]} transition-all flex items-center justify-end pr-2`} style={{ width: `${Math.max(percentage, 5)}%` }}>
                               <span className="text-xs text-white font-medium">{percentage.toFixed(0)}%</span>
                             </div>
@@ -3795,20 +3799,20 @@ export const PhaseDetailPage: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-3 gap-6">
-                    <div className="bg-gradient-to-br from-blue-900/20 to-blue-900/30 rounded-xl p-4">
-                      <p className="text-sm text-blue-300 font-medium mb-2">Conservative Estimate</p>
-                      <p className="text-3xl font-bold text-blue-200">${Math.round(totalCost * 0.8).toLocaleString()}</p>
-                      <p className="text-xs text-blue-400 mt-1">-20% buffer</p>
+                    <div className="rounded-xl p-4" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
+                      <p className="text-sm font-medium mb-2" style={{ color: '#93c5fd' }}>Conservative Estimate</p>
+                      <p className="text-3xl font-bold" style={{ color: '#60a5fa' }}>${Math.round(totalCost * 0.8).toLocaleString()}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>-20% buffer</p>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
-                      <p className="text-sm text-blue-700 font-medium mb-2">Base Estimate</p>
-                      <p className="text-3xl font-bold text-blue-800">${totalCost.toLocaleString()}</p>
-                      <p className="text-xs text-blue-600 mt-1">Current projection</p>
+                    <div className="rounded-xl p-4" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.3)' }}>
+                      <p className="text-sm font-medium mb-2" style={{ color: '#1A6FD4' }}>Base Estimate</p>
+                      <p className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>${totalCost.toLocaleString()}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Current projection</p>
                     </div>
-                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4">
-                      <p className="text-sm text-amber-700 font-medium mb-2">With Contingency</p>
-                      <p className="text-3xl font-bold text-amber-800">${Math.round(totalCost * 1.25).toLocaleString()}</p>
-                      <p className="text-xs text-amber-600 mt-1">+25% contingency</p>
+                    <div className="rounded-xl p-4" style={{ background: 'var(--brand-800)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                      <p className="text-sm font-medium mb-2" style={{ color: '#fdba74' }}>With Contingency</p>
+                      <p className="text-3xl font-bold" style={{ color: '#fb923c' }}>${Math.round(totalCost * 1.25).toLocaleString()}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>+25% contingency</p>
                     </div>
                   </div>
                 </CardContent>
@@ -4400,29 +4404,33 @@ export const PhaseDetailPage: React.FC = () => {
         <div className="p-4">
           {phaseBottomTab === 'history' && (
             <VersionHistory
-              versions={[]}
-              onCompare={() => {}}
-              onRestore={() => {}}
+              versions={versionEntries}
+              onCompare={handleCompareVersions}
+              onRestore={handleRestoreVersion}
             />
           )}
           {phaseBottomTab === 'traceability' && phaseId === 'requirements_gathering' && (
             <TraceabilityMatrix
-              requirements={requirements.map(r => ({ id: r.requirement_id || '', title: r.title || '', type: r.type || '' }))}
-              tasks={tasks.map(t => ({ id: t.task_id || '', title: t.title || '', status: t.status || '' }))}
-              links={[]}
-              coveragePercentage={0}
-              onCreateLink={() => {}}
+              requirements={(traceabilityMatrix?.requirements || requirements).map((r: any) => ({ id: r.id || r.requirement_id || '', title: r.title || '', type: r.type || '' }))}
+              tasks={(traceabilityMatrix?.tasks || tasks).map((t: any) => ({ id: t.id || t.task_id || '', title: t.title || '', status: t.status || '' }))}
+              links={(traceabilityMatrix?.links || []).map(link => ({
+                source_id: link.source_id,
+                target_id: link.target_id,
+                link_type: link.link_type,
+              }))}
+              coveragePercentage={traceabilityMatrix?.coverage_percentage || 0}
+              onCreateLink={handleCreateTraceabilityLink}
             />
           )}
           {phaseBottomTab === 'discussion' && (
             <NegotiationThread
-              threadId={`${id}-${phaseId}`}
-              title={`${phaseConfig?.title || 'Phase'} Discussion`}
-              description="Discuss requirements, changes, and decisions for this phase."
-              status="open"
-              comments={[]}
-              onAddComment={() => {}}
-              onResolve={() => {}}
+              threadId={discussionThread?.id || `${id}-${phaseId}`}
+              title={discussionThread?.title || `${phaseConfig?.title || 'Phase'} Discussion`}
+              description={discussionThread?.description || 'Discuss requirements, changes, and decisions for this phase.'}
+              status={discussionThread?.status || 'open'}
+              comments={nestedDiscussionComments}
+              onAddComment={handleAddDiscussionComment}
+              onResolve={handleResolveDiscussion}
             />
           )}
         </div>

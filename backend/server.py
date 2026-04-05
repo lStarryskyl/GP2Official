@@ -13,6 +13,7 @@ from routes import (
 )
 from routes import ai_chat
 from routes import ai_debate
+from routes import ai_suggestions
 from config import settings
 
 try:
@@ -113,6 +114,7 @@ app.include_router(explainability.router, prefix="/api", tags=["AI Explainabilit
 app.include_router(utils.router, prefix="/api/utils", tags=["Utilities"])
 app.include_router(ai_chat.router, prefix="/api/ai-chat", tags=["AI Chat"])
 app.include_router(ai_debate.router, prefix="/api", tags=["AI Debate"])
+app.include_router(ai_suggestions.router, prefix="/api", tags=["AI Suggestions"])
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

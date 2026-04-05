@@ -8,6 +8,7 @@ import {
   Zap, BookOpen,
 } from 'lucide-react';
 import { ConversationalDock } from '@/components/ConversationalDock';
+import { AIDebatePanel } from '@/components/AIDebatePanel';
 
 interface LayoutProps { children: React.ReactNode; }
 
@@ -39,8 +40,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const projectMatch    = useMemo(() => location.pathname.match(/\/projects\/([^/]+)/), [location.pathname]);
   const activeProjectId = projectMatch && projectMatch[1]?.length > 6 ? projectMatch[1] : null;
+  // AIChatAssistant (Athena) handles chat on phase pages — don't show ConversationalDock there
+  const onPhasePage = location.pathname.includes('/phases/');
 
   useEffect(() => { if (!activeProjectId) setAssistantOpen(false); }, [activeProjectId]);
+
+  // Ctrl+K opens AI chat on any project page
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && activeProjectId && !onPhasePage) {
+        e.preventDefault();
+        setAssistantOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [activeProjectId, onPhasePage]);
 
   const isActive = (path: string) => {
     if (path === '/projects') return location.pathname === path || location.pathname.startsWith('/projects/');
@@ -300,8 +315,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </main>
 
-      {/* ── AI Chat FAB ── */}
+      {/* ── AI Debate Panel (visible on any project page) ── */}
       {activeProjectId && (
+        <AIDebatePanel projectId={activeProjectId} />
+      )}
+
+      {/* ── AI Chat FAB (hidden on phase pages where Athena is already shown) ── */}
+      {activeProjectId && !onPhasePage && (
         <>
           {!assistantOpen && (
             <button
@@ -322,7 +342,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div style={{
                 position: 'absolute', top: '-2px', right: '-2px',
                 width: '12px', height: '12px', borderRadius: '50%',
-                background: '#22c55e', border: '2px solid var(--brand-900)',
+                background: '#1A6FD4', border: '2px solid var(--brand-900)',
                 animation: 'pulse-ring 2s infinite',
               }} />
             </button>

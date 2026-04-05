@@ -1,25 +1,28 @@
 """Notification and activity feed service."""
 
-import uuid
 from typing import List, Dict, Any
 from datetime import datetime
 
-from models.notification import (
-    Notification, NotificationCreate, ActivityFeedItem, NotificationPreferences
-)
+from models.notification import NotificationCreate
+from repositories.notification_repository import NotificationRepository
+from repositories.activity_feed_repository import ActivityFeedRepository
+from repositories.activity_repository import ActivityRepository
 
 
 class NotificationService:
     """Service for notifications and activity feeds."""
-    
+
+    def __init__(self):
+        self.notification_repo = NotificationRepository()
+        self.activity_feed_repo = ActivityFeedRepository()
+        self.activity_repo = ActivityRepository()
+
     async def create_notification(
         self,
         notification_data: NotificationCreate
     ) -> Dict[str, Any]:
         """Create a new notification."""
-        
         notification = {
-            "id": str(uuid.uuid4()),
             "user_id": notification_data.user_id,
             "project_id": notification_data.project_id,
             "type": notification_data.type,
@@ -34,8 +37,9 @@ class NotificationService:
             "read_at": None,
             "created_at": datetime.utcnow()
         }
-        
-        return notification
+
+        saved = await self.notification_repo.create_notification(notification)
+        return saved.model_dump(by_alias=False)
     
     async def mark_as_read(
         self,
@@ -43,11 +47,10 @@ class NotificationService:
     ) -> Dict[str, Any]:
         """Mark notification as read."""
         
-        return {
-            "notification_id": notification_id,
-            "read": True,
-            "read_at": datetime.utcnow()
-        }
+        saved = await self.notification_repo.mark_as_read(notification_id)
+        if not saved:
+            return {"notification_id": notification_id, "read": False}
+        return saved.model_dump(by_alias=False)
     
     async def mark_all_as_read(
         self,
@@ -55,8 +58,10 @@ class NotificationService:
     ) -> Dict[str, Any]:
         """Mark all notifications as read for a user."""
         
+        count = await self.notification_repo.mark_all_as_read(user_id)
         return {
             "user_id": user_id,
+            "marked_count": count,
             "marked_read_at": datetime.utcnow()
         }
     
@@ -75,7 +80,6 @@ class NotificationService:
         """Create an activity feed item."""
         
         activity = {
-            "id": str(uuid.uuid4()),
             "project_id": project_id,
             "user_id": user_id,
             "user_name": user_name,
@@ -87,8 +91,21 @@ class NotificationService:
             "metadata": metadata or {},
             "created_at": datetime.utcnow()
         }
-        
-        return activity
+
+        saved = await self.activity_feed_repo.create_item(activity)
+        await self.activity_repo.record(
+            project_id=project_id,
+            user_id=user_id,
+            event_type=action,
+            details_json={
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "entity_name": entity_name,
+                "description": description,
+                **(metadata or {}),
+            },
+        )
+        return saved.model_dump(by_alias=False)
     
     async def get_user_notifications(
         self,
@@ -98,8 +115,8 @@ class NotificationService:
     ) -> List[Dict[str, Any]]:
         """Get notifications for a user."""
         
-        # This would query the database
-        return []
+        notifications = await self.notification_repo.list_by_user(user_id, unread_only, limit)
+        return [notification.model_dump(by_alias=False) for notification in notifications]
     
     async def get_project_activity(
         self,
@@ -108,8 +125,27 @@ class NotificationService:
     ) -> List[Dict[str, Any]]:
         """Get activity feed for a project."""
         
-        # This would query the database
-        return []
+        activities = await self.activity_feed_repo.list_by_project(project_id, limit)
+        if activities:
+            return [activity.model_dump(by_alias=False) for activity in activities]
+
+        logs = await self.activity_repo.list_by_project(project_id, limit)
+        return [
+            {
+                "id": log.id,
+                "project_id": log.project_id,
+                "user_id": log.user_id or "",
+                "user_name": "",
+                "action": log.event_type,
+                "entity_type": (log.details_json or {}).get("entity_type", "project"),
+                "entity_id": (log.details_json or {}).get("entity_id", ""),
+                "entity_name": (log.details_json or {}).get("entity_name", ""),
+                "description": (log.details_json or {}).get("description", log.event_type.replace("_", " ").title()),
+                "metadata": log.details_json or {},
+                "created_at": log.created_at,
+            }
+            for log in logs
+        ]
     
     async def notify_mention(
         self,

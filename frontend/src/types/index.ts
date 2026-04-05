@@ -297,6 +297,92 @@ export interface ChangeLogEntry {
   updated_at: string;
 }
 
+export interface VersionHistoryEntry {
+  id: string;
+  project_id: string;
+  entity_type: string;
+  entity_id: string;
+  version_number: number;
+  changes: Record<string, any>;
+  change_summary: string;
+  changed_by: string;
+  changed_by_name: string;
+  previous_version_id?: string | null;
+  created_at: string;
+}
+
+export interface VersionDiffResult {
+  entity_type: string;
+  entity_id: string;
+  from_version: number;
+  to_version: number;
+  added: Record<string, any>;
+  removed: Record<string, any>;
+  modified: Record<string, { from: any; to: any }>;
+  summary: string;
+}
+
+export interface TraceabilityLink {
+  id: string;
+  project_id: string;
+  source_type: string;
+  source_id: string;
+  source_name: string;
+  target_type: string;
+  target_id: string;
+  target_name: string;
+  link_type: string;
+  rationale?: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface TraceabilityMatrixData {
+  project_id: string;
+  requirements: Array<{ id: string; title: string; type: string }>;
+  tasks: Array<{ id: string; title: string; status: string }>;
+  links: TraceabilityLink[];
+  coverage_percentage: number;
+  orphaned_requirements: string[];
+  orphaned_tasks: string[];
+  generated_at: string;
+}
+
+export interface NegotiationComment {
+  id: string;
+  project_id: string;
+  requirement_id?: string | null;
+  parent_id?: string | null;
+  content: string;
+  author_id: string;
+  author_name: string;
+  replies: string[];
+  mentions: string[];
+  reactions: Record<string, string[]>;
+  edited: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NegotiationThread {
+  id: string;
+  project_id: string;
+  requirement_id?: string | null;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  stakeholder_ids: string[];
+  created_by: string;
+  comments: string[];
+  decisions: Record<string, any>[];
+  impact_analysis_id?: string | null;
+  resolution?: string | null;
+  resolved_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ScenarioSnapshot {
   project_id: string;
   name: string;

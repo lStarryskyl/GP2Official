@@ -1,36 +1,73 @@
-"""Diagram workspace repository."""
+"""Diagram workspace repository — PostgreSQL implementation."""
 
+import json
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from database import get_db
-from models.diagram import DiagramState, get_stage_label
+from models.diagram import DiagramState
+
+
+def _get_pool():
+    from database import pool
+    if pool is None:
+        raise Exception("Database pool not initialized.")
+    return pool
+
+
+def _row_to_state(row) -> DiagramState:
+    data = dict(row)
+    for field in ("nodes", "edges", "metadata", "frames"):
+        if isinstance(data.get(field), str):
+            try:
+                data[field] = json.loads(data[field])
+            except (json.JSONDecodeError, TypeError):
+                data[field] = [] if field in ("nodes", "edges", "frames") else {}
+    # DiagramState uses _id alias
+    data["_id"] = data.pop("id", data.get("id", ""))
+    return DiagramState(**data)
 
 
 class DiagramRepository:
     """Persistence helper for SDLC diagram workspaces."""
 
-    def __init__(self):
-        self.collection_name = "diagram_workspaces"
+    async def _ensure_table(self, conn):
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS diagram_workspaces (
+                id          TEXT PRIMARY KEY,
+                project_id  TEXT NOT NULL,
+                stage       TEXT NOT NULL,
+                title       TEXT NOT NULL DEFAULT '',
+                nodes       TEXT NOT NULL DEFAULT '[]',
+                edges       TEXT NOT NULL DEFAULT '[]',
+                metadata    TEXT NOT NULL DEFAULT '{}',
+                frames      TEXT NOT NULL DEFAULT '[]',
+                created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (project_id, stage)
+            )
+        ''')
 
     async def get_stage(self, project_id: str, stage: str) -> Optional[DiagramState]:
-        """Fetch a workspace for a specific stage."""
-        db = get_db()
-        doc = await db[self.collection_name].find_one(
-            {"project_id": project_id, "stage": stage}
-        )
-        if doc:
-            return DiagramState(**doc)
+        pool = _get_pool()
+        async with pool.acquire() as conn:
+            await self._ensure_table(conn)
+            row = await conn.fetchrow(
+                'SELECT * FROM diagram_workspaces WHERE project_id = $1 AND stage = $2',
+                project_id, stage
+            )
+        if row:
+            return _row_to_state(row)
         return None
 
     async def list_by_project(self, project_id: str) -> List[DiagramState]:
-        """List all workspaces for a project."""
-        db = get_db()
-        cursor = db[self.collection_name].find({"project_id": project_id}).sort("stage", 1)
-        diagrams: List[DiagramState] = []
-        async for doc in cursor:
-            diagrams.append(DiagramState(**doc))
-        return diagrams
+        pool = _get_pool()
+        async with pool.acquire() as conn:
+            await self._ensure_table(conn)
+            rows = await conn.fetch(
+                'SELECT * FROM diagram_workspaces WHERE project_id = $1 ORDER BY stage',
+                project_id
+            )
+        return [_row_to_state(r) for r in rows]
 
     async def upsert_stage(
         self,
@@ -42,34 +79,32 @@ class DiagramRepository:
         metadata: Optional[Dict] = None,
         frames: Optional[List[Dict]] = None,
     ) -> DiagramState:
-        """Create or update a workspace for a stage."""
-        db = get_db()
+        from models.diagram import get_stage_label
+        pool = _get_pool()
         now = datetime.utcnow()
-        metadata = metadata or {}
         title = title or f"{get_stage_label(stage)} Diagram"
-        update_doc = {
-            "$set": {
-                "title": title,
-                "nodes": nodes,
-                "edges": edges,
-                "metadata": metadata,
-                "updated_at": now,
-            },
-            "$setOnInsert": {
-                "_id": f"diagram_{str(now.timestamp()).replace('.', '')}",
-                "project_id": project_id,
-                "stage": stage,
-                "created_at": now,
-                "frames": frames or [],
-            },
-        }
-        if frames is not None:
-            update_doc["$set"]["frames"] = frames
+        metadata = metadata or {}
+        frames = frames or []
+        diagram_id = f"diagram_{project_id}_{stage}"
 
-        result = await db[self.collection_name].find_one_and_update(
-            {"project_id": project_id, "stage": stage},
-            update_doc,
-            upsert=True,
-            return_document=True,
-        )
-        return DiagramState(**result)
+        async with pool.acquire() as conn:
+            await self._ensure_table(conn)
+            row = await conn.fetchrow('''
+                INSERT INTO diagram_workspaces
+                    (id, project_id, stage, title, nodes, edges, metadata, frames, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+                ON CONFLICT (project_id, stage) DO UPDATE SET
+                    title      = EXCLUDED.title,
+                    nodes      = EXCLUDED.nodes,
+                    edges      = EXCLUDED.edges,
+                    metadata   = EXCLUDED.metadata,
+                    frames     = EXCLUDED.frames,
+                    updated_at = EXCLUDED.updated_at
+                RETURNING *
+            ''',
+                diagram_id, project_id, stage, title,
+                json.dumps(nodes), json.dumps(edges),
+                json.dumps(metadata), json.dumps(frames),
+                now
+            )
+        return _row_to_state(row)

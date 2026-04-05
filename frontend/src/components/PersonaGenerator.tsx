@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Users, Sparkles, Target, Loader2, Plus, UserCircle, Brain } from 'lucide-react';
+import { Users, Sparkles, Target, Loader2, Plus, UserCircle, Brain, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface Persona {
@@ -34,33 +34,19 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
   const [userStories, setUserStories] = useState<UserStory[]>([]);
   const [count, setCount] = useState(3);
   const [activeTab, setActiveTab] = useState<'personas' | 'stories'>('personas');
+  const [personaError, setPersonaError] = useState('');
+  const [storyError, setStoryError] = useState('');
 
   const handleGeneratePersonas = async () => {
     setIsGenerating(true);
+    setPersonaError('');
     try {
       const data = await api.generatePersonas(projectId, count);
       setPersonas(data);
       onGenerated?.();
-    } catch (error) {
-      console.error('Failed to generate personas:', error);
-      // Generate mock personas for demo
-      const mockPersonas: Persona[] = Array.from({ length: count }, (_, i) => ({
-        id: `persona_${i + 1}`,
-        name: ['Alex Chen', 'Sarah Johnson', 'Michael Rivera', 'Emily Wong', 'David Kim'][i] || `User ${i + 1}`,
-        role: ['Product Manager', 'Software Engineer', 'UX Designer', 'Project Lead', 'Business Analyst'][i] || 'Team Member',
-        background: 'Experienced professional with 5+ years in the industry, focused on delivering value and improving team productivity.',
-        goals: [
-          'Streamline project planning processes',
-          'Improve team collaboration and communication',
-          'Reduce time spent on administrative tasks'
-        ],
-        pain_points: [
-          'Manual tracking of project progress is time-consuming',
-          'Difficulty in maintaining consistent documentation',
-          'Lack of AI-powered insights for decision making'
-        ]
-      }));
-      setPersonas(mockPersonas);
+    } catch (error: any) {
+      const msg = error?.response?.data?.detail || 'Failed to generate personas. Please try again.';
+      setPersonaError(msg);
     } finally {
       setIsGenerating(false);
     }
@@ -68,42 +54,13 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
 
   const handleGenerateUserStories = async () => {
     setIsGeneratingStories(true);
+    setStoryError('');
     try {
       const data = await api.generateUserStories(projectId);
       setUserStories(data);
-    } catch (error) {
-      console.error('Failed to generate user stories:', error);
-      // Generate mock user stories for demo
-      const mockStories: UserStory[] = [
-        {
-          id: 'story_1',
-          title: 'Project Creation',
-          as_a: 'Product Manager',
-          i_want: 'to create new projects with AI-generated templates',
-          so_that: 'I can quickly kickstart project planning',
-          acceptance_criteria: ['Can create project with name and description', 'AI generates initial structure', 'Templates are customizable'],
-          priority: 'high'
-        },
-        {
-          id: 'story_2',
-          title: 'Requirements Generation',
-          as_a: 'Business Analyst',
-          i_want: 'to generate requirements from project descriptions',
-          so_that: 'I can save time on documentation',
-          acceptance_criteria: ['AI extracts key requirements', 'Requirements are editable', 'Can export to various formats'],
-          priority: 'high'
-        },
-        {
-          id: 'story_3',
-          title: 'Phase Navigation',
-          as_a: 'Team Member',
-          i_want: 'to navigate between project phases easily',
-          so_that: 'I can track project progress efficiently',
-          acceptance_criteria: ['Clear phase indicators', 'Progress tracking', 'Easy navigation'],
-          priority: 'medium'
-        }
-      ];
-      setUserStories(mockStories);
+    } catch (error: any) {
+      const msg = error?.response?.data?.detail || 'Failed to generate user stories. Please try again.';
+      setStoryError(msg);
     } finally {
       setIsGeneratingStories(false);
     }
@@ -192,6 +149,14 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
               )}
             </Button>
           </div>
+
+          {/* Error */}
+          {personaError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+              <AlertTriangle size={16} color="#ef4444" />
+              <span style={{ fontSize: '13px', color: '#f87171', fontFamily: 'DM Sans, sans-serif' }}>{personaError}</span>
+            </div>
+          )}
 
           {/* Personas Grid */}
           {personas.length > 0 && (
@@ -294,6 +259,14 @@ export const PersonaGenerator: React.FC<PersonaGeneratorProps> = ({ projectId, o
               )}
             </Button>
           </div>
+
+          {/* Error */}
+          {storyError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+              <AlertTriangle size={16} color="#ef4444" />
+              <span style={{ fontSize: '13px', color: '#f87171', fontFamily: 'DM Sans, sans-serif' }}>{storyError}</span>
+            </div>
+          )}
 
           {/* User Stories Grid */}
           {userStories.length > 0 && (

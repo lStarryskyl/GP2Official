@@ -29,15 +29,38 @@ import {
   Building2,
   Briefcase,
   Users,
-  TreePine
+  TreePine,
+  Activity,
+  Zap,
 } from 'lucide-react';
 import type { Project } from '@/types';
+
+// ── Health score helpers ─────────────────────────────────────────────────────
+const PHASE_KEYS = ['planning','feasibility_study','requirements_gathering','validation','design','development','tasks','cost_benefit','risks','summary'];
+
+function getHealthScore(phaseStatus?: Record<string, string>): number {
+  if (!phaseStatus) return 0;
+  const completed = PHASE_KEYS.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
+  return Math.round((completed / PHASE_KEYS.length) * 100);
+}
+
+function getHealthColor(score: number) {
+  if (score >= 70) return { color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', label: 'Healthy' };
+  if (score >= 40) return { color: '#F97316', bg: 'rgba(249,115,22,0.12)', label: 'In Progress' };
+  return { color: '#4a6070', bg: 'rgba(74,96,112,0.15)', label: 'Starting' };
+}
+
+function getPhaseCompletionText(phaseStatus?: Record<string, string>): string {
+  if (!phaseStatus) return '0 / 10 phases';
+  const completed = PHASE_KEYS.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
+  return `${completed} / 10 phases`;
+}
 
 const quickActions = [
   { icon: Plus,       label: 'New Project',   description: 'Start from scratch',       action: 'new',     color: 'forest' },
   { icon: Upload,     label: 'Import',         description: 'Upload documents',          action: 'import',  color: 'sage' },
   { icon: Lightbulb, label: 'AI Insights',    description: 'Get recommendations',       action: 'insights',color: 'amber' },
-  { icon: HelpCircle,label: 'Documentation',  description: 'Learn more',                action: 'docs',    color: 'green' },
+  { icon: HelpCircle,label: 'Documentation',  description: 'Learn more',                action: 'docs',    color: 'blue' },
 ];
 
 export const ProjectsPage: React.FC = () => {
@@ -157,7 +180,7 @@ export const ProjectsPage: React.FC = () => {
               forest: 'from-[var(--blue-400)] to-[var(--blue-600)] hover:shadow-[var(--blue-400)]/20',
               sage:   'from-[var(--blue-300)] to-[var(--text-muted)] hover:shadow-[var(--blue-300)]/20',
               amber:  'from-[var(--orange-400)] to-[var(--orange-600)] hover:shadow-[var(--orange-400)]/20',
-              green:  'from-blue-600 to-blue-500 hover:shadow-blue-500/20',
+              green:  'from-blue-500 to-blue-500 hover:shadow-blue-500/20',
             }[action.color] || 'from-[var(--blue-400)] to-[var(--blue-600)]';
 
             return (
@@ -264,6 +287,10 @@ export const ProjectsPage: React.FC = () => {
                   const StatusIcon   = statusConfig.icon;
                   const isHovered    = hoveredProject === projectId;
 
+                  const healthScore = getHealthScore(project.phase_status);
+                  const healthColor = getHealthColor(healthScore);
+                  const phaseText   = getPhaseCompletionText(project.phase_status);
+
                   return (
                     <div
                       key={projectId}
@@ -274,19 +301,54 @@ export const ProjectsPage: React.FC = () => {
                       style={{ animationDelay: `${index * 75}ms` }}
                       data-testid={`project-card-${projectId}`}
                     >
-                      {/* Status Badge */}
-                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor} mb-4`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {statusConfig.label}
+                      {/* Top row: status + health badge */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {statusConfig.label}
+                        </div>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          padding: '4px 10px', borderRadius: '999px',
+                          background: healthColor.bg, border: `1px solid ${healthColor.color}44`,
+                          fontSize: '11px', fontWeight: 700, color: healthColor.color,
+                          fontFamily: 'Syne, sans-serif',
+                        }}>
+                          <Zap size={10} />
+                          {healthScore}%
+                        </div>
                       </div>
 
                       {/* Project Info */}
                       <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2 group-hover:text-[var(--blue-400)] transition-colors line-clamp-1">
                         {project.name}
                       </h3>
-                      <p className="text-[var(--text-muted)] text-sm mb-6 line-clamp-2">
+                      <p className="text-[var(--text-muted)] text-sm mb-4 line-clamp-2">
                         {project.description || 'No description provided'}
                       </p>
+
+                      {/* Phase progress bar */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'DM Sans, sans-serif' }}>
+                            <Activity size={10} style={{ display: 'inline', marginRight: '4px' }} />
+                            {phaseText}
+                          </span>
+                          <span style={{ fontSize: '11px', color: healthColor.color, fontWeight: 600 }}>{healthScore}% complete</span>
+                        </div>
+                        <div style={{ height: '4px', borderRadius: '999px', background: 'rgba(26,46,69,0.6)', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', borderRadius: '999px',
+                            width: `${healthScore}%`,
+                            background: healthScore >= 70
+                              ? 'linear-gradient(to right, #1A6FD4, #3d8fe0)'
+                              : healthScore >= 40
+                              ? 'linear-gradient(to right, #F97316, #fb9042)'
+                              : 'rgba(74,96,112,0.5)',
+                            transition: 'width 0.6s ease',
+                          }} />
+                        </div>
+                      </div>
 
                       {/* Meta Info */}
                       <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">

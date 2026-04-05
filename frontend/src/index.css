@@ -45,7 +45,7 @@
   --orange-200: #fed0ae;
 
   /* ── Semantic ── */
-  --success: #22c55e;
+  --success: #1A6FD4;
   --warning: #F97316;
   --error:   #ef4444;
   --info:    #1A6FD4;
@@ -116,11 +116,16 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Syne', 'DM Sans', sans-serif;
+  font-family: 'DM Sans', 'Inter', sans-serif;
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
+}
+
+/* Only brand/hero headings use Syne — tight tracking to avoid width */
+.font-syne, [style*="Syne"] {
+  letter-spacing: -0.03em;
 }
 
 code, pre, .mono { font-family: 'JetBrains Mono', monospace; }

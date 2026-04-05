@@ -252,7 +252,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
   };
 
   const getScoreGradient = (score: number) => {
-    if (score >= 80) return 'from-blue-900/200 to-blue-900/100';
+    if (score >= 80) return 'from-blue-900 to-blue-900/100';
     if (score >= 60) return 'from-amber-500 to-orange-500';
     return 'from-red-500 to-rose-500';
   };
@@ -271,7 +271,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
   const sectionColors: Record<string, { bg: string; border: string; icon: string; gradient: string }> = {
     purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: 'text-purple-400', gradient: 'from-purple-500 to-violet-600' },
     blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: 'text-blue-400', gradient: 'from-blue-500 to-indigo-600' },
-    green: { bg: 'bg-blue-900/200/10', border: 'border-blue-500/30', icon: 'text-blue-400', gradient: 'from-blue-900/200 to-teal-600' },
+    green: { bg: 'bg-blue-900/10', border: 'border-blue-500/30', icon: 'text-blue-400', gradient: 'from-blue-900 to-teal-600' },
     amber: { bg: 'bg-[var(--blue-400)]/10', border: 'border-[var(--blue-400)]/30', icon: 'text-[var(--blue-400)]', gradient: 'from-[var(--blue-400)] to-[#b8962e]' },
     red: { bg: 'bg-red-500/10', border: 'border-red-500/30', icon: 'text-red-400', gradient: 'from-red-500 to-rose-600' },
   };
@@ -440,7 +440,7 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
                         key={idx}
                         className={`flex items-start gap-3 p-3 rounded-lg border ${
                           item.status === 'complete'
-                            ? 'bg-blue-900/200/10 border-blue-500/30'
+                            ? 'bg-blue-900/10 border-blue-500/30'
                             : item.status === 'partial'
                             ? 'bg-[var(--blue-400)]/10 border-[var(--blue-400)]/30'
                             : 'bg-[#152238] border-[var(--brand-700)]'

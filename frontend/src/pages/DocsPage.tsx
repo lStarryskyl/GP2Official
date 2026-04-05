@@ -12,7 +12,7 @@ interface EndpointProps {
 }
 
 const METHOD_COLORS: Record<string, string> = {
-  GET:    '#22c55e',
+  GET:    '#1A6FD4',
   POST:   '#1A6FD4',
   PUT:    '#F97316',
   PATCH:  '#a855f7',
@@ -66,7 +66,7 @@ const Endpoint: React.FC<EndpointProps> = ({ method, path, description, auth = t
           {response && (
             <div style={{ marginTop: '10px' }}>
               <p style={{ fontSize: '11px', color: '#4a6070', fontFamily: 'DM Sans, sans-serif', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Response</p>
-              <pre style={{ background: '#0D1B2A', padding: '10px 12px', borderRadius: '6px', fontSize: '12px', color: '#22c55e', fontFamily: 'JetBrains Mono, monospace', overflow: 'auto', margin: 0 }}>{response}</pre>
+              <pre style={{ background: '#0D1B2A', padding: '10px 12px', borderRadius: '6px', fontSize: '12px', color: '#1A6FD4', fontFamily: 'JetBrains Mono, monospace', overflow: 'auto', margin: 0 }}>{response}</pre>
             </div>
           )}
         </div>
@@ -91,6 +91,8 @@ const SECTIONS: Section[] = [
 const DocsPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('overview');
+  const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const docsUrl = `${apiBase.replace(/\/$/, '')}/docs`;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0D1B2A', color: '#E8EDF5', display: 'flex', flexDirection: 'column' }}>
@@ -122,7 +124,7 @@ const DocsPage: React.FC = () => {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
           <a
-            href="http://localhost:8000/docs"
+            href={docsUrl}
             target="_blank"
             rel="noreferrer"
             style={{
@@ -192,13 +194,13 @@ const DocsPage: React.FC = () => {
               Acorn API
             </h1>
             <p style={{ color: '#8899AA', fontSize: '16px', fontFamily: 'DM Sans, sans-serif', lineHeight: '1.7', margin: '0 0 24px' }}>
-              Acorn is an AI-powered SDLC planning platform. The REST API lets you create projects, generate full phase documentation with Gemini AI, export artifacts, and collaborate in real-time.
+              Acorn is an AI-powered SDLC planning platform. The REST API lets you create projects, generate full phase documentation with AI, export artifacts, and collaborate in real-time.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {[
-                { label: 'Base URL', value: 'http://localhost:8000/api' },
+                { label: 'Base URL', value: `${apiBase.replace(/\/$/, '')}/api` },
                 { label: 'Auth', value: 'Bearer JWT token' },
-                { label: 'AI Model', value: 'Gemini 2.5 Pro / 2.0 Flash' },
+                { label: 'AI Model', value: 'OpenAI GPT models' },
               ].map(item => (
                 <div key={item.label} style={{ padding: '16px', background: '#111f30', borderRadius: '10px', border: '1px solid rgba(26,111,212,0.2)' }}>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#4a6070', fontFamily: 'DM Sans, sans-serif', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.label}</p>
@@ -259,11 +261,11 @@ const DocsPage: React.FC = () => {
               Each phase stores its output as a <code style={{ color: '#3d8fe0' }}>PHASE_*</code> artifact with markdown content.
             </p>
             <Endpoint method="GET" path="/projects/{id}/phases/" description="Get status of all 10 phases (locked/active/completed)." />
-            <Endpoint method="POST" path="/projects/{id}/phases/{phase}/generate/" description="Generate content for a specific phase using Gemini AI. Returns structured markdown."
+            <Endpoint method="POST" path="/projects/{id}/phases/{phase}/generate/" description="Generate content for a specific phase using AI. Returns structured markdown."
               body={`{ "custom_prompt": "Focus on mobile-first architecture" }`}
               response={`{ "phase": "design", "content": "# System Design\\n\\n...", "status": "completed" }`}
             />
-            <Endpoint method="GET" path="/projects/{id}/phases/{phase}/generate/stream/" description="Server-Sent Events (SSE) stream — yields tokens in real-time as Gemini generates. Connect with EventSource." />
+            <Endpoint method="GET" path="/projects/{id}/phases/{phase}/generate/stream/" description="Server-Sent Events (SSE) stream that yields tokens in real time while AI generates content." />
             <Endpoint method="POST" path="/projects/{id}/phases/unlock-all/" description="Unlock all phases simultaneously (bypasses linear progression)." />
           </section>
 

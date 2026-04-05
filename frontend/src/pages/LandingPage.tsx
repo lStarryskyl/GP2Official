@@ -1,608 +1,535 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowRight,
-  Sparkles,
-  TreePine,
-  Zap,
-  Shield,
-  BarChart3,
-  Users,
-  FileText,
-  CheckCircle2,
-  Star,
-  Rocket,
-  TrendingUp,
-  Clock,
-  Award,
-  Cpu,
-  Layers,
-  GitBranch,
-  ChevronDown,
+  ArrowRight, Sparkles, Zap, Shield, BarChart3, Users, FileText,
+  CheckCircle2, Star, Rocket, TrendingUp, Clock, Award, Cpu, Layers,
+  GitBranch, ChevronDown, MessageSquare, DollarSign, AlertTriangle,
+  ClipboardList, Search, FlaskConical, Code2, LayoutDashboard,
 } from 'lucide-react';
 
-// ─── Acorn SVG ─────────────────────────────────────────────────────────────
-const AcornSVG: React.FC<{ cracked?: boolean; className?: string }> = ({ cracked = false, className = '' }) => (
-  <svg width="80" height="100" viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {cracked ? (
-      <>
-        {/* Left half of cracked acorn */}
-        <g transform="translate(-8, 4) rotate(-15, 40, 70)">
-          <ellipse cx="40" cy="72" rx="22" ry="28" fill="#8B5E3C" />
-          <ellipse cx="40" cy="44" rx="24" ry="14" fill="var(--brand-750)" />
-          <ellipse cx="40" cy="44" rx="18" ry="10" fill="var(--brand-800)" />
-          <rect x="37" y="30" width="6" height="16" rx="3" fill="var(--brand-800)" />
-        </g>
-        {/* Right half */}
-        <g transform="translate(8, 4) rotate(15, 40, 70)">
-          <ellipse cx="40" cy="72" rx="22" ry="28" fill="#A0714E" />
-          <ellipse cx="40" cy="44" rx="24" ry="14" fill="#6b4c35" />
-          <ellipse cx="40" cy="44" rx="18" ry="10" fill="#4a3324" />
-          <rect x="37" y="30" width="6" height="16" rx="3" fill="#4a3324" />
-        </g>
-        {/* Sparkle rays */}
-        {[0,60,120,180,240,300].map((deg, i) => (
-          <line key={i}
-            x1="40" y1="70"
-            x2={40 + Math.cos(deg * Math.PI/180) * 38}
-            y2={70 + Math.sin(deg * Math.PI/180) * 38}
-            stroke="var(--orange-400)" strokeWidth="2" strokeLinecap="round"
-            style={{ opacity: 0.7 + i * 0.05 }}
-          />
-        ))}
-      </>
-    ) : (
-      <>
-        {/* Cap */}
-        <ellipse cx="40" cy="40" rx="28" ry="16" fill="var(--brand-750)" />
-        <ellipse cx="40" cy="40" rx="22" ry="11" fill="var(--brand-800)" />
-        {/* Stem */}
-        <rect x="37" y="24" width="6" height="18" rx="3" fill="var(--brand-800)" />
-        {/* Body */}
-        <ellipse cx="40" cy="68" rx="26" ry="32" fill="#8B5E3C" />
-        <ellipse cx="40" cy="62" rx="22" ry="26" fill="#A0714E" />
-        {/* Shine */}
-        <ellipse cx="32" cy="55" rx="6" ry="8" fill="white" fillOpacity="0.12" />
-      </>
-    )}
-  </svg>
-);
+// ─── Phase data ──────────────────────────────────────────────────────────────
+const PHASES = [
+  { id: 'planning',      label: 'Planning',        icon: ClipboardList,  color: '#1A6FD4' },
+  { id: 'feasibility',   label: 'Feasibility',     icon: Search,         color: '#2d88e8' },
+  { id: 'requirements',  label: 'Requirements',    icon: FileText,       color: '#3d8fe0' },
+  { id: 'validation',    label: 'Validation',      icon: CheckCircle2,   color: '#1A6FD4' },
+  { id: 'design',        label: 'System Design',   icon: Layers,         color: '#2d88e8' },
+  { id: 'development',   label: 'Development',     icon: Code2,          color: '#F97316' },
+  { id: 'tasks',         label: 'Tasks',           icon: GitBranch,      color: '#fb9042' },
+  { id: 'cost',          label: 'Cost & Benefit',  icon: DollarSign,     color: '#F97316' },
+  { id: 'risks',         label: 'Risks',           icon: AlertTriangle,  color: '#fb9042' },
+  { id: 'summary',       label: 'Summary',         icon: LayoutDashboard,color: '#F97316' },
+];
 
-// ─── Full Tree SVG (landing page) ─────────────────────────────────────────
-const FullLandingTree: React.FC<{ onLeafClick: (id: string) => void; activeLeaf: string | null }> = ({
-  onLeafClick,
-  activeLeaf,
-}) => {
-  const contentLeaves = [
-    { id: 'what',     x: 160,  y: 320, r: 52, label: 'What is\nAcorn?',   color: '#2A9D8F', textColor: '#fff' },
-    { id: 'how',      x: 380,  y: 280, r: 52, label: 'How It\nWorks',      color: '#6B4C8A', textColor: '#fff' },
-    { id: 'features', x: 580,  y: 310, r: 52, label: 'Features',           color: '#D4A017', textColor: 'var(--brand-900)' },
-    { id: 'started',  x: 740,  y: 260, r: 52, label: 'Get\nStarted',       color: '#C1440E', textColor: '#fff' },
-  ];
+// Row 1: indices 0-4 left→right  (y ≈ 80)
+// Row 2: indices 5-9 right→left  (y ≈ 200)
+const NODE_W = 108;
+const NODE_H = 56;
+const GAP_X  = 48;
+const ROW1_Y = 60;
+const ROW2_Y = 188;
 
-  const phaseLeaves = [
-    { id: 'planning',              x: 110,  y: 190, r: 42, label: 'Planning',     color: '#D4A017', textColor: 'var(--brand-900)' },
-    { id: 'feasibility_study',     x: 255,  y: 155, r: 42, label: 'Feasibility',  color: '#7BA05B', textColor: 'var(--brand-900)' },
-    { id: 'requirements_gathering',x: 400,  y: 130, r: 42, label: 'Requirements', color: 'var(--blue-500)', textColor: '#fff'    },
-    { id: 'design',                x: 530,  y: 155, r: 42, label: 'Design',       color: '#6B4C8A', textColor: '#fff'    },
-    { id: 'development',           x: 660,  y: 180, r: 42, label: 'Dev',          color: '#8B5E3C', textColor: '#fff'    },
-    { id: 'summary',               x: 400,  y: 55,  r: 48, label: '★ Summary',    color: '#D4A017', textColor: 'var(--brand-900)' },
-  ];
+function nodeX(i: number): number {
+  if (i < 5) return 20 + i * (NODE_W + GAP_X);
+  // bottom row reversed: index 5 = rightmost
+  const j = i - 5; // 0..4
+  return 20 + (4 - j) * (NODE_W + GAP_X);
+}
+function nodeY(i: number): number {
+  return i < 5 ? ROW1_Y : ROW2_Y;
+}
 
-  const branches = [
-    // trunk to content level
-    [400, 500, 160, 320], [400, 500, 380, 280],
-    [400, 500, 580, 310], [400, 500, 740, 260],
-    // content to phase level
-    [160, 320, 110, 190], [160, 320, 255, 155],
-    [380, 280, 400, 130], [580, 310, 530, 155],
-    [580, 310, 660, 180], [740, 260, 660, 180],
-    // phase level to crown
-    [255, 155, 400, 55], [530, 155, 400, 55],
-    [400, 130, 400, 55],
-  ];
+const SVG_W = 20 + 5 * (NODE_W + GAP_X) - GAP_X + 20; // 5 nodes
+const SVG_H = ROW2_Y + NODE_H + 40;
+
+// ─── SDLC Flowchart SVG ───────────────────────────────────────────────────────
+interface SDLCFlowchartProps {
+  visibleCount: number; // 0 = nothing, 10 = all
+  compact?: boolean;
+}
+
+const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = false }) => {
+  const scale = compact ? 0.72 : 1;
 
   return (
     <svg
-      width="100%" height="100%"
-      viewBox="0 0 880 560"
-      preserveAspectRatio="xMidYMid meet"
-      style={{ maxWidth: '900px', margin: '0 auto', display: 'block' }}
+      width={SVG_W * scale}
+      height={SVG_H * scale}
+      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+      style={{ overflow: 'visible', display: 'block' }}
     >
-      {/* Roots */}
-      <line x1="400" y1="560" x2="400" y2="500" stroke="var(--brand-800)" strokeWidth="18" strokeLinecap="round" />
-      <line x1="400" y1="540" x2="340" y2="560" stroke="var(--brand-850)" strokeWidth="10" strokeLinecap="round" opacity="0.5" />
-      <line x1="400" y1="540" x2="460" y2="560" stroke="var(--brand-850)" strokeWidth="10" strokeLinecap="round" opacity="0.5" />
-      <ellipse cx="400" cy="558" rx="80" ry="6" fill="var(--brand-700)" fillOpacity="0.4" />
+      <defs>
+        <filter id="glow-node">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="glow-line">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#1A6FD4" />
+        </marker>
+        <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="1" refY="3" orient="auto">
+          <path d="M8,0 L8,6 L0,3 z" fill="#F97316" />
+        </marker>
+        <marker id="arrow-down" markerWidth="8" markerHeight="8" refX="3" refY="7" orient="auto">
+          <path d="M0,0 L6,0 L3,8 z" fill="#F97316" />
+        </marker>
+      </defs>
 
-      {/* Trunk */}
-      <line x1="400" y1="500" x2="400" y2="380" stroke="var(--brand-750)" strokeWidth="14" strokeLinecap="round" />
-      <line x1="400" y1="500" x2="400" y2="380" stroke="#8B5E3C" strokeWidth="8" strokeLinecap="round" opacity="0.4" />
+      {/* ── Connector lines ── */}
+      {PHASES.map((phase, i) => {
+        if (i >= visibleCount - 1) return null;
 
-      {/* Branches */}
-      {branches.map(([x1, y1, x2, y2], i) => (
-        <path key={i}
-          d={`M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2}, ${x2} ${(y1 + y2) / 2}, ${x2} ${y2}`}
-          stroke="var(--brand-600)" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.7"
-        />
-      ))}
-
-      {/* Content leaves */}
-      {contentLeaves.map(leaf => {
-        const isActive = activeLeaf === leaf.id;
-        return (
-          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}>
-            {isActive && <circle cx={leaf.x} cy={leaf.y} r={leaf.r + 16} fill={leaf.color} fillOpacity="0.18" />}
-            <circle cx={leaf.x} cy={leaf.y} r={leaf.r}
-              fill={leaf.color}
-              stroke={isActive ? '#fff' : 'rgba(255,255,255,0.2)'}
-              strokeWidth={isActive ? 3 : 1}
-              style={{ filter: isActive ? `drop-shadow(0 0 14px ${leaf.color}aa)` : 'none', transition: 'all 0.3s ease' }}
+        // Row 1 horizontal connectors (0→1, 1→2, 2→3, 3→4)
+        if (i < 4) {
+          const x1 = nodeX(i) + NODE_W;
+          const y  = nodeY(i) + NODE_H / 2;
+          const x2 = nodeX(i + 1);
+          return (
+            <line key={`conn-${i}`}
+              x1={x1} y1={y} x2={x2 - 2} y2={y}
+              stroke="#1A6FD4" strokeWidth="2"
+              markerEnd="url(#arrow-blue)"
+              filter="url(#glow-line)"
+              style={{ animation: `fadeIn 0.3s ease forwards` }}
             />
-            {leaf.label.split('\n').map((line, li) => (
-              <text key={li}
-                x={leaf.x} y={leaf.y + (li - (leaf.label.split('\n').length - 1) / 2) * 14}
-                textAnchor="middle" fill={leaf.textColor}
-                fontSize="11" fontWeight="700" fontFamily="Inter, sans-serif"
-                style={{ pointerEvents: 'none' }}
-              >
-                {line}
-              </text>
-            ))}
-          </g>
-        );
+          );
+        }
+
+        // U-turn connector: row1 node 4 → row2 node 5
+        if (i === 4) {
+          const x  = nodeX(4) + NODE_W / 2;
+          const y1 = nodeY(4) + NODE_H;
+          const y2 = nodeY(5);
+          return (
+            <line key="conn-uturn"
+              x1={x} y1={y1} x2={x} y2={y2 - 2}
+              stroke="#F97316" strokeWidth="2"
+              markerEnd="url(#arrow-down)"
+              filter="url(#glow-line)"
+              style={{ animation: 'fadeIn 0.3s ease forwards' }}
+            />
+          );
+        }
+
+        // Row 2 horizontal connectors (5→6, 6→7, 7→8, 8→9)
+        // nodeX(5) is rightmost, nodeX(9) is leftmost — so connect right-edge of next to left-edge of current
+        if (i >= 5 && i < 9) {
+          const x1 = nodeX(i);              // left edge of current (further left = higher index)
+          const x2 = nodeX(i + 1) + NODE_W; // right edge of next node (further right)
+          const y  = nodeY(i) + NODE_H / 2;
+          // Draw from right (x2) to left (x1), arrow points left
+          return (
+            <line key={`conn-${i}`}
+              x1={x2} y1={y} x2={x1 + 2} y2={y}
+              stroke="#F97316" strokeWidth="2"
+              markerEnd="url(#arrow-orange)"
+              filter="url(#glow-line)"
+              style={{ animation: 'fadeIn 0.3s ease forwards' }}
+            />
+          );
+        }
+
+        return null;
       })}
 
-      {/* Phase leaves */}
-      {phaseLeaves.map(leaf => {
-        const isActive = activeLeaf === leaf.id;
+      {/* ── Phase nodes ── */}
+      {PHASES.map((phase, i) => {
+        if (i >= visibleCount) return null;
+        const x = nodeX(i);
+        const y = nodeY(i);
+        const Icon = phase.icon;
+        const isOrange = i >= 5;
+
         return (
-          <g key={leaf.id} onClick={() => onLeafClick(leaf.id)} style={{ cursor: 'pointer' }}>
-            {isActive && <circle cx={leaf.x} cy={leaf.y} r={leaf.r + 14} fill={leaf.color} fillOpacity="0.2" />}
-            <circle cx={leaf.x} cy={leaf.y} r={leaf.r}
-              fill={leaf.color}
-              stroke={isActive ? '#fff' : 'rgba(255,255,255,0.15)'}
-              strokeWidth={isActive ? 2.5 : 1}
-              style={{ filter: isActive ? `drop-shadow(0 0 10px ${leaf.color}99)` : 'none', transition: 'all 0.3s ease' }}
+          <g key={phase.id} style={{ animation: 'nodeAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+            {/* Node background */}
+            <rect
+              x={x} y={y} width={NODE_W} height={NODE_H} rx={10}
+              fill={isOrange ? 'rgba(249,115,22,0.15)' : 'rgba(26,111,212,0.18)'}
+              stroke={isOrange ? '#F97316' : '#1A6FD4'}
+              strokeWidth="1.5"
+              filter="url(#glow-node)"
             />
-            <text x={leaf.x} y={leaf.y + 4} textAnchor="middle"
-              fill={leaf.textColor} fontSize="9.5" fontWeight="700"
-              fontFamily="Inter, sans-serif" style={{ pointerEvents: 'none' }}
-            >
-              {leaf.label}
+
+            {/* Step badge */}
+            <circle cx={x + 14} cy={y + 14} r={10}
+              fill={isOrange ? '#F97316' : '#1A6FD4'}
+              opacity={0.9}
+            />
+            <text x={x + 14} y={y + 18} textAnchor="middle"
+              fill="#fff" fontSize="9" fontFamily="DM Sans, sans-serif" fontWeight="700">
+              {i + 1}
+            </text>
+
+            {/* Label */}
+            <text x={x + NODE_W / 2} y={y + NODE_H / 2 + 5}
+              textAnchor="middle"
+              fill="#E8EDF5" fontSize="11" fontFamily="DM Sans, sans-serif" fontWeight="600">
+              {phase.label}
             </text>
           </g>
         );
       })}
 
-      {/* Floating particles */}
-      {[0,1,2,3,4].map(i => (
-        <circle key={i}
-          cx={100 + i * 160} cy={20 + (i % 3) * 12} r="3"
-          fill="var(--blue-400)" fillOpacity={0.25 + i * 0.08}
-          style={{ animation: `float ${3 + i * 0.7}s ease-in-out ${i * 0.4}s infinite` }}
-        />
-      ))}
+      <style>{`
+        @keyframes nodeAppear {
+          from { opacity: 0; transform: scale(0.6); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
     </svg>
   );
 };
 
-// ─── Leaf tooltip panels ────────────────────────────────────────────────────
-const LEAF_PANELS: Record<string, { title: string; body: React.ReactNode }> = {
-  what: {
-    title: 'What is Acorn?',
-    body: (
-      <div className="space-y-3">
-        <p className="text-[var(--text-muted)] text-sm leading-relaxed">
-          Acorn is an AI-powered project planning platform that grows your idea from a seed into a full
-          architectural plan — requirements, timelines, diagrams, and stakeholder analysis included.
+// ─── Splash Screen ───────────────────────────────────────────────────────────
+interface SplashProps { onEnter: () => void; onViewDocs: () => void; }
+
+const SPLASH_STATS = [
+  { value: '10x', label: 'Faster planning' },
+  { value: '100%', label: 'SDLC coverage' },
+  { value: '< 5 min', label: 'From idea to SRS' },
+];
+
+const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs }) => {
+  const [visible, setVisible] = useState(0);
+  const [showCTA, setShowCTA] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+
+  useEffect(() => {
+    if (visible < PHASES.length) {
+      const t = setTimeout(() => setVisible(v => v + 1), 280);
+      return () => clearTimeout(t);
+    } else {
+      const t = setTimeout(() => { setShowCTA(true); setShowStats(true); }, 350);
+      return () => clearTimeout(t);
+    }
+  }, [visible]);
+
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(160deg, #0a1f3d 0%, #0D1B2A 55%, #0d1520 100%)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div className="bg-grid" style={{ position: 'absolute', inset: 0, opacity: 0.25 }} />
+      <div className="glow-orb glow-orb-forest" style={{ width: '700px', height: '700px', top: '-25%', left: '-20%', opacity: 0.35 }} />
+      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.08), transparent 70%)' }} />
+
+      {/* Logo + wordmark */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '13px',
+          background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 30px rgba(26,111,212,0.55)',
+        }}>
+          <Zap size={24} color="#fff" />
+        </div>
+        <div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '30px', color: '#E8EDF5', letterSpacing: '-0.03em', display: 'block', lineHeight: 1 }}>Acorn</span>
+          <span style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase' }}>Project Intelligence Platform</span>
+        </div>
+      </div>
+
+      {/* Headline */}
+      <div style={{ textAlign: 'center', marginBottom: '40px', position: 'relative', zIndex: 1, padding: '0 24px' }}>
+        <h1 style={{
+          fontFamily: "'Syne', sans-serif", fontWeight: 800,
+          fontSize: 'clamp(24px, 4vw, 42px)', color: '#E8EDF5',
+          lineHeight: 1.15, letterSpacing: '-0.03em', marginBottom: '12px',
+        }}>
+          Your entire SDLC,<br />
+          <span style={{ background: 'linear-gradient(135deg, #1A6FD4, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            generated in minutes.
+          </span>
+        </h1>
+        <p style={{ color: '#8899AA', fontSize: '15px', fontFamily: "'DM Sans', sans-serif", maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>
+          Describe any software project. Acorn builds every phase — requirements, architecture, tasks, costs, and risk analysis — automatically.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {['SRS Generation','Risk Analysis','Phase Flow','Team Collab'].map(t => (
-            <span key={t} className="px-2 py-1 rounded-full text-xs font-semibold"
-              style={{ background: 'rgba(42,157,143,0.2)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.3)' }}>
-              {t}
-            </span>
+      </div>
+
+      {/* Flowchart */}
+      <div style={{ position: 'relative', zIndex: 1, overflowX: 'auto', maxWidth: '100vw', padding: '0 16px' }}>
+        <SDLCFlowchart visibleCount={visible} />
+      </div>
+
+      {/* Progress label */}
+      <p style={{
+        marginTop: '16px', fontSize: '12px', color: 'rgba(136,153,170,0.7)',
+        fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.1em', textTransform: 'uppercase',
+        position: 'relative', zIndex: 1,
+        opacity: visible > 0 ? 1 : 0, transition: 'opacity 0.4s',
+      }}>
+        {visible < PHASES.length ? `Building pipeline · phase ${visible} of ${PHASES.length}` : 'All 10 phases ready'}
+      </p>
+
+      {/* Stats row */}
+      {showStats && (
+        <div style={{
+          display: 'flex', gap: '32px', marginTop: '28px', position: 'relative', zIndex: 1,
+          animation: 'nodeAppear 0.5s ease forwards',
+        }}>
+          {SPLASH_STATS.map(({ value, label }) => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '22px', color: '#F97316' }}>{value}</div>
+              <div style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.05em' }}>{label}</div>
+            </div>
           ))}
         </div>
-      </div>
-    ),
-  },
-  how: {
-    title: 'How It Works',
-    body: (
-      <ol className="space-y-2 text-sm text-[var(--text-muted)]">
-        {['Describe your project idea', 'AI generates all 10 planning phases', 'Review, edit, and export to PDF/SRS', 'Deploy with a complete architecture plan'].map((s, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <span className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
-              style={{ background: '#6B4C8A', color: '#fff' }}>{i + 1}</span>
-            <span>{s}</span>
-          </li>
-        ))}
-      </ol>
-    ),
-  },
-  features: {
-    title: 'Features',
-    body: (
-      <div className="grid grid-cols-2 gap-2">
-        {[
-          ['AI Board Room', '8 specialized agents debate your architecture'],
-          ['Conflict Detection', 'Scans requirements for contradictions'],
-          ['Code Scaffold', 'Generates boilerplate for your tech stack'],
-          ['Export Center', 'PDF, SRS, OpenAPI, ERD diagrams'],
-        ].map(([t, d]) => (
-          <div key={t} className="p-2 rounded-lg" style={{ background: 'rgba(212,160,23,0.08)', border: '1px solid rgba(212,160,23,0.2)' }}>
-            <p className="text-xs font-bold text-[#D4A017]">{t}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">{d}</p>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  started: {
-    title: 'Get Started',
-    body: (
-      <div className="space-y-3">
-        <p className="text-sm text-[var(--text-muted)]">Free tier available — no credit card required.</p>
-        <div className="space-y-2">
-          <button className="w-full py-2.5 rounded-xl text-sm font-bold text-[var(--brand-900)] transition-all"
-            style={{ background: 'linear-gradient(135deg, #C1440E, #e05a24)' }}
-            onClick={() => window.location.href = '/register'}>
-            Create Free Account →
+      )}
+
+      {/* CTA */}
+      {showCTA && (
+        <div style={{ display: 'flex', gap: '12px', marginTop: '32px', position: 'relative', zIndex: 1, animation: 'nodeAppear 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            onClick={onEnter}
+            style={{
+              padding: '14px 36px',
+              background: 'linear-gradient(135deg, #F97316, #cc4900)',
+              border: 'none', borderRadius: '12px', cursor: 'pointer',
+              color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700,
+              fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px',
+              boxShadow: '0 4px 28px rgba(249,115,22,0.45)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 36px rgba(249,115,22,0.55)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 28px rgba(249,115,22,0.45)'; }}
+          >
+            <ArrowRight size={18} /> Start Building Free
           </button>
-          <button className="w-full py-2 rounded-xl text-sm font-medium border transition-all"
-            style={{ borderColor: 'rgba(193,68,14,0.4)', color: '#C1440E' }}
-            onClick={() => window.location.href = '/login'}>
-            Sign In
+          <button
+            onClick={onViewDocs}
+            style={{
+              padding: '14px 28px',
+              background: 'rgba(26,111,212,0.12)',
+              border: '1px solid rgba(26,111,212,0.4)', borderRadius: '12px', cursor: 'pointer',
+              color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
+              fontSize: '15px', transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,111,212,0.2)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,111,212,0.12)'; }}
+          >
+            View SDLC Guide
           </button>
         </div>
-      </div>
-    ),
-  },
+      )}
+
+      {/* Bottom tagline */}
+      {showCTA && (
+        <p style={{ marginTop: '24px', fontSize: '12px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", position: 'relative', zIndex: 1, animation: 'nodeAppear 0.5s ease 0.2s forwards', opacity: 0 }}>
+          No credit card required · Full SDLC automation · Export to PDF, Confluence & Jira
+        </p>
+      )}
+    </div>
+  );
 };
 
-// ─── Main LandingPage ───────────────────────────────────────────────────────
-type Stage = 'falling' | 'cracking' | 'welcome' | 'tree';
-
+// ─── Main Landing Page ────────────────────────────────────────────────────────
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [stage, setStage] = useState<Stage>('falling');
-  const [activeLeaf, setActiveLeaf] = useState<string | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  const hasEnteredRef = useRef(false);
+  const [showSplash, setShowSplash] = useState(true);
 
-  useEffect(() => {
-    // Skip intro animation if user already passed through it
-    if (sessionStorage.getItem('acorn_intro_done')) {
-      setStage('tree');
-      return;
-    }
-    // Sequence timing
-    const t1 = setTimeout(() => setStage('cracking'), 2200);  // acorn hits ground
-    const t2 = setTimeout(() => setStage('welcome'), 2800);   // crack → welcome text
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleEnter = () => {
-    sessionStorage.setItem('acorn_intro_done', '1');
-    hasEnteredRef.current = true;
-    setStage('tree');
-    setActiveLeaf(null);
-  };
-
-  const handleLeafClick = (id: string) => {
-    if (['planning','feasibility_study','requirements_gathering','design','development','summary'].includes(id)) {
-      navigate('/register');
-    } else {
-      setActiveLeaf(prev => prev === id ? null : id);
-    }
-  };
-
-  // ── Intro / welcome stage ────────────────────────────────────────────────
-  if (stage === 'falling' || stage === 'cracking' || stage === 'welcome') {
-    return (
-      <div
-        className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
-        style={{ background: 'radial-gradient(ellipse at 50% 80%, #0f2a18 0%, #060e09 100%)' }}
-      >
-        {/* Background particles */}
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(18)].map((_, i) => (
-            <div key={i} className="absolute rounded-full"
-              style={{
-                width: `${2 + (i % 4)}px`, height: `${2 + (i % 4)}px`,
-                left: `${5 + i * 5.2}%`, top: `${10 + (i * 7.3) % 80}%`,
-                background: i % 3 === 0 ? 'var(--blue-400)' : i % 3 === 1 ? '#D4A017' : '#2A9D8F',
-                opacity: 0.15 + (i % 5) * 0.04,
-                animation: `float ${4 + i % 4}s ease-in-out ${i * 0.3}s infinite`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Forest floor silhouette */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
-          style={{ background: 'linear-gradient(to top, var(--brand-900) 60%, transparent)' }}
-        />
-
-        {/* Acorn + crack animation */}
-        <div className="relative flex flex-col items-center">
-          <div style={{
-            animation: stage === 'falling'
-              ? 'acornFall 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards'
-              : stage === 'cracking'
-              ? 'acornShake 0.4s ease-in-out'
-              : 'none',
-          }}>
-            <AcornSVG cracked={stage === 'cracking' || stage === 'welcome'} />
-          </div>
-
-          {/* Ground flash on impact */}
-          {stage === 'cracking' && (
-            <div className="absolute bottom-0 w-32 h-8 rounded-full"
-              style={{
-                background: 'radial-gradient(ellipse, rgba(212,160,23,0.6) 0%, transparent 70%)',
-                animation: 'impactFlash 0.5s ease-out forwards',
-              }}
-            />
-          )}
-
-          {/* Welcome text */}
-          {stage === 'welcome' && (
-            <div className="mt-10 text-center" style={{ animation: 'welcomeFadeIn 0.8s ease-out forwards' }}>
-              <h1 className="text-5xl font-bold mb-3"
-                style={{
-                  background: 'linear-gradient(135deg, var(--blue-400), #D4A017, #2A9D8F)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
-                Welcome to Acorn
-              </h1>
-              <p className="text-[var(--text-muted)] text-lg mb-8">Grow your project from a seed of an idea</p>
-              <button
-                onClick={handleEnter}
-                className="group inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-lg font-bold transition-all duration-300"
-                style={{
-                  background: 'linear-gradient(135deg, var(--brand-600), var(--blue-400))',
-                  color: 'var(--brand-900)',
-                  boxShadow: '0 0 40px rgba(26,111,212,0.3)',
-                }}
-              >
-                <TreePine className="w-5 h-5" />
-                Enter the Forest
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <style>{`
-          @keyframes acornFall {
-            0%   { transform: translateY(-220px) rotate(-20deg); opacity: 0; }
-            60%  { transform: translateY(0px) rotate(5deg); opacity: 1; }
-            75%  { transform: translateY(-30px) rotate(-3deg); }
-            88%  { transform: translateY(0px) rotate(2deg); }
-            95%  { transform: translateY(-8px) rotate(-1deg); }
-            100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
-          }
-          @keyframes acornShake {
-            0%,100% { transform: translateX(0); }
-            20% { transform: translateX(-6px) rotate(-5deg); }
-            40% { transform: translateX(6px) rotate(5deg); }
-            60% { transform: translateX(-4px) rotate(-3deg); }
-            80% { transform: translateX(4px) rotate(3deg); }
-          }
-          @keyframes impactFlash {
-            0%   { opacity: 1; transform: scale(0.5); }
-            100% { opacity: 0; transform: scale(2); }
-          }
-          @keyframes welcomeFadeIn {
-            0%   { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes float {
-            0%,100% { transform: translateY(0); }
-            50%     { transform: translateY(-12px); }
-          }
-        `}</style>
-      </div>
-    );
+  if (showSplash) {
+    return <SplashScreen onEnter={() => setShowSplash(false)} onViewDocs={() => navigate('/sdlc-guide')} />;
   }
 
-  // ── Tree stage — main landing page ───────────────────────────────────────
-  return (
-    <div className="min-h-screen bg-[var(--brand-900)] text-[var(--text-primary)] overflow-x-hidden">
+  const card = (style?: React.CSSProperties): React.CSSProperties => ({
+    background: 'rgba(26,46,69,0.6)',
+    border: '1px solid rgba(26,111,212,0.2)',
+    borderRadius: '16px',
+    backdropFilter: 'blur(12px)',
+    ...style,
+  });
 
-      {/* Nav */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrollY > 40 ? 'bg-[var(--brand-900)]/90 backdrop-blur-md border-b border-[var(--brand-700)]/40' : ''
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-18 py-4">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => { sessionStorage.removeItem('acorn_intro_done'); setStage('falling'); }}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--blue-400)] to-[var(--brand-600)] flex items-center justify-center">
-              <TreePine className="w-5 h-5 text-[var(--brand-900)]" />
-            </div>
-            <span className="text-xl font-bold text-gradient-forest">Acorn</span>
+  return (
+    <div style={{ minHeight: '100vh', background: '#0D1B2A', color: '#E8EDF5' }}>
+
+      {/* ── NAV ── */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 40px', height: '64px',
+        background: 'rgba(13,27,42,0.85)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(26,111,212,0.15)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(26,111,212,0.4)' }}>
+            <Zap size={16} color="#fff" />
           </div>
-          <div className="hidden md:flex items-center gap-6 text-sm">
-            {['Features', 'Pricing', 'Enterprise'].map(l => (
-              <a key={l} href={`#${l.toLowerCase()}`} className="text-[var(--text-muted)] hover:text-[var(--blue-400)] transition-colors font-medium">{l}</a>
-            ))}
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/login')} className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium text-sm transition-colors">Sign In</button>
-            <button onClick={() => navigate('/register')} className="btn-primary text-sm px-5 py-2.5">
-              Start Free <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '20px' }}>Acorn</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={() => navigate('/sdlc-guide')} style={{ padding: '8px 16px', background: 'none', border: 'none', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', cursor: 'pointer' }}>SDLC Guide</button>
+          <button onClick={() => navigate('/login')}
+            style={{ padding: '8px 20px', background: 'none', border: '1px solid rgba(26,111,212,0.4)', borderRadius: '8px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
+            Sign In
+          </button>
+          <button onClick={() => navigate('/register')}
+            style={{ padding: '8px 20px', background: 'linear-gradient(135deg, #F97316, #cc4900)', border: 'none', borderRadius: '8px', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(249,115,22,0.35)' }}>
+            Get Started Free
+          </button>
         </div>
       </nav>
 
-      {/* Hero — The Tree IS the landing page */}
-      <section className="relative pt-24 pb-16 min-h-screen flex flex-col">
-        <div className="max-w-5xl mx-auto px-6 w-full text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
-            style={{ background: 'rgba(26,111,212,0.08)', border: '1px solid rgba(26,111,212,0.2)' }}>
-            <Sparkles className="w-3.5 h-3.5 text-[var(--blue-400)]" />
-            <span className="text-[var(--blue-400)] text-xs font-bold tracking-widest">AI-POWERED PROJECT PLANNING</span>
+      {/* ── HERO ── */}
+      <section style={{ padding: '80px 40px 60px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '24px' }}>
+
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'rgba(26,111,212,0.12)', border: '1px solid rgba(26,111,212,0.35)', borderRadius: '999px' }}>
+            <Sparkles size={14} color="#1A6FD4" />
+            <span style={{ fontSize: '13px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>AI-Powered Platform</span>
           </div>
-          <h1 className="text-5xl lg:text-6xl font-bold mb-4 leading-tight">
-            <span className="text-[var(--text-primary)]">Your Project,</span>{' '}
-            <span className="text-gradient-forest">Growing</span>
+
+          <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(36px, 6vw, 68px)', lineHeight: 1.1, maxWidth: '800px' }}>
+            AI-Powered<br />
+            <span style={{ background: 'linear-gradient(135deg, #1A6FD4, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Project Planning
+            </span>
           </h1>
-          <p className="text-[var(--text-muted)] text-lg max-w-2xl mx-auto">
-            Click the leaves below to explore. Each leaf is a phase of your project lifecycle.
-          </p>
-        </div>
 
-        {/* Interactive Tree */}
-        <div className="relative flex-1 flex items-center justify-center px-4" style={{ minHeight: '520px' }}>
-          <div className="w-full" style={{ maxWidth: '880px' }}>
-            <FullLandingTree onLeafClick={handleLeafClick} activeLeaf={activeLeaf} />
+          <p style={{ color: '#8899AA', fontSize: '18px', fontFamily: "'DM Sans', sans-serif", maxWidth: '600px', lineHeight: 1.7 }}>
+            Describe your project — Acorn generates a complete SDLC plan with requirements, SRS, designs, tasks, risk analysis, and cost estimates in minutes.
+          </p>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={() => navigate('/register')}
+              style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #F97316, #cc4900)', border: 'none', borderRadius: '10px', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 24px rgba(249,115,22,0.4)' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              <ArrowRight size={18} /> Start Building Free
+            </button>
+            <button onClick={() => navigate('/sdlc-guide')} style={{ padding: '8px 16px', background: 'none', border: 'none', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', cursor: 'pointer' }}>SDLC Guide</button>
+          <button onClick={() => navigate('/login')}
+              style={{ padding: '14px 32px', background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.4)', borderRadius: '10px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: '16px', cursor: 'pointer' }}>
+              Sign In
+            </button>
           </div>
 
-          {/* Leaf info panel */}
-          {activeLeaf && LEAF_PANELS[activeLeaf] && (
-            <div
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-72 rounded-2xl p-5 z-20"
-              style={{
-                background: 'var(--brand-850)',
-                border: '1px solid var(--brand-700)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-                animation: 'panelSlide 0.25s ease-out',
-              }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-[var(--text-primary)] text-base">{LEAF_PANELS[activeLeaf].title}</h3>
-                <button onClick={() => setActiveLeaf(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-lg leading-none transition-colors">×</button>
-              </div>
-              {LEAF_PANELS[activeLeaf].body}
+          {/* Flowchart preview — all phases visible */}
+          <div style={{ marginTop: '48px', padding: '32px', ...card(), overflowX: 'auto', width: '100%' }}>
+            <p style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', textAlign: 'left' }}>
+              Complete SDLC Pipeline · 10 Phases
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <SDLCFlowchart visibleCount={10} compact />
             </div>
-          )}
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-6 mt-4 pb-4 text-xs text-[var(--text-muted)]">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full inline-block" style={{ background: '#D4A017' }} />Content Sections</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full inline-block" style={{ background: '#7BA05B' }} />Project Phases</span>
-          <span className="flex items-center gap-1.5"><ChevronDown className="w-3 h-3" />Click leaves to explore</span>
-        </div>
-
-        {/* Scroll CTA */}
-        <div className="flex justify-center mt-4 animate-bounce">
-          <div className="flex flex-col items-center gap-1 text-[var(--text-muted)] text-xs cursor-pointer" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}>
-            <span>Scroll to learn more</span>
-            <ChevronDown className="w-4 h-4" />
           </div>
         </div>
       </section>
 
-      {/* Stats Strip */}
-      <section className="py-16 px-6" style={{ background: 'linear-gradient(to bottom, var(--brand-900), var(--brand-850))' }}>
-        <div className="max-w-5xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ padding: '80px 40px', maxWidth: '1200px', margin: '0 auto' }}>
+        <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '36px', textAlign: 'center', marginBottom: '12px' }}>
+          How It Works
+        </h2>
+        <p style={{ color: '#8899AA', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", fontSize: '16px', marginBottom: '48px' }}>
+          Three steps from idea to a complete project plan.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
           {[
-            { v: '10x', l: 'Faster Planning', c: 'var(--blue-400)' },
-            { v: '500+', l: 'Enterprise Users', c: '#D4A017' },
-            { v: '99.9%', l: 'Uptime', c: '#2A9D8F' },
-            { v: '8', l: 'AI Agents', c: '#6B4C8A' },
-          ].map(({ v, l, c }) => (
-            <div key={l} className="text-center">
-              <p className="text-4xl font-bold mb-1" style={{ color: c }}>{v}</p>
-              <p className="text-[var(--text-muted)] text-sm">{l}</p>
+            { step: '01', icon: MessageSquare, title: 'Describe Your Project', desc: 'Write a brief description of what you want to build — a sentence or a paragraph.', color: '#1A6FD4' },
+            { step: '02', icon: Cpu,           title: 'AI Generates the Plan', desc: 'Our AI creates SRS, personas, architecture, tasks, cost estimates, and risk analysis.', color: '#F97316' },
+            { step: '03', icon: Rocket,        title: 'Refine & Export',        desc: 'Edit any section, chat with your AI advisor, and export to PDF, Confluence, or Jira.', color: '#1A6FD4' },
+          ].map(({ step, icon: Icon, title, desc, color }) => (
+            <div key={step} style={{ padding: '28px', ...card(), position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '-12px', right: '-8px', fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '72px', color: 'rgba(255,255,255,0.03)', lineHeight: 1 }}>{step}</div>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `rgba(${color === '#1A6FD4' ? '26,111,212' : '249,115,22'},0.15)`, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Icon size={22} color={color} />
+              </div>
+              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '18px', marginBottom: '10px' }}>{title}</h3>
+              <p style={{ color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="badge mb-4"><Layers className="w-3.5 h-3.5" />PLATFORM CAPABILITIES</div>
-            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">Everything Your Project Needs</h2>
-            <p className="text-[var(--text-muted)] text-lg max-w-2xl mx-auto">From idea to architecture — all phases, all artifacts, all in one place</p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Cpu,        title: 'AI Board Room',       desc: '8 specialized agents debate your architecture and reach consensus', color: '#2A9D8F' },
-              { icon: Shield,     title: 'Security Audit Agent', desc: 'Scans your requirements for security gaps and compliance issues', color: '#C1440E' },
-              { icon: GitBranch,  title: 'Conflict Detection',   desc: 'Automatically finds contradictions across your requirements', color: '#D4A017' },
-              { icon: FileText,   title: 'SRS Generation',       desc: 'IEEE 830-compliant Software Requirements Specifications', color: '#6B4C8A' },
-              { icon: BarChart3,  title: 'Analytics Dashboard',  desc: 'Real-time insights, burndown charts, risk heatmaps', color: '#7BA05B' },
-              { icon: Zap,        title: 'Code Scaffold Agent',  desc: 'Generates boilerplate code for your entire chosen tech stack', color: '#8B5E3C' },
-            ].map(({ icon: Icon, title, desc, color }) => (
-              <div key={title} className="card p-7 hover-lift group" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
-                  style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
-                  <Icon className="w-5 h-5" style={{ color }} />
+      {/* ── PHASES GRID ── */}
+      <section style={{ padding: '80px 40px', background: 'rgba(26,111,212,0.04)', borderTop: '1px solid rgba(26,111,212,0.1)', borderBottom: '1px solid rgba(26,111,212,0.1)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '36px', textAlign: 'center', marginBottom: '12px' }}>
+            Every Phase, Covered
+          </h2>
+          <p style={{ color: '#8899AA', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", fontSize: '16px', marginBottom: '48px' }}>
+            From initial planning to deployment — all 10 SDLC phases automated.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+            {PHASES.map((phase, i) => {
+              const Icon = phase.icon;
+              const isOrange = i >= 5;
+              return (
+                <div key={phase.id} style={{ padding: '20px', ...card({ border: `1px solid ${isOrange ? 'rgba(249,115,22,0.2)' : 'rgba(26,111,212,0.2)'}` }), display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: `rgba(${isOrange ? '249,115,22' : '26,111,212'},0.15)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={16} color={isOrange ? '#F97316' : '#1A6FD4'} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '10px', color: isOrange ? '#F97316' : '#1A6FD4', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: '2px' }}>Phase {i + 1}</div>
+                    <div style={{ fontSize: '13px', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: '#E8EDF5' }}>{phase.label}</div>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-[var(--text-primary)] mb-2">{title}</h3>
-                <p className="text-[var(--text-muted)] text-sm">{desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Phase Flow visual */}
-      <section className="py-24 px-6" style={{ background: 'var(--brand-850)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="badge mb-4"><Award className="w-3.5 h-3.5" />10-PHASE WORKFLOW</div>
-            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">From Seed to Architecture</h2>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {[
-              { label: 'Planning',      color: '#D4A017' },
-              { label: 'Feasibility',   color: '#7BA05B' },
-              { label: 'Requirements',  color: 'var(--blue-500)' },
-              { label: 'Validation',    color: '#5F7A8A' },
-              { label: 'Design',        color: '#6B4C8A' },
-              { label: 'Development',   color: '#8B5E3C' },
-              { label: 'Tasks',         color: '#D4A017' },
-              { label: 'Costs',         color: '#2A9D8F' },
-              { label: 'Risks',         color: '#C1440E' },
-              { label: 'Summary',       color: 'var(--blue-400)' },
-            ].map(({ label, color }, i) => (
-              <div key={label} className="flex items-center gap-2">
-                <div className="px-4 py-2 rounded-full text-sm font-semibold"
-                  style={{ background: `${color}18`, border: `1px solid ${color}40`, color }}>
-                  {i + 1}. {label}
-                </div>
-                {i < 9 && <ArrowRight className="w-3 h-3 text-[var(--brand-600)]" />}
-              </div>
-            ))}
-          </div>
+      {/* ── AI FEATURES ── */}
+      <section style={{ padding: '80px 40px', maxWidth: '1200px', margin: '0 auto' }}>
+        <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '36px', textAlign: 'center', marginBottom: '12px' }}>
+          Intelligent AI Agents
+        </h2>
+        <p style={{ color: '#8899AA', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", fontSize: '16px', marginBottom: '48px' }}>
+          Specialized agents work together to deliver comprehensive project intelligence.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+          {[
+            { icon: FileText,    title: 'SRS Generator',       desc: 'Full software requirements specification with functional + non-functional reqs.', color: '#1A6FD4' },
+            { icon: Users,       title: 'Persona Builder',      desc: 'AI-generated user personas with pain points, goals, and user stories.', color: '#F97316' },
+            { icon: Shield,      title: 'Risk Analyzer',        desc: 'Proactively identifies project risks with mitigation strategies.', color: '#1A6FD4' },
+            { icon: BarChart3,   title: 'Cost Estimator',       desc: 'Detailed budget breakdowns with ROI forecasting and resource planning.', color: '#F97316' },
+            { icon: GitBranch,   title: 'Task Planner',         desc: 'Sprint-ready task breakdown with priorities, estimates, and dependencies.', color: '#1A6FD4' },
+            { icon: TrendingUp,  title: 'AI Explainability',    desc: 'Confidence scores and reasoning trails for every AI-generated output.', color: '#F97316' },
+          ].map(({ icon: Icon, title, desc, color }) => (
+            <div key={title} style={{ padding: '24px', ...card(), transition: 'border-color 0.2s, transform 0.2s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}60`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+            >
+              <Icon size={24} color={color} style={{ marginBottom: '16px' }} />
+              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>{title}</h3>
+              <p style={{ color: '#8899AA', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>{desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Testimonials / Social Proof */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">Trusted by builders worldwide</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
+      {/* ── TESTIMONIALS ── */}
+      <section style={{ padding: '80px 40px', background: 'rgba(26,111,212,0.04)', borderTop: '1px solid rgba(26,111,212,0.1)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '36px', textAlign: 'center', marginBottom: '48px' }}>
+            Trusted by Product Teams
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
             {[
-              { q: 'Acorn cut our SRS writing time from 3 weeks to 2 hours. The AI agents actually understand software architecture.', name: 'Sarah K.', role: 'CTO, FinTech Startup' },
-              { q: 'The conflict detection alone saved us from a $50k architecture mistake. It caught contradictions we missed in review.', name: 'James M.', role: 'Solutions Architect' },
-              { q: 'Every phase flows into the next perfectly. Having the tree visualization makes it easy to see where we are at a glance.', name: 'Priya T.', role: 'Product Manager' },
-            ].map(({ q, name, role }) => (
-              <div key={name} className="card p-6">
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-[#D4A017] text-[#D4A017]" />)}
+              { quote: 'Acorn cut our pre-dev planning phase from 3 weeks to 2 days. The SRS output is genuinely production-quality.', name: 'Sarah M.', role: 'VP Engineering', stars: 5 },
+              { quote: 'The AI personas feature alone is worth it. No more guessing who our users are — we have data-backed profiles from day one.', name: 'James K.', role: 'Product Manager', stars: 5 },
+              { quote: 'Risk analysis caught three architectural issues we would have missed. Saved us from a very painful sprint 4.', name: 'Priya L.', role: 'Tech Lead', stars: 5 },
+            ].map(({ quote, name, role, stars }) => (
+              <div key={name} style={{ padding: '24px', ...card() }}>
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '16px' }}>
+                  {Array.from({ length: stars }).map((_, i) => <Star key={i} size={14} color="#F97316" fill="#F97316" />)}
                 </div>
-                <p className="text-[var(--text-muted)] text-sm mb-4 leading-relaxed">"{q}"</p>
+                <p style={{ color: '#C8D5E5', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, marginBottom: '20px', fontStyle: 'italic' }}>"{quote}"</p>
                 <div>
-                  <p className="font-semibold text-[var(--text-primary)] text-sm">{name}</p>
-                  <p className="text-[var(--text-muted)] text-xs">{role}</p>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '14px' }}>{name}</div>
+                  <div style={{ color: '#8899AA', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>{role}</div>
                 </div>
               </div>
             ))}
@@ -610,59 +537,39 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section id="pricing" className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="card p-14 text-center relative overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(26,111,212,0.06) 0%, transparent 70%)' }} />
-            <Rocket className="w-12 h-12 mx-auto mb-6 text-[var(--blue-400)]" />
-            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">Plant Your First Project Today</h2>
-            <p className="text-[var(--text-muted)] text-lg mb-10 max-w-xl mx-auto">
-              Free tier available. No credit card required. Start growing in under 2 minutes.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <button onClick={() => navigate('/register')} className="btn-primary text-lg px-12 py-5 group">
-                <Sparkles className="w-5 h-5" />
-                Get Started Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button onClick={() => navigate('/login')} className="btn-secondary text-lg px-10 py-5">
-                Sign In
-              </button>
-            </div>
-          </div>
+      {/* ── CTA ── */}
+      <section style={{ padding: '100px 40px', textAlign: 'center', background: 'linear-gradient(180deg, transparent, rgba(26,111,212,0.08))' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.35)', borderRadius: '999px', marginBottom: '24px' }}>
+          <Award size={14} color="#F97316" />
+          <span style={{ fontSize: '13px', color: '#fb9042', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>Free to get started</span>
         </div>
+        <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5vw, 52px)', marginBottom: '16px', lineHeight: 1.1 }}>
+          Ready to build smarter?
+        </h2>
+        <p style={{ color: '#8899AA', fontSize: '18px', fontFamily: "'DM Sans', sans-serif", marginBottom: '40px', maxWidth: '480px', margin: '0 auto 40px' }}>
+          Join thousands of product teams shipping better software faster.
+        </p>
+        <button onClick={() => navigate('/register')}
+          style={{ padding: '16px 48px', background: 'linear-gradient(135deg, #F97316, #cc4900)', border: 'none', borderRadius: '12px', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '18px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 6px 32px rgba(249,115,22,0.45)' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(249,115,22,0.5)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 32px rgba(249,115,22,0.45)'; }}
+        >
+          <Rocket size={20} /> Start Building Free
+        </button>
       </section>
 
-      {/* Footer */}
-      <footer className="py-10 px-6 border-t border-[var(--brand-700)]/30">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--blue-400)] to-[var(--brand-600)] flex items-center justify-center">
-              <TreePine className="w-4 h-4 text-[var(--brand-900)]" />
-            </div>
-            <span className="font-bold text-gradient-forest">Acorn</span>
+      {/* ── FOOTER ── */}
+      <footer style={{ padding: '32px 40px', borderTop: '1px solid rgba(26,111,212,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap size={13} color="#fff" />
           </div>
-          <p className="text-[var(--text-muted)] text-xs">© 2026 Acorn Technologies. All rights reserved.</p>
-          <div className="flex gap-6 text-xs">
-            {['Privacy','Terms','Contact'].map(l => (
-              <a key={l} href="#" className="text-[var(--text-muted)] hover:text-[var(--blue-400)] transition-colors">{l}</a>
-            ))}
-          </div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '16px' }}>Acorn</span>
         </div>
+        <p style={{ color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }}>
+          © 2025 Acorn · AI-Powered Project Planning · Project Intelligence Platform
+        </p>
       </footer>
-
-      <style>{`
-        @keyframes panelSlide {
-          from { opacity: 0; transform: translateY(-50%) translateX(20px); }
-          to   { opacity: 1; transform: translateY(-50%) translateX(0); }
-        }
-        @keyframes float {
-          0%,100% { transform: translateY(0); }
-          50%     { transform: translateY(-10px); }
-        }
-      `}</style>
     </div>
   );
 };

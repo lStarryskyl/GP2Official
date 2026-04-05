@@ -1,30 +1,45 @@
-"""Activity repository (minimal stub)."""
+"""Activity repository (Postgres)."""
 
 from typing import List, Optional
-from database import get_db
-from models.activity import ActivityLog
 from datetime import datetime
+import json
+import uuid
+
+from database import get_pool
+from models.activity import ActivityLog
 
 
 class ActivityRepository:
     """Persistence for activity logs."""
 
     def __init__(self):
-        self.collection_name = "activity_logs"
+        self.table_name = "activity_logs"
+
+    def _get_pool(self):
+        pool = get_pool()
+        if pool is None:
+            raise Exception("Database pool not initialized. Is DATABASE_URL set?")
+        return pool
+
+    def _decode_row(self, row) -> ActivityLog:
+        data = dict(row)
+        if isinstance(data.get("details_json"), str):
+            try:
+                data["details_json"] = json.loads(data["details_json"])
+            except json.JSONDecodeError:
+                data["details_json"] = {}
+        return ActivityLog(**data)
 
     async def list_by_project(self, project_id: str, limit: int = 50) -> List[ActivityLog]:
-        """Return recent activity for a project (if any)."""
-        db = get_db()
-        cursor = (
-            db[self.collection_name]
-            .find({"project_id": project_id})
-            .sort("created_at", -1)
-            .limit(limit)
-        )
-        items: List[ActivityLog] = []
-        async for doc in cursor:
-            items.append(ActivityLog(**doc))
-        return items
+        query = f"""
+            SELECT * FROM {self.table_name}
+            WHERE project_id = $1
+            ORDER BY created_at DESC
+            LIMIT $2
+        """
+        async with self._get_pool().acquire() as conn:
+            rows = await conn.fetch(query, project_id, limit)
+        return [self._decode_row(row) for row in rows]
 
     async def record(
         self,
@@ -33,15 +48,22 @@ class ActivityRepository:
         user_id: str = None,
         details_json: Optional[dict] = None,
     ) -> ActivityLog:
-        """Insert a new activity log."""
-        db = get_db()
-        doc = {
-            "_id": f"act_{str(datetime.utcnow().timestamp()).replace('.', '')}",
-            "project_id": project_id,
-            "user_id": user_id,
-            "event_type": event_type,
-            "details_json": details_json or {},
-            "created_at": datetime.utcnow(),
-        }
-        await db[self.collection_name].insert_one(doc)
-        return ActivityLog(**doc)
+        entry_id = f"act_{uuid.uuid4().hex}"
+        now = datetime.utcnow()
+        query = f"""
+            INSERT INTO {self.table_name} (
+                id, project_id, user_id, event_type, details_json, created_at
+            ) VALUES ($1,$2,$3,$4,$5,$6)
+            RETURNING *
+        """
+        async with self._get_pool().acquire() as conn:
+            row = await conn.fetchrow(
+                query,
+                entry_id,
+                project_id,
+                user_id,
+                event_type,
+                json.dumps(details_json or {}),
+                now,
+            )
+        return self._decode_row(row)

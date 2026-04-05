@@ -24,6 +24,7 @@ from models.task import TaskResponse, TaskCreate
 from models.artifact import ArtifactResponse, ArtifactUpdateRequest
 from models.ai_run import AiRunResponse
 from models.activity import ActivityLogResponse
+from models.version import VersionCreate
 from repositories.requirement_repository import RequirementRepository
 from repositories.task_repository import TaskRepository
 from repositories.artifact_repository import ArtifactRepository
@@ -31,6 +32,7 @@ from repositories.activity_repository import ActivityRepository
 from repositories.ai_run_repository import AiRunRepository
 from services.generation_service import GenerationService
 from services.context_assistant import ContextAssistantService
+from services.version_service import VersionService
 
 router = APIRouter()
 project_service = ProjectService()
@@ -41,6 +43,7 @@ activity_repo = ActivityRepository()
 generation_service = GenerationService()
 ai_run_repo = AiRunRepository()
 assistant_service = ContextAssistantService()
+version_service = VersionService()
 
 
 class GenerationConfig(BaseModel):
@@ -625,6 +628,28 @@ async def update_artifact(
     artifact = await artifact_repo.update_artifact(project_id, artifact_id, updates)
     if not artifact:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artifact not found")
+    await version_service.create_version(
+        VersionCreate(
+            project_id=project_id,
+            entity_type="artifact",
+            entity_id=artifact.id,
+            version_number=artifact.version,
+            changes=updates,
+            change_summary=f"Updated artifact {artifact.title}",
+            changed_by=current_user.id,
+        ),
+        changed_by_name=current_user.full_name or current_user.email,
+    )
+    await activity_repo.record(
+        project_id=project_id,
+        user_id=current_user.id,
+        event_type="artifact_updated",
+        details_json={
+            "artifact_id": artifact.id,
+            "artifact_type": artifact.type,
+            "version": artifact.version,
+        },
+    )
     return ArtifactResponse(
         id=artifact.id,
         artifact_id=artifact.id,

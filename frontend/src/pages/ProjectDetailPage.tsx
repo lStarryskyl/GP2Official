@@ -6,7 +6,7 @@ import { ExportButtons } from '@/components/ExportButtons';
 import { api } from '@/lib/api';
 import type { Artifact, Project, Requirement, Task } from '@/types';
 import { phaseConfigs, phaseHexColors } from '@/constants/phases';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
 import Joyride, { STATUS as JoyrideStatus, Step } from 'react-joyride';
 import { formatDate } from '@/lib/utils';
 import { workspacePresets } from '@/constants/workspacePresets';
@@ -15,211 +15,116 @@ import { AIAgentsPanel } from '@/components/AIAgentsPanel';
 type DraftSectionKey = 'overview';
 
 /* =========================================================
-   PHASE TREE COMPONENT
-   Renders an SVG tree with phases as interactive leaves
+   PHASE KANBAN BOARD
+   Sequential phase cards — click to navigate into any phase
    ========================================================= */
-const PhaseTree: React.FC<{
+const PhaseKanban: React.FC<{
   phases: typeof phaseConfigs;
   phaseStatus: Record<string, string>;
   phaseOutputs: Record<string, string>;
   onPhaseClick: (phaseId: string) => void;
-  projectId: string;
 }> = ({ phases, phaseStatus, phaseOutputs, onPhaseClick }) => {
-  const [hoveredPhase, setHoveredPhase] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
-  // Tree layout: trunk center-bottom, branches spreading up
-  // All 10 phases arranged as a living tree
-  const treeNodes = [
-    { id: 'planning',               x: 400, y: 510, label: 'Planning',      level: 0 },
-    { id: 'feasibility_study',      x: 250, y: 420, label: 'Feasibility',   level: 1 },
-    { id: 'requirements_gathering', x: 550, y: 420, label: 'Requirements',  level: 1 },
-    { id: 'validation',             x: 150, y: 325, label: 'Validation',    level: 2 },
-    { id: 'design',                 x: 400, y: 325, label: 'Design',        level: 2 },
-    { id: 'development',            x: 650, y: 325, label: 'Development',   level: 2 },
-    { id: 'tasks',                  x: 200, y: 225, label: 'Tasks',         level: 3 },
-    { id: 'cost_benefit',           x: 450, y: 225, label: 'Costs',         level: 3 },
-    { id: 'risks',                  x: 600, y: 140, label: 'Risks',         level: 4 },
-    { id: 'summary',                x: 400, y: 55,  label: 'Summary',       level: 5 },
-  ];
-
-  // Branch connections (parent → child)
-  const branches: [string, string][] = [
-    ['planning',               'feasibility_study'],
-    ['planning',               'requirements_gathering'],
-    ['feasibility_study',      'validation'],
-    ['feasibility_study',      'design'],
-    ['requirements_gathering', 'design'],
-    ['requirements_gathering', 'development'],
-    ['validation',             'tasks'],
-    ['design',                 'cost_benefit'],
-    ['development',            'cost_benefit'],
-    ['tasks',                  'risks'],
-    ['cost_benefit',           'risks'],
-    ['risks',                  'summary'],
-  ];
-
-  const getNodeColor = (phaseId: string) => {
-    const status = (phaseStatus[phaseId] || 'locked').toLowerCase();
-    if (status === 'completed')                   return 'var(--blue-400)'; // bright forest green
-    if (status === 'active' || status === 'in_progress') return 'var(--orange-400)'; // warm amber
-    if (status === 'ready' || status === 'planning')     return 'var(--blue-300)'; // light green
-    return 'var(--brand-700)'; // dark/locked
+  const getStatusInfo = (phaseId: string) => {
+    const s = (phaseStatus[phaseId] || 'locked').toLowerCase();
+    if (s === 'completed')   return { label: 'Completed',   color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', border: 'rgba(26,111,212,0.4)' };
+    if (s === 'in_progress') return { label: 'In Progress', color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.4)' };
+    if (s === 'active')      return { label: 'Active',      color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.4)' };
+    if (s === 'ready')       return { label: 'Ready',       color: '#3d8fe0', bg: 'rgba(61,143,224,0.12)', border: 'rgba(61,143,224,0.3)' };
+    return { label: 'Locked', color: '#4a6070', bg: 'rgba(26,46,69,0.4)', border: 'rgba(30,53,82,0.5)' };
   };
 
-  const getTextColor = (phaseId: string) => {
-    const status = (phaseStatus[phaseId] || 'locked').toLowerCase();
-    if (status === 'completed' || status === 'active' || status === 'ready' || status === 'planning') {
-      return 'var(--brand-900)';
-    }
-    return 'var(--text-muted)';
-  };
+  // Split into 2 rows of 5
+  const row1 = phases.slice(0, 5);
+  const row2 = phases.slice(5, 10);
 
-  const nodeMap = Object.fromEntries(treeNodes.map(n => [n.id, n]));
+  const PhaseCard = ({ phase, idx }: { phase: typeof phases[0]; idx: number }) => {
+    const info    = getStatusInfo(phase.id);
+    const isHov   = hovered === phase.id;
+    const hasOut  = Boolean(phaseOutputs[phase.id]);
+    const isDone  = (phaseStatus[phase.id] || '').toLowerCase() === 'completed';
+
+    return (
+      <div
+        onClick={() => onPhaseClick(phase.id)}
+        onMouseEnter={() => setHovered(phase.id)}
+        onMouseLeave={() => setHovered(null)}
+        style={{
+          background: isHov ? info.bg : 'var(--brand-800)',
+          border: `1px solid ${isHov ? info.border : 'rgba(30,53,82,0.6)'}`,
+          borderRadius: '14px',
+          padding: '16px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          transform: isHov ? 'translateY(-2px)' : 'none',
+          boxShadow: isHov ? `0 8px 24px ${info.color}20` : '0 2px 8px rgba(0,0,0,0.2)',
+          position: 'relative',
+          flex: '1 1 0',
+          minWidth: 0,
+        }}
+      >
+        {/* Step badge */}
+        <div style={{
+          position: 'absolute', top: '12px', right: '12px',
+          width: '22px', height: '22px', borderRadius: '50%',
+          background: isDone ? '#1A6FD4' : 'var(--brand-700)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {isDone
+            ? <CheckCircle2 size={12} color="#fff" />
+            : <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-faint)' }}>{phase.stepNumber}</span>
+          }
+        </div>
+
+        {/* Output dot */}
+        {hasOut && !isDone && (
+          <div style={{
+            position: 'absolute', top: '10px', right: '38px',
+            width: '8px', height: '8px', borderRadius: '50%',
+            background: '#F97316',
+          }} />
+        )}
+
+        <p style={{ fontSize: '11px', color: info.color, fontWeight: 700, marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          Phase {phase.stepNumber}
+        </p>
+        <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', lineHeight: 1.3 }}>
+          {phase.title}
+        </p>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {phase.description}
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{
+            padding: '3px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
+            background: info.bg, color: info.color, border: `1px solid ${info.border}`,
+          }}>
+            {info.label}
+          </span>
+          <ChevronRight size={14} color="var(--text-faint)" />
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="relative w-full" style={{ height: '560px' }}>
-      <svg width="100%" height="100%" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid meet">
-        {/* Deep root glow */}
-        <ellipse cx="400" cy="555" rx="70" ry="8" fill="var(--brand-850)" fillOpacity="0.6" />
-
-        {/* Tree trunk - thick bark brown */}
-        <line x1="400" y1="558" x2="400" y2="510"
-          stroke="var(--brand-800)" strokeWidth="16" strokeLinecap="round" />
-        <line x1="400" y1="558" x2="400" y2="515"
-          stroke="var(--brand-750)" strokeWidth="9" strokeLinecap="round" />
-
-        {/* Ambient ground mist */}
-        <ellipse cx="400" cy="556" rx="90" ry="6" fill="var(--brand-800)" fillOpacity="0.5" />
-
-        {/* Branches */}
-        {branches.map(([from, to], i) => {
-          const fromNode = nodeMap[from];
-          const toNode   = nodeMap[to];
-          if (!fromNode || !toNode) return null;
-          const isHighlighted = hoveredPhase === to || hoveredPhase === from;
-          const midY = (fromNode.y + toNode.y) / 2;
-
-          return (
-            <path
-              key={i}
-              d={`M ${fromNode.x} ${fromNode.y} C ${fromNode.x} ${midY}, ${toNode.x} ${midY}, ${toNode.x} ${toNode.y}`}
-              stroke={isHighlighted ? 'var(--blue-400)' : 'var(--blue-600)'}
-              strokeWidth={isHighlighted ? 4.5 : 3}
-              fill="none"
-              strokeLinecap="round"
-              style={{ transition: 'stroke 0.35s ease, stroke-width 0.35s ease' }}
-            />
-          );
-        })}
-
-        {/* Floating ambient particles */}
-        {[0,1,2,3,4].map(i => {
-          const px = 120 + i * 130;
-          const py = 30 + (i % 3) * 20;
-          return (
-            <circle key={i} cx={px} cy={py} r="3"
-              fill="var(--blue-400)" fillOpacity={0.2 + i * 0.05}
-              style={{ animation: `float ${3 + i * 0.6}s ease-in-out ${i * 0.4}s infinite` }}
-            />
-          );
-        })}
-
-        {/* Phase leaf nodes */}
-        {treeNodes.map((node) => {
-          const phaseConfig = phases.find(p => p.id === node.id);
-          const nodeColor   = getNodeColor(node.id);
-          const textColor   = getTextColor(node.id);
-          const isHovered   = hoveredPhase === node.id;
-          const hasOutput   = Boolean(phaseOutputs[node.id]);
-          const r = isHovered ? 50 : 44;
-
-          return (
-            <g
-              key={node.id}
-              onClick={() => onPhaseClick(node.id)}
-              onMouseEnter={() => setHoveredPhase(node.id)}
-              onMouseLeave={() => setHoveredPhase(null)}
-              style={{ cursor: 'pointer' }}
-              className="tree-node"
-            >
-              {/* Outer glow ring (always subtle) */}
-              <circle cx={node.x} cy={node.y} r={r + 14}
-                fill={nodeColor} fillOpacity={isHovered ? 0.18 : 0.06}
-                style={{ transition: 'all 0.35s ease' }}
-              />
-
-              {/* Main leaf/node circle */}
-              <circle
-                cx={node.x} cy={node.y} r={r}
-                fill={nodeColor}
-                stroke={isHovered ? 'var(--blue-300)' : 'var(--brand-700)'}
-                strokeWidth={isHovered ? 3 : 1.5}
-                style={{
-                  transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  filter: isHovered ? `drop-shadow(0 0 14px ${nodeColor}90)` : 'none',
-                }}
-              />
-
-              {/* Step number */}
-              <text x={node.x} y={node.y - 9} textAnchor="middle"
-                fill={textColor} fontSize="10" fontWeight="700" fontFamily="Inter, sans-serif">
-                {phaseConfig?.stepNumber || ''}
-              </text>
-
-              {/* Phase label */}
-              <text x={node.x} y={node.y + 7} textAnchor="middle"
-                fill={textColor} fontSize="9.5" fontWeight="700" fontFamily="Inter, sans-serif">
-                {node.label}
-              </text>
-
-              {/* Output dot indicator */}
-              {hasOutput && (
-                <g>
-                  <circle cx={node.x + r - 8} cy={node.y - r + 8} r={8} fill="var(--orange-400)" />
-                  <text x={node.x + r - 8} y={node.y - r + 12}
-                    textAnchor="middle" fill="var(--brand-900)" fontSize="9" fontWeight="800">
-                    ✓
-                  </text>
-                </g>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Hover tooltip */}
-      {hoveredPhase && (() => {
-        const phase  = phases.find(p => p.id === hoveredPhase);
-        const status = (phaseStatus[hoveredPhase] || 'locked').toLowerCase();
-        if (!phase) return null;
-        return (
-          <div
-            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 rounded-xl px-5 py-3 text-center pointer-events-none z-10"
-            style={{
-              minWidth: '220px',
-              background: 'var(--brand-800)',
-              border: '1px solid var(--blue-600)',
-              boxShadow: '0 8px 32px rgba(26,111,212,0.15)',
-            }}
-          >
-            <p className="text-sm font-semibold text-[var(--blue-300)]">{phase.title}</p>
-            {phase.description && (
-              <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{phase.description.slice(0, 70)}...</p>
-            )}
-            <span className={`inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-              status === 'completed'
-                ? 'bg-green-500/20 text-green-400'
-                : status === 'active' || status === 'in_progress'
-                ? 'bg-amber-500/20 text-amber-400'
-                : status === 'ready'
-                ? 'bg-[var(--blue-400)]/20 text-[var(--blue-400)]'
-                : 'bg-[var(--brand-700)]/50 text-[var(--text-muted)]'
-            }`}>
-              {status}
-            </span>
-          </div>
-        );
-      })()}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Row 1: phases 1-5 */}
+      <div style={{ display: 'flex', gap: '10px' }}>
+        {row1.map((phase, i) => <PhaseCard key={phase.id} phase={phase} idx={i} />)}
+      </div>
+      {/* Connector arrow row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '4px 0' }}>
+        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(26,111,212,0.3))' }} />
+        <ChevronRight size={14} color="rgba(249,115,22,0.6)" style={{ transform: 'rotate(90deg)' }} />
+        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(249,115,22,0.3))' }} />
+      </div>
+      {/* Row 2: phases 6-10 (reversed to show flow) */}
+      <div style={{ display: 'flex', gap: '10px', flexDirection: 'row-reverse' }}>
+        {row2.map((phase, i) => <PhaseCard key={phase.id} phase={phase} idx={i + 5} />)}
+      </div>
     </div>
   );
 };
@@ -522,7 +427,26 @@ export const ProjectDetailPage: React.FC = () => {
                   <p className="text-[var(--text-muted)] max-w-2xl">{project.description}</p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* Health Score Badge */}
+                {(() => {
+                  const phaseKeys = ['planning','feasibility_study','requirements_gathering','validation','design','development','tasks','cost_benefit','risks','summary'];
+                  const done = phaseKeys.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
+                  const score = Math.round((done / phaseKeys.length) * 100);
+                  const scoreColor = score >= 70 ? '#1A6FD4' : score >= 40 ? '#F97316' : '#4a6070';
+                  const scoreBg = score >= 70 ? 'rgba(26,111,212,0.15)' : score >= 40 ? 'rgba(249,115,22,0.12)' : 'rgba(74,96,112,0.15)';
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '999px', background: scoreBg, border: `1px solid ${scoreColor}44` }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${scoreColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '9px', fontWeight: 800, color: scoreColor, fontFamily: 'Syne, sans-serif' }}>{score}%</span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: scoreColor, fontFamily: 'Syne, sans-serif', lineHeight: 1 }}>Health Score</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif' }}>{done}/10 phases</div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30 text-xs font-semibold uppercase tracking-wide">
                   {project.status}
                 </span>
@@ -659,145 +583,45 @@ export const ProjectDetailPage: React.FC = () => {
           )}
 
           <div className="space-y-4 sm:space-y-6">
-            {/* Phases Section */}
+            {/* Phases Section — Kanban Board */}
             <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-4 sm:p-6 shadow-lg phase-board">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold text-[var(--text-primary)]">Project Phases</h2>
-                  <p className="text-xs sm:text-sm text-[var(--text-muted)] hidden sm:block">
-                    Click any leaf to work on that phase. Green = complete, amber = in progress.
+                  <p className="text-xs sm:text-sm text-[var(--text-muted)]">
+                    Select a phase to continue — complete them in order for best results.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* View toggle */}
-                  <div className="flex items-center bg-[var(--brand-800)] rounded-xl p-1 border border-[var(--brand-700)]/50">
-                    <button
-                      onClick={() => setTreeView(true)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                        treeView ? 'bg-[var(--blue-400)] text-[var(--brand-900)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                      }`}
-                    >
-                      Tree
-                    </button>
-                    <button
-                      onClick={() => setTreeView(false)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                        !treeView ? 'bg-[var(--blue-400)] text-[var(--brand-900)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                      }`}
-                    >
-                      List
-                    </button>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length} className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
-                    Export All
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length} className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
+                  Export All
+                </Button>
               </div>
 
-              {/* Tree View */}
-              {treeView ? (
-                <div className="relative">
-                  <PhaseTree
-                    phases={phaseConfigs}
-                    phaseStatus={phaseStatus}
-                    phaseOutputs={phaseOutputs}
-                    onPhaseClick={handlePhaseClick}
-                    projectId={project.project_id || project.id || ''}
-                  />
+              <PhaseKanban
+                phases={phaseConfigs}
+                phaseStatus={phaseStatus}
+                phaseOutputs={phaseOutputs}
+                onPhaseClick={handlePhaseClick}
+              />
 
-                  {/* Phase color legend */}
-                  <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-[var(--brand-700)]/30">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[var(--blue-400)]" />
-                      <span className="text-xs text-[var(--text-muted)]">Completed</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[var(--orange-400)]" />
-                      <span className="text-xs text-[var(--text-muted)]">In Progress</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[var(--blue-300)]" />
-                      <span className="text-xs text-[var(--text-muted)]">Ready</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[var(--brand-700)] border border-[var(--blue-600)]" />
-                      <span className="text-xs text-[var(--text-muted)]">Locked</span>
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[var(--orange-400)]" />
-                      <span className="text-xs text-[var(--text-muted)]">dot = output available</span>
-                    </div>
+              {/* Legend */}
+              <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-[var(--brand-700)]/30">
+                {[
+                  { color: '#1A6FD4', label: 'Completed' },
+                  { color: '#F97316', label: 'In Progress' },
+                  { color: '#3d8fe0', label: 'Ready' },
+                  { color: '#4a6070', label: 'Locked' },
+                  { color: '#F97316', label: '● output ready', dot: true },
+                ].map(({ color, label, dot }) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    {dot
+                      ? <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color }} />
+                      : <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: color, opacity: 0.7 }} />
+                    }
+                    <span className="text-xs text-[var(--text-muted)]">{label}</span>
                   </div>
-                </div>
-              ) : (
-                /* List View */
-                <div className="divide-y divide-[var(--brand-700)]/30">
-                  {phaseConfigs.map((phase) => {
-                    const status = (phaseStatus[phase.id] || 'locked').toLowerCase();
-                    const pillClass =
-                      status === 'completed'
-                        ? 'bg-blue-900/200/20 text-blue-400 border border-blue-500/30'
-                        : status === 'active' || status === 'planning'
-                        ? 'bg-[var(--orange-400)]/20 text-[var(--orange-400)] border border-[var(--orange-400)]/30'
-                        : 'bg-[var(--brand-700)]/30 text-[var(--text-muted)] border border-[var(--brand-700)]';
-                    const pillLabel = statusLabels[status] || status;
-                    const hasOutput = Boolean(phaseOutputs[phase.id]);
-
-                    return (
-                      <div
-                        key={phase.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            navigate(`/projects/${project.project_id || project.id}/phases/${phase.id}`);
-                          }
-                        }}
-                        className={`w-full text-left ${phaseRowPadding} hover:bg-[var(--brand-750)] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue-400)] rounded-xl`}
-                      >
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30 flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
-                            {phase.stepNumber}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <p className={`font-semibold text-[var(--text-primary)] ${condensePhases ? 'text-sm' : 'text-base'}`}>{phase.title}</p>
-                              <div className="flex items-center gap-2">
-                                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${pillClass}`}>
-                                  {pillLabel}
-                                </span>
-                                {hasOutput && (
-                                  <span
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleExportPhase(phase.id);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleExportPhase(phase.id);
-                                      }
-                                    }}
-                                    className="text-xs font-semibold text-[var(--blue-400)] hover:text-[var(--blue-300)]"
-                                  >
-                                    Export
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <p className={`mt-1 text-[var(--text-muted)] line-clamp-2 ${condensePhases ? 'text-xs' : 'text-sm'}`}>{phase.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                ))}
+              </div>
             </div>
 
             <div className="grid gap-4">

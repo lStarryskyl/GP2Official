@@ -60,8 +60,8 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
         title="AI Debate"
         style={{
           position: 'fixed',
-          bottom: '9rem',
-          right: '1.5rem',
+          bottom: '90px',
+          right: '24px',
           zIndex: 1000,
           width: '48px',
           height: '48px',
@@ -87,8 +87,8 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
         <div
           style={{
             position: 'fixed',
-            bottom: '12rem',
-            right: '1.5rem',
+            bottom: '150px',
+            right: '24px',
             width: '400px',
             maxHeight: '600px',
             overflowY: 'auto',

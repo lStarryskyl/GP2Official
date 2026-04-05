@@ -28,10 +28,10 @@ async def export_pdf(
         project_dict = {
             "name": project.name,
             "description": project.description or "",
-            "owner": project.owner_name or current_user.email,
+            "owner": getattr(project, 'owner_name', None) or current_user.email,
             "status": project.status,
             "created_at": str(project.created_at),
-            "current_phase": project.current_phase or "",
+            "current_phase": getattr(project, 'current_phase', None) or "",
         }
 
         requirements_objs = await requirement_repo.list_by_project(project_id)
@@ -88,10 +88,10 @@ async def export_docx(
         project_dict = {
             "name": project.name,
             "description": project.description or "",
-            "owner": project.owner_name or current_user.email,
+            "owner": getattr(project, 'owner_name', None) or current_user.email,
             "status": project.status,
             "created_at": str(project.created_at),
-            "current_phase": project.current_phase or "",
+            "current_phase": getattr(project, 'current_phase', None) or "",
         }
 
         requirements_objs = await requirement_repo.list_by_project(project_id)

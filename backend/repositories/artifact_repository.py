@@ -168,7 +168,7 @@ class _SupabaseArtifactRepository:
         payload['updated_at'] = now
         
         set_clause = ", ".join([f"{k} = ${i+3}" for i, k in enumerate(payload.keys())])
-        query = f"UPDATE artifacts SET {set_clause} WHERE project_id = $1 AND id = $2 RETURNING *"
+        query = f"UPDATE artifacts SET {set_clause}, version = version + 1 WHERE project_id = $1 AND id = $2 RETURNING *"
         
         async with pool.acquire() as conn:
             row = await conn.fetchrow(query, project_id, artifact_id, *payload.values())

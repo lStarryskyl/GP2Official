@@ -3,20 +3,19 @@
 from typing import Dict, Tuple, Optional
 import logging
 import time
-import google.generativeai as genai
 
 from config import settings
 from repositories.project_repository import ProjectRepository
 from models.project import default_phase_status
 from repositories.artifact_repository import ArtifactRepository
 from repositories.ai_run_repository import AiRunRepository
+from repositories.activity_repository import ActivityRepository
 from services.markdown_formatter import MarkdownFormatter
+from services.openai_client import call_openai
+from services.version_service import VersionService
+from models.version import VersionCreate
 
 logger = logging.getLogger(__name__)
-
-# Configure Gemini once at module level
-if settings.gemini_api_key:
-    genai.configure(api_key=settings.gemini_api_key)
 
 PHASE_ORDER = [
     "planning",
@@ -49,14 +48,14 @@ class PhaseFlowService:
     """Manage sequential phase generation and storage."""
 
     def __init__(self):
-        self.api_key = settings.gemini_api_key
-        self.model_name = settings.gemini_pro_model  # gemini-2.5-pro-latest for phase generation
         self.project_repo = ProjectRepository()
         self.artifact_repo = ArtifactRepository()
         self.ai_run_repo = AiRunRepository()
+        self.activity_repo = ActivityRepository()
+        self.version_service = VersionService()
         self.markdown_formatter = MarkdownFormatter()
-        logger.info(f"PhaseFlowService initialized - Provider: Gemini, Model: {self.model_name}")
-        logger.info(f"Gemini API key configured: {'Yes' if self.api_key else 'No'}")
+        logger.info(f"PhaseFlowService initialized - Provider: OpenAI, Model: {settings.openai_model}")
+        logger.info(f"OpenAI API key configured: {'Yes' if settings.openai_api_key else 'No'}")
 
     async def get_status(self, project_id: str, organization: str) -> Dict[str, str]:
         project = await self.project_repo.get_by_id(project_id, organization)
@@ -167,6 +166,30 @@ class PhaseFlowService:
         
         logger.info(f"Created artifact with ID: {artifact.id}")
         logger.info(f"Artifact content_json keys: {list(artifact.content_json.keys()) if artifact.content_json else 'None'}")
+        if user_id:
+            await self.version_service.create_version(
+                VersionCreate(
+                    project_id=project_id,
+                    entity_type="artifact",
+                    entity_id=artifact.id,
+                    version_number=artifact.version,
+                    changes=payload,
+                    change_summary=f"Generated {PHASE_TITLES[phase]} phase output",
+                    changed_by=user_id,
+                ),
+                changed_by_name=user_id,
+            )
+            await self.activity_repo.record(
+                project_id=project_id,
+                user_id=user_id,
+                event_type="phase_generated",
+                details_json={
+                    "phase": phase,
+                    "artifact_id": artifact.id,
+                    "artifact_type": artifact_type,
+                    "version": artifact.version,
+                },
+            )
 
         status[phase] = "completed"
         next_index = PHASE_ORDER.index(phase) + 1
@@ -230,9 +253,9 @@ class PhaseFlowService:
         user_id: Optional[str] = None,
         prior_context: str = "",
     ) -> str:
-        # Use placeholder content if no Gemini API key is configured
-        if not self.api_key:
-            logger.info(f"No Gemini API key configured, using placeholder content for phase {phase}")
+        # Use placeholder content if no OpenAI API key is configured
+        if not settings.openai_api_key:
+            logger.info(f"No OpenAI API key configured, using placeholder content for phase {phase}")
             return await self._generate_placeholder_content(phase, user_prompt)
             
         system_message = (
@@ -329,31 +352,20 @@ class PhaseFlowService:
             user_id=user_id,
             job_type="phase",
             phase=phase,
-            provider="gemini",
-            model=self.model_name,
+            provider="openai",
+            model=settings.openai_model,
             prompt=prompt,
             metadata={"phase_title": PHASE_TITLES.get(phase)},
         )
 
-        # Call Gemini API
+        # Call OpenAI API
         started_at = time.perf_counter()
         try:
-            logger.info(f"Calling Gemini API with model: {self.model_name} for phase: {phase}")
-            model = genai.GenerativeModel(
-                model_name=self.model_name,
-                system_instruction=system_message,
-            )
+            logger.info(f"Calling OpenAI API with model: {settings.openai_model} for phase: {phase}")
             full_prompt = f"{prompt}\n\nProduce a structured Markdown response with clear headings, bullet lists, and actionable items."
-            response_obj = await model.generate_content_async(
-                full_prompt,
-                generation_config=genai.GenerationConfig(
-                    max_output_tokens=4000,
-                    temperature=0.7,
-                )
-            )
-            response = response_obj.text
+            response = await call_openai(full_prompt, system=system_message, max_tokens=4000)
             duration = int((time.perf_counter() - started_at) * 1000)
-            logger.info(f"Gemini response received: {len(response)} characters in {duration}ms")
+            logger.info(f"OpenAI response received: {len(response)} characters in {duration}ms")
             await self.ai_run_repo.complete_run(
                 run_entry.id,
                 status="completed",

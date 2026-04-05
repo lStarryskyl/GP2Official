@@ -94,6 +94,7 @@ async def sync_ux_flow_to_diagram(
         nodes=diagram.nodes,
         edges=diagram.edges,
         metadata=diagram.metadata,
+        frames=diagram.frames,
         created_at=diagram.created_at,
         updated_at=diagram.updated_at,
     )

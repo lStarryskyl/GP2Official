@@ -15,6 +15,7 @@ from repositories.requirement_repository import RequirementRepository
 from repositories.task_repository import TaskRepository
 from repositories.artifact_repository import ArtifactRepository
 from repositories.ai_run_repository import AiRunRepository
+from repositories.activity_repository import ActivityRepository
 from services.llm_client import LLMClient
 from services.srs_generator import SRSGenerator
 from services.uml_generator import UMLGenerator
@@ -22,6 +23,8 @@ from services.task_planner import TaskPlanner
 from services.risk_analyzer import RiskAnalyzer
 from services.cost_estimator import CostEstimator
 from services.plantuml_service import build_plantuml_image_url
+from services.notification_service import NotificationService
+from models.notification import NotificationCreate
 from config import settings
 
 
@@ -35,6 +38,8 @@ class GenerationService:
         self.task_repo = TaskRepository()
         self.artifact_repo = ArtifactRepository()
         self.ai_run_repo = AiRunRepository()
+        self.activity_repo = ActivityRepository()
+        self.notification_service = NotificationService()
         self.llm_client = LLMClient()
         self.srs_generator = SRSGenerator()
         self.uml_generator = UMLGenerator()
@@ -54,6 +59,12 @@ class GenerationService:
         
         # Create generation job
         job = await self.generation_repo.create(request.project_id, current_user.id)
+        await self.activity_repo.record(
+            project_id=request.project_id,
+            user_id=current_user.id,
+            event_type="generation_started",
+            details_json={"job_id": job.id, "type": "project_generation"},
+        )
         
         # Start generation in background
         asyncio.create_task(self._execute_generation(job.id, project, request, current_user.id))
@@ -224,6 +235,27 @@ class GenerationService:
                 progress=1.0,
                 result_summary=result_summary
             )
+            await self.activity_repo.record(
+                project_id=project.id,
+                user_id=user_id,
+                event_type="generation_completed",
+                details_json={"job_id": job_id, **result_summary},
+            )
+            if user_id:
+                await self.notification_service.create_notification(
+                    NotificationCreate(
+                        user_id=user_id,
+                        project_id=project.id,
+                        type="ai_generation",
+                        title="AI generation completed",
+                        message=f"{project.name} generation finished successfully.",
+                        priority="normal",
+                        entity_type="generation_job",
+                        entity_id=job_id,
+                        action_url=f"/projects/{project.id}/analytics",
+                        metadata=result_summary,
+                    )
+                )
             await self.ai_run_repo.complete_run(
                 audit_run.id,
                 status="completed",
@@ -237,6 +269,27 @@ class GenerationService:
                 JobStatus.FAILED,
                 error_message=str(e)
             )
+            await self.activity_repo.record(
+                project_id=project.id,
+                user_id=user_id,
+                event_type="generation_failed",
+                details_json={"job_id": job_id, "error": str(e)},
+            )
+            if user_id:
+                await self.notification_service.create_notification(
+                    NotificationCreate(
+                        user_id=user_id,
+                        project_id=project.id,
+                        type="ai_generation",
+                        title="AI generation failed",
+                        message=f"{project.name} generation failed: {str(e)[:120]}",
+                        priority="high",
+                        entity_type="generation_job",
+                        entity_id=job_id,
+                        action_url=f"/projects/{project.id}/analytics",
+                        metadata={"error": str(e)},
+                    )
+                )
             await self.ai_run_repo.complete_run(
                 audit_run.id,
                 status="failed",
@@ -260,12 +313,32 @@ Generate a list of functional and non-functional requirements."""
         
         # Parse and save requirements
         requirements_data = []
-        for req in llm_response:
+        for index, req in enumerate(llm_response):
+            if isinstance(req, str):
+                req = {
+                    "type": RequirementType.FUNCTIONAL,
+                    "title": f"Generated Requirement {index + 1}",
+                    "description": req,
+                    "priority": RequirementPriority.MEDIUM,
+                }
+
+            title = (
+                req.get("title")
+                or req.get("name")
+                or req.get("requirement")
+                or f"Generated Requirement {index + 1}"
+            )
+            description = (
+                req.get("description")
+                or req.get("details")
+                or req.get("summary")
+                or "No description provided by the model."
+            )
             requirements_data.append({
                 "project_id": project.id,
                 "type": req.get("type", RequirementType.FUNCTIONAL),
-                "title": req["title"],
-                "description": req["description"],
+                "title": title,
+                "description": description,
                 "priority": req.get("priority", RequirementPriority.MEDIUM),
                 "status": "proposed",
                 "confidence_score": req.get("confidence_score"),

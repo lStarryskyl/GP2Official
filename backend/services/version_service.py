@@ -1,15 +1,20 @@
 """Version history and diffing service."""
 
-import uuid
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from models.version import Version, VersionCreate, DiffResult
+from models.version import VersionCreate, DiffResult
+from repositories.version_repository import VersionRepository
+from repositories.artifact_repository import ArtifactRepository
 
 
 class VersionService:
     """Service for version history and diffing."""
-    
+
+    def __init__(self):
+        self.repo = VersionRepository()
+        self.artifact_repo = ArtifactRepository()
+
     async def create_version(
         self,
         version_data: VersionCreate,
@@ -18,12 +23,26 @@ class VersionService:
     ) -> Dict[str, Any]:
         """Create a new version record."""
         
+        version_number = version_data.version_number
+        if version_number <= 0:
+            version_number = await self.repo.get_latest_version_number(
+                version_data.entity_type,
+                version_data.entity_id,
+            ) + 1
+
+        if previous_version_id is None and version_number > 1:
+            previous = await self.repo.get_by_entity_version(
+                version_data.entity_type,
+                version_data.entity_id,
+                version_number - 1,
+            )
+            previous_version_id = previous.id if previous else None
+
         version = {
-            "id": str(uuid.uuid4()),
             "project_id": version_data.project_id,
             "entity_type": version_data.entity_type,
             "entity_id": version_data.entity_id,
-            "version_number": version_data.version_number,
+            "version_number": version_number,
             "changes": version_data.changes,
             "change_summary": version_data.change_summary,
             "changed_by": version_data.changed_by,
@@ -31,8 +50,9 @@ class VersionService:
             "previous_version_id": previous_version_id,
             "created_at": datetime.utcnow()
         }
-        
-        return version
+
+        saved = await self.repo.create_version(version)
+        return saved.model_dump(by_alias=False)
     
     async def get_version_history(
         self,
@@ -42,9 +62,8 @@ class VersionService:
     ) -> List[Dict[str, Any]]:
         """Get version history for an entity."""
         
-        # This would query the database
-        # For now, return empty list as placeholder
-        return []
+        versions = await self.repo.list_by_entity(entity_type, entity_id, limit)
+        return [version.model_dump(by_alias=False) for version in versions]
     
     async def compare_versions(
         self,
@@ -130,11 +149,41 @@ class VersionService:
         restored_by: str
     ) -> Dict[str, Any]:
         """Restore an entity to a previous version."""
-        
+        version = await self.repo.get_by_entity_version(entity_type, entity_id, version_number)
+        if not version:
+            return {
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "restored_to_version": version_number,
+                "restored_by": restored_by,
+                "restored_at": datetime.utcnow(),
+                "restored": False,
+            }
+
+        if entity_type == "artifact":
+            restored = await self.artifact_repo.update_artifact(
+                version.project_id,
+                entity_id,
+                {"content_json": version.changes},
+            )
+            if restored:
+                await self.create_version(
+                    VersionCreate(
+                        project_id=version.project_id,
+                        entity_type=entity_type,
+                        entity_id=entity_id,
+                        version_number=restored.version,
+                        changes=version.changes,
+                        change_summary=f"Restored artifact to version {version_number}",
+                        changed_by=restored_by,
+                    ),
+                    changed_by_name=restored_by,
+                )
         return {
             "entity_type": entity_type,
             "entity_id": entity_id,
             "restored_to_version": version_number,
             "restored_by": restored_by,
-            "restored_at": datetime.utcnow()
+            "restored_at": datetime.utcnow(),
+            "restored": True,
         }

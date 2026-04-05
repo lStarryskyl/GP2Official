@@ -268,6 +268,185 @@ async def ensure_tables_exist():
         await conn.execute('CREATE INDEX IF NOT EXISTS idx_invites_org ON workspace_invites(organization)')
         await conn.execute('CREATE INDEX IF NOT EXISTS idx_invites_email ON workspace_invites(email)')
 
+        # Change logs
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS change_logs (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                organization TEXT,
+                author_id TEXT NOT NULL,
+                description TEXT NOT NULL,
+                files JSONB DEFAULT '[]',
+                task_ids JSONB DEFAULT '[]',
+                requirement_ids JSONB DEFAULT '[]',
+                entry_type TEXT DEFAULT 'manual',
+                ai_summary TEXT,
+                diagram_url TEXT,
+                metadata JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_change_logs_project ON change_logs(project_id)')
+
+        # Activity logs (project timeline)
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS activity_logs (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                user_id TEXT,
+                event_type TEXT NOT NULL,
+                details_json JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_project ON activity_logs(project_id)')
+
+        # Generation jobs
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS generation_jobs (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                user_id TEXT,
+                status TEXT DEFAULT 'pending',
+                progress FLOAT DEFAULT 0.0,
+                result_summary JSONB,
+                error_message TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                completed_at TIMESTAMPTZ
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_generation_jobs_project ON generation_jobs(project_id)')
+
+        # Version history
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS version_history (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                version_number INTEGER NOT NULL,
+                changes JSONB DEFAULT '{}',
+                change_summary TEXT,
+                changed_by TEXT,
+                changed_by_name TEXT,
+                previous_version_id TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_version_history_entity ON version_history(entity_type, entity_id)')
+
+        # Notifications
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS notifications (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                project_id TEXT,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                priority TEXT DEFAULT 'normal',
+                entity_type TEXT,
+                entity_id TEXT,
+                action_url TEXT,
+                metadata JSONB DEFAULT '{}',
+                read BOOLEAN DEFAULT false,
+                read_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)')
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS notification_preferences (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                email_notifications BOOLEAN DEFAULT true,
+                push_notifications BOOLEAN DEFAULT true,
+                comment_mentions BOOLEAN DEFAULT true,
+                requirement_changes BOOLEAN DEFAULT true,
+                task_assignments BOOLEAN DEFAULT true,
+                project_updates BOOLEAN DEFAULT true,
+                weekly_digest BOOLEAN DEFAULT true
+            )
+        ''')
+
+        # Activity feed items (richer than simple logs)
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS activity_feed (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                user_name TEXT,
+                action TEXT,
+                entity_type TEXT,
+                entity_id TEXT,
+                entity_name TEXT,
+                description TEXT,
+                metadata JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_activity_feed_project ON activity_feed(project_id)')
+
+        # Traceability links
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS traceability_links (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                source_type TEXT NOT NULL,
+                source_id TEXT NOT NULL,
+                source_name TEXT,
+                target_type TEXT NOT NULL,
+                target_id TEXT NOT NULL,
+                target_name TEXT,
+                link_type TEXT,
+                rationale TEXT,
+                created_by TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_traceability_project ON traceability_links(project_id)')
+
+        # Negotiation threads and comments
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS negotiation_threads (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                requirement_id TEXT,
+                title TEXT,
+                description TEXT,
+                status TEXT DEFAULT 'open',
+                priority TEXT DEFAULT 'medium',
+                stakeholder_ids JSONB DEFAULT '[]',
+                created_by TEXT,
+                resolution TEXT,
+                resolved_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_negotiation_threads_project ON negotiation_threads(project_id)')
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS negotiation_comments (
+                id TEXT PRIMARY KEY,
+                thread_id TEXT NOT NULL,
+                project_id TEXT NOT NULL,
+                requirement_id TEXT,
+                parent_id TEXT,
+                content TEXT,
+                author_id TEXT,
+                author_name TEXT,
+                mentions JSONB DEFAULT '[]',
+                reactions JSONB DEFAULT '{}',
+                edited BOOLEAN DEFAULT false,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        ''')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_negotiation_comments_thread ON negotiation_comments(thread_id)')
+
     print("[DB] Database tables verified/created successfully!")
 
 

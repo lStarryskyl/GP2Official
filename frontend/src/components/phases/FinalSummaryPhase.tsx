@@ -92,36 +92,36 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
   return (
     <div className="space-y-6">
       {/* Project Overview Card */}
-      <Card className="overflow-hidden">
-        <div className="bg-gradient-to-r from-stone-600 to-neutral-700 p-8">
+      <Card className="overflow-hidden" style={{ border: '1px solid rgba(26,111,212,0.25)' }}>
+        <div className="p-8" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #0f2540 60%, #1a3a5c 100%)', borderBottom: '1px solid rgba(26,111,212,0.2)' }}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">{projectName}</h1>
-              <p className="text-white/80">Project Summary & Final Review</p>
+              <p style={{ color: 'rgba(255,255,255,0.7)' }}>Project Summary & Final Review</p>
             </div>
             <div className="text-right">
-              <div className="text-5xl font-bold text-white">{overallProgress}%</div>
-              <p className="text-white/80">Overall Progress</p>
+              <div className="text-5xl font-bold" style={{ color: '#1A6FD4' }}>{overallProgress}%</div>
+              <p style={{ color: 'rgba(255,255,255,0.7)' }}>Overall Progress</p>
             </div>
           </div>
         </div>
-        <CardContent className="p-6">
+        <CardContent className="p-6" style={{ background: 'var(--brand-800)' }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-blue-50 rounded-xl text-center">
-              <div className="text-2xl font-bold text-blue-700">{stats.requirements}</div>
-              <div className="text-sm text-blue-600">Requirements</div>
+            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--brand-750, #152238)', border: '1px solid rgba(26,111,212,0.2)' }}>
+              <div className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{stats.requirements}</div>
+              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Requirements</div>
             </div>
-            <div className="p-4 bg-blue-900/20 rounded-xl text-center">
-              <div className="text-2xl font-bold text-blue-300">{stats.tasks}</div>
-              <div className="text-sm text-blue-400">Tasks</div>
+            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--brand-750, #152238)', border: '1px solid rgba(26,111,212,0.2)' }}>
+              <div className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{stats.tasks}</div>
+              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Tasks</div>
             </div>
-            <div className="p-4 bg-purple-50 rounded-xl text-center">
-              <div className="text-2xl font-bold text-purple-700">{stats.artifacts}</div>
-              <div className="text-sm text-purple-600">Artifacts</div>
+            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--brand-750, #152238)', border: '1px solid rgba(249,115,22,0.2)' }}>
+              <div className="text-2xl font-bold" style={{ color: '#fb923c' }}>{stats.artifacts}</div>
+              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Artifacts</div>
             </div>
-            <div className="p-4 bg-amber-50 rounded-xl text-center">
-              <div className="text-2xl font-bold text-amber-700">{completedPhases}/{phaseConfigs.length}</div>
-              <div className="text-sm text-amber-600">Phases Done</div>
+            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--brand-750, #152238)', border: '1px solid rgba(26,111,212,0.2)' }}>
+              <div className="text-2xl font-bold" style={{ color: '#4ade80' }}>{completedPhases}/{phaseConfigs.length}</div>
+              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Phases Done</div>
             </div>
           </div>
         </CardContent>
@@ -130,8 +130,8 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
       {/* Phase Status Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-gray-600" />
+          <CardTitle className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <BarChart3 className="h-5 w-5" style={{ color: '#1A6FD4' }} />
             Phase Completion Status
           </CardTitle>
         </CardHeader>
@@ -144,22 +144,20 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
               return (
                 <div
                   key={phase.id}
-                  className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md ${
-                    isComplete
-                      ? 'border-blue-700/40 bg-blue-900/20'
-                      : isInProgress
-                      ? 'border-blue-200 bg-blue-50'
-                      : 'border-gray-200 bg-gray-50'
-                  }`}
+                  className="flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer hover:brightness-110"
+                  style={{
+                    border: isComplete ? '2px solid rgba(26,111,212,0.4)' : isInProgress ? '2px solid rgba(249,115,22,0.4)' : '2px solid var(--brand-700)',
+                    background: isComplete ? 'rgba(26,111,212,0.08)' : isInProgress ? 'rgba(249,115,22,0.06)' : 'var(--brand-750, #152238)',
+                  }}
                   onClick={() => navigate(`/projects/${projectId}/phases/${phase.id}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: 'var(--brand-700)' }}>
                       {getPhaseIcon(phase.id)}
                     </span>
                     <div>
-                      <div className="font-medium text-gray-900">{phase.title}</div>
-                      <div className="text-sm text-gray-500">{phase.description.slice(0, 60)}...</div>
+                      <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{phase.title}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-muted)' }}>{phase.description.slice(0, 60)}...</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -167,7 +165,7 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
                       {status.replace('_', ' ')}
                     </Badge>
                     {isComplete && <CheckCircle2 className="h-5 w-5 text-blue-400" />}
-                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                    <ArrowRight className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
                   </div>
                 </div>
               );
@@ -178,13 +176,13 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
 
 
       {/* Export & Share */}
-      <Card className="bg-gradient-to-r from-gray-50 to-slate-50">
+      <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-gray-600" />
+          <CardTitle className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <FileText className="h-5 w-5" style={{ color: '#1A6FD4' }} />
             Export & Share
           </CardTitle>
-          <CardDescription>Download or share the project summary</CardDescription>
+          <CardDescription style={{ color: 'var(--text-muted)' }}>Download or share the project summary</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
@@ -209,24 +207,23 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
       </Card>
 
       {/* Navigation */}
-      <Card className="bg-gradient-to-r from-indigo-500 to-purple-600">
+      <Card style={{ background: 'linear-gradient(135deg, #0D1B2A, #0f2a4a)', border: '1px solid rgba(26,111,212,0.3)' }}>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div className="text-white">
+            <div style={{ color: 'var(--text-primary)' }}>
               <h3 className="text-xl font-bold mb-1">Wrap up or start a new iteration</h3>
-              <p className="text-white/80">Jump back to overview or revisit earlier phases</p>
+              <p style={{ color: 'var(--text-muted)' }}>Jump back to overview or revisit earlier phases</p>
             </div>
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={() => navigate(`/projects/${projectId}`)}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Project Overview
               </Button>
               <Button
-                className="bg-white text-indigo-600 hover:bg-white/90"
+                style={{ background: '#1A6FD4', color: '#fff', border: 'none' }}
                 onClick={() => navigate(`/projects/${projectId}/phases/${phaseConfigs[0].id}`)}
               >
                 Start New Iteration

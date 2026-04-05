@@ -65,13 +65,19 @@ class LlmChat:
 
     async def send_message(self, message: UserMessage) -> str:
         """Dispatch the prompt to the configured provider."""
-        prompt = self._compose_prompt(message.text if isinstance(message, UserMessage) else str(message))
+        user_text = message.text if isinstance(message, UserMessage) else str(message)
+
+        if self.provider in {"openai"}:
+            return await self._send_via_openai(user_text)
+
+        prompt = self._compose_prompt(user_text)
         if self.provider in {"gemini", "google", "google_gemini"}:
             return await self._send_via_gemini(prompt)
         if self.provider in {"huggingface", "hf"}:
             return await self._send_via_huggingface(prompt)
-        if self.provider in {"openai", "mock", "stub"}:
+        if self.provider in {"mock", "stub"}:
             return await self._send_via_mock(prompt)
+
         logger.warning("Unknown LLM provider '%s', using mock response", self.provider)
         return await self._send_via_mock(prompt)
 
@@ -79,6 +85,17 @@ class LlmChat:
         if self.system_message:
             return f"{self.system_message.strip()}\n\n{user_text.strip()}"
         return user_text
+
+    async def _send_via_openai(self, user_text: str) -> str:
+        if not self.api_key:
+            logger.warning("OpenAI provider selected but API key missing, falling back to mock")
+            return await self._send_via_mock(self._compose_prompt(user_text))
+        try:
+            from services.openai_client import call_openai
+            return await call_openai(user_text, system=self.system_message or "", model=self.model)
+        except Exception as exc:  # pragma: no cover - network call
+            logger.error("OpenAI request failed: %s", exc)
+            return await self._send_via_mock(self._compose_prompt(user_text))
 
     async def _send_via_mock(self, prompt: str) -> str:
         """Return a deterministic mock response for local development."""

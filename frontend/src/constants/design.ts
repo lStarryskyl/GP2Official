@@ -57,7 +57,7 @@ export const colors = {
     100: '#DCFCE7',
     500: '#22C55E',
     600: '#16A34A',
-    700: '#15803D',
+    700: '#1A6FD4',
   },
 
   // Warning - Uses brand orange

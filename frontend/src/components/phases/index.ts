@@ -6,3 +6,4 @@ export { GanttChartPhase } from './GanttChartPhase';
 export { FinalSummaryPhase } from './FinalSummaryPhase';
 export { ValidationPhase } from './ValidationPhase';
 export { DesignPhase } from './DesignPhase';
+export { TestingPhase } from './TestingPhase';

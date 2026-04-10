@@ -168,13 +168,21 @@ export const phaseConfig = {
     gradient: 'from-amber-500 to-amber-600',
     order: 6,
   },
+  testing: {
+    id: 'testing',
+    label: 'Testing',
+    icon: 'FlaskConical',
+    color: '#0EA5E9',
+    gradient: 'from-sky-500 to-sky-600',
+    order: 7,
+  },
   summary: {
     id: 'summary',
     label: 'Summary',
     icon: 'Flag',
     color: colors.phases.summary,
     gradient: 'from-[var(--blue-400)] to-[#b8962e]',
-    order: 7,
+    order: 8,
   },
 };
 

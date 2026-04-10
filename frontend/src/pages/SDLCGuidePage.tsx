@@ -6,7 +6,7 @@ import {
   Layers, Code2, GitBranch, DollarSign, AlertTriangle,
   LayoutDashboard, BookOpen, Users, Shield, TrendingUp,
   Clock, Target, CheckSquare, Lightbulb, Database,
-  BarChart3, Lock, Globe, Cpu, ArrowLeft,
+  BarChart3, Lock, Globe, Cpu, ArrowLeft,FlaskConical,
 } from 'lucide-react';
 
 // ─── Phase definitions ────────────────────────────────────────────────────────
@@ -300,8 +300,40 @@ const PHASES = [
     ],
   },
   {
-    id: 'summary',
+    id: 'testing',
     step: 10,
+    icon: FlaskConical,
+    color: '#fb9042',
+    title: 'Testing & Quality Assurance',
+    tagline: 'Generate synthetic test data and audit requirement coverage automatically.',
+    what: 'The testing phase uses AI to generate comprehensive test scenarios and synthetic test data from functional requirements. It then performs a semantic coverage audit to identify orphaned requirements that have no corresponding test cases, ensuring complete traceability between what was specified and what is tested.',
+    why: 'Projects that defer testing strategy to the end ship 3× more defects. By generating test scenarios directly from requirements, teams catch specification gaps before a single line of code is written. Automated gap analysis ensures nothing falls through the cracks.',
+    acornDoes: [
+      'Generates positive, negative, edge-case, and boundary test scenarios from requirements',
+      'Produces synthetic, privacy-compliant test datasets in JSON and CSV formats',
+      'Performs semantic coverage audit comparing requirements against test scenarios',
+      'Identifies orphaned requirements with zero test coverage',
+      'Provides actionable recommendations to close coverage gaps',
+    ],
+    keyArtifacts: ['Test Scenario Catalog', 'Synthetic Test Datasets', 'Coverage Audit Report', 'Gap Analysis Matrix', 'Test Recommendations'],
+    bestPractices: [
+      'Generate test data immediately after requirements are finalized — not after development',
+      'Include edge cases for every input field: nulls, max lengths, special characters, type mismatches',
+      'Treat orphaned requirements as blocking issues — if it cannot be tested, it cannot be verified',
+      'Re-run the coverage audit after every requirements change to catch new gaps',
+      'Use the generated datasets as the basis for both manual QA and automated test suites',
+    ],
+    duration: '3–5 days',
+    complexity: 'Medium',
+    common_mistakes: [
+      'Only testing the happy path and ignoring boundary and negative cases',
+      'Writing test cases that paraphrase the requirement instead of truly validating behavior',
+      'Not updating test scenarios when requirements change mid-project',
+    ],
+  },
+  {
+    id: 'summary',
+    step: 11,
     icon: LayoutDashboard,
     color: '#F97316',
     title: 'Project Summary & Handoff',
@@ -393,7 +425,7 @@ const SDLCGuidePage: React.FC = () => {
           </span>
         </h1>
         <p style={{ color: '#8899AA', fontSize: '17px', lineHeight: 1.7, maxWidth: '640px', margin: '0 auto 32px' }}>
-          Everything you need to know about the 10 phases of modern software development — what each phase produces, why it matters, and the best practices that separate successful projects from failed ones.
+          Everything you need to know about the 11 phases of modern software development — what each phase produces, why it matters, and the best practices that separate successful projects from failed ones.
         </p>
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[

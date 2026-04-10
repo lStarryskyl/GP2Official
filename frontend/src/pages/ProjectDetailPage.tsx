@@ -36,8 +36,8 @@ const PhaseKanban: React.FC<{
   };
 
   // Split into 2 rows of 5
-  const row1 = phases.slice(0, 5);
-  const row2 = phases.slice(5, 10);
+  const row1 = phases.slice(0, 6);
+  const row2 = phases.slice(6);
 
   const PhaseCard = ({ phase, idx }: { phase: typeof phases[0]; idx: number }) => {
     const info    = getStatusInfo(phase.id);

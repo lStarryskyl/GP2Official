@@ -103,14 +103,24 @@ export const phaseConfigs: PhaseConfig[] = [
     order: 8,
   },
   {
+    id: 'testing',
+    title: 'Testing',
+    shortTitle: 'Testing',
+    description: 'AI-driven test data generation and coverage audit',
+    canvasMode: 'freeform',
+    stepNumber: 10,
+    color: 'teal',
+    order: 9,
+  },
+  {
     id: 'summary',
     title: 'Summary',
     shortTitle: 'Summary',
     description: 'Final summary, risks, and next steps',
     canvasMode: 'freeform',
-    stepNumber: 10,
+    stepNumber: 11,
     color: 'gold',
-    order: 9,
+    order: 10,
   },
 ];
 
@@ -140,6 +150,7 @@ export const phaseHexColors: Record<string, { fill: string; text: string; glow: 
   tasks:                  { fill: '#D4A017', text: 'var(--brand-900)', glow: '#D4A01799' },
   cost_benefit:           { fill: '#2A9D8F', text: 'var(--text-primary)', glow: '#2A9D8F99' },
   risks:                  { fill: '#C1440E', text: 'var(--text-primary)', glow: '#C1440E99' },
+  testing:                { fill: '#0EA5E9', text: 'var(--text-primary)', glow: '#0EA5E999' },
   summary:                { fill: 'var(--blue-400)', text: 'var(--brand-900)', glow: 'var(--blue-400)99' },
 };
 

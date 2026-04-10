@@ -128,6 +128,7 @@ async def stream_phase_generation(
                 "tasks": "Author the Execution Map: epics, stories, tasks with time estimates, dependencies, milestones, and Gantt data.",
                 "cost_benefit": "Produce a concise Cost & Benefit analysis: cost drivers, estimated benefits, ROI, and budget hotspots.",
                 "risks": "Compile an actionable Risk Register with Risk Overview, Risk Register table, Before/After mitigation comparison, and Recommended Actions checklist.",
+                "testing": "Produce a Testing Plan: key test categories, critical test scenarios for functional requirements, edge cases, boundary conditions, and a coverage checklist.",
                 "summary": "Compile the Project Summary: achievements, final metrics, lessons learned, outstanding risks, and recommendations.",
             }
 

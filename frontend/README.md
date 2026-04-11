@@ -6,17 +6,17 @@ React + TypeScript frontend for Architect AI software planning automation platfo
 
 ### Prerequisites
 
-- Node.js 18+ or Yarn
+- Node.js 20.19+ or 22.12+
 - Backend API running on http://localhost:8000
 
 ### Installation
 
 ```bash
 # Install dependencies
-yarn install
+npm ci
 
 # Start development server
-yarn dev
+npm run dev
 ```
 
 Frontend will be available at: `http://localhost:5173`
@@ -174,32 +174,32 @@ VITE_API_URL=http://localhost:8000
 
 ```bash
 # Install dependencies
-yarn install
+npm ci
 
 # Run dev server
-yarn dev
+npm run dev
 
 # Build for production
-yarn build
+npm run build
 
 # Preview production build
-yarn preview
+npm run preview
 
 # Lint code
-yarn lint
+npm run lint
 ```
 
 ## 📦 Build
 
 ```bash
-yarn build
+npm run build
 ```
 
 Output will be in `dist/` directory.
 
 ## 🚢 Deployment
 
-1. Build the app: `yarn build`
+1. Build the app: `npm run build`
 2. Deploy `dist/` folder to any static hosting (Vercel, Netlify, S3, etc.)
 3. Set environment variable `VITE_API_URL` to production backend URL
 

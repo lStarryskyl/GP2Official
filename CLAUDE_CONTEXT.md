@@ -381,8 +381,8 @@ React 18, TypeScript, Vite, Tailwind CSS, React Router v6, Zustand, Axios. Styli
 - `uvicorn main:app --reload --port 8000`
 - Frontend
 - `cd frontend`
-- `yarn install`
-- `yarn dev`
+- `npm ci`
+- `npm run dev`
 
 **Quick Jump List**
 - Backend entry: `backend/server.py`

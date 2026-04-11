@@ -35,6 +35,7 @@ def default_phase_status() -> Dict[str, str]:
         "tasks": "locked",
         "cost_benefit": "locked",
         "risks": "locked",
+        "testing": "locked",
         "summary": "locked",
     }
 

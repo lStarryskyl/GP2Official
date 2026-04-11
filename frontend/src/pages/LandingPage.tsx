@@ -18,33 +18,35 @@ const PHASES = [
   { id: 'tasks',         label: 'Tasks',           icon: GitBranch,      color: '#fb9042' },
   { id: 'cost',          label: 'Cost & Benefit',  icon: DollarSign,     color: '#F97316' },
   { id: 'risks',         label: 'Risks',           icon: AlertTriangle,  color: '#fb9042' },
+  { id: 'testing',       label: 'Testing',         icon: FlaskConical,   color: '#2A9D8F' },
   { id: 'summary',       label: 'Summary',         icon: LayoutDashboard,color: '#F97316' },
 ];
 
 // Row 1: indices 0-4 left→right  (y ≈ 80)
 // Row 2: indices 5-9 right→left  (y ≈ 200)
-const NODE_W = 108;
+const NODE_W = 100;
 const NODE_H = 56;
-const GAP_X  = 48;
+const GAP_X  = 32;
 const ROW1_Y = 60;
 const ROW2_Y = 188;
+const ROW1_COUNT = 6;
+const ROW2_COUNT = 5;
 
 function nodeX(i: number): number {
-  if (i < 5) return 20 + i * (NODE_W + GAP_X);
-  // bottom row reversed: index 5 = rightmost
-  const j = i - 5; // 0..4
-  return 20 + (4 - j) * (NODE_W + GAP_X);
+  if (i < ROW1_COUNT) return 20 + i * (NODE_W + GAP_X);
+  const j = i - ROW1_COUNT;
+  return 20 + (ROW2_COUNT - 1 - j) * (NODE_W + GAP_X);
 }
 function nodeY(i: number): number {
-  return i < 5 ? ROW1_Y : ROW2_Y;
+  return i < ROW1_COUNT ? ROW1_Y : ROW2_Y;
 }
 
-const SVG_W = 20 + 5 * (NODE_W + GAP_X) - GAP_X + 20; // 5 nodes
+const SVG_W = 20 + ROW1_COUNT * (NODE_W + GAP_X) - GAP_X + 20;
 const SVG_H = ROW2_Y + NODE_H + 40;
 
 // ─── SDLC Flowchart SVG ───────────────────────────────────────────────────────
 interface SDLCFlowchartProps {
-  visibleCount: number; // 0 = nothing, 10 = all
+  visibleCount: number; // 0 = nothing, 11 = all
   compact?: boolean;
 }
 
@@ -83,7 +85,7 @@ const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = f
         if (i >= visibleCount - 1) return null;
 
         // Row 1 horizontal connectors (0→1, 1→2, 2→3, 3→4)
-        if (i < 4) {
+        if (i < ROW1_COUNT - 1) {
           const x1 = nodeX(i) + NODE_W;
           const y  = nodeY(i) + NODE_H / 2;
           const x2 = nodeX(i + 1);
@@ -99,7 +101,7 @@ const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = f
         }
 
         // U-turn connector: row1 node 4 → row2 node 5
-        if (i === 4) {
+        if (i === ROW1_COUNT - 1) {
           const x  = nodeX(4) + NODE_W / 2;
           const y1 = nodeY(4) + NODE_H;
           const y2 = nodeY(5);
@@ -116,7 +118,7 @@ const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = f
 
         // Row 2 horizontal connectors (5→6, 6→7, 7→8, 8→9)
         // nodeX(5) is rightmost, nodeX(9) is leftmost — so connect right-edge of next to left-edge of current
-        if (i >= 5 && i < 9) {
+        if (i >= ROW1_COUNT && i < ROW1_COUNT + ROW2_COUNT - 1) {
           const x1 = nodeX(i);              // left edge of current (further left = higher index)
           const x2 = nodeX(i + 1) + NODE_W; // right edge of next node (further right)
           const y  = nodeY(i) + NODE_H / 2;
@@ -268,7 +270,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs }) => {
         position: 'relative', zIndex: 1,
         opacity: visible > 0 ? 1 : 0, transition: 'opacity 0.4s',
       }}>
-        {visible < PHASES.length ? `Building pipeline · phase ${visible} of ${PHASES.length}` : 'All 10 phases ready'}
+        {visible < PHASES.length ? `Building pipeline · phase ${visible} of ${PHASES.length}` : 'All 11 phases ready'}
       </p>
 
       {/* Stats row */}
@@ -417,10 +419,10 @@ const LandingPage: React.FC = () => {
           {/* Flowchart preview — all phases visible */}
           <div style={{ marginTop: '48px', padding: '32px', ...card(), overflowX: 'auto', width: '100%' }}>
             <p style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', textAlign: 'left' }}>
-              Complete SDLC Pipeline · 10 Phases
+              Complete SDLC Pipeline · 11 Phases
             </p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <SDLCFlowchart visibleCount={10} compact />
+              <SDLCFlowchart visibleCount={11} compact />
             </div>
           </div>
         </div>

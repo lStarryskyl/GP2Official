@@ -36,6 +36,7 @@ import {
   FinalSummaryPhase,
   ValidationPhase,
   DesignPhase,
+  TestingPhase,
 } from '@/components/phases';
 import {
   ArrowLeft,
@@ -1619,7 +1620,7 @@ export const PhaseDetailPage: React.FC = () => {
     const colors: Record<string, string> = {
       planning: '#D4A017', feasibility_study: '#7BA05B', requirements_gathering: 'var(--blue-500)',
       validation: '#5F7A8A', design: '#6B4C8A', development: '#8B5E3C',
-      tasks: '#D4A017', cost_benefit: '#2A9D8F', risks: '#C1440E', summary: 'var(--blue-400)',
+      tasks: '#D4A017', cost_benefit: '#2A9D8F', risks: '#C1440E', testing: '#0EA5E9', summary: 'var(--blue-400)',
     };
     return colors[phaseId || ''] || 'var(--blue-400)';
   })();
@@ -2830,6 +2831,23 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+      </PhaseWrapper>
+    );
+  }
+
+  // ============================================
+  // TESTING PHASE
+  // ============================================
+  if (phaseId === 'testing') {
+    return (
+      <PhaseWrapper>
+        <TestingPhase
+          projectId={id || ''}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+          content={phaseMarkdown}
+          requirements={requirements}
+        />
       </PhaseWrapper>
     );
   }

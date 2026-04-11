@@ -704,6 +704,22 @@ class ApiClient {
     });
     return response.data;
   }
+
+  // Testing
+  async generateTestData(projectId: string, options?: any): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/testing/generate-test-data`, options || {});
+    return response.data;
+  }
+
+  async runCoverageAudit(projectId: string, options?: any): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/testing/coverage-audit`, options || {});
+    return response.data;
+  }
+
+  async getTestingResults(projectId: string): Promise<any> {
+    const response = await this.client.get(`/projects/${projectId}/testing/results`);
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();

@@ -42,6 +42,7 @@ const PHASE_COLORS: Record<string, string> = {
   tasks:                  '#D4A017',
   cost_benefit:           '#2A9D8F',
   risks:                  '#C1440E',
+  testing:                '#0EA5E9',
   summary:                'var(--blue-400)',
 };
 

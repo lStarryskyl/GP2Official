@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Lightbulb, Search, FileText, CheckSquare, Layout, Code,
   ListTodo, DollarSign, AlertTriangle, BookOpen, ChevronLeft,
-  ChevronRight, Menu, X, ArrowLeft,
+  ChevronRight, Menu, X, ArrowLeft, FlaskConical,
 } from 'lucide-react';
 import { phaseConfigs } from '@/constants/phases';
 
@@ -17,6 +17,7 @@ const PHASE_ICONS: Record<string, React.ReactNode> = {
   tasks:                  <ListTodo size={15} />,
   cost_benefit:           <DollarSign size={15} />,
   risks:                  <AlertTriangle size={15} />,
+  testing:                <FlaskConical size={15} />,
   summary:                <BookOpen size={15} />,
 };
 

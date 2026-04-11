@@ -27,6 +27,7 @@ PHASE_ORDER = [
     "tasks",
     "cost_benefit",
     "risks",
+    "testing",
     "summary",
 ]
 
@@ -40,6 +41,7 @@ PHASE_TITLES = {
     "tasks": "Tasks",
     "cost_benefit": "Costs & Benefits",
     "risks": "Risks & Mitigations",
+    "testing": "Testing",
     "summary": "Summary",
 }
 
@@ -330,6 +332,12 @@ class PhaseFlowService:
                 "\n## Recommended Actions (Checklist)\n"
                 "List 5–10 concrete next actions as a Markdown checklist (using - [ ]), each referencing one or more risks and owners.\n"
                 "Keep the entire response in clean Markdown so the UI can render tables and sections side-by-side."
+            ),
+            "testing": (
+                "Produce a Testing Plan for the project: identify key test categories (unit, integration, "
+                "end-to-end, performance), list critical test scenarios for the functional requirements, "
+                "highlight edge cases and boundary conditions, and recommend a test data strategy. "
+                "Include a coverage checklist mapping requirements to test scenarios."
             ),
             "summary": (
                 "Compile the Project Summary: key achievements, final metrics, lessons learned, "

@@ -159,8 +159,7 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.client.get(`/projects/${projectId}/testing/results`);
-        const d = res.data;
+        const d = await api.getTestingResults(projectId);
         if (d.test_data) setTestData(d.test_data);
         if (d.coverage_audit) setCoverageData(d.coverage_audit);
       } catch {
@@ -174,13 +173,13 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
     setLoadingTests(true);
     setError(null);
     try {
-      const res = await api.client.post(`/projects/${projectId}/testing/generate-test-data`, {
+      const data = await api.generateTestData(projectId, {
         include_edge_cases: true,
         include_boundary_values: true,
         max_rows_per_requirement: 10,
       });
-      if (res.data?.data) {
-        setTestData(res.data.data);
+      if (data?.data) {
+        setTestData(data.data);
         setActiveTab('scenarios');
       }
     } catch (err: any) {
@@ -196,10 +195,10 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
     setLoadingCoverage(true);
     setError(null);
     try {
-      const res = await api.client.post(`/projects/${projectId}/testing/coverage-audit`, {
+      const data = await api.runCoverageAudit(projectId, {
         include_non_functional: false,
       });
-      const result = res.data?.data;
+      const result = data?.data;
       if (result) {
         setCoverageData(result);
         setActiveTab('coverage');

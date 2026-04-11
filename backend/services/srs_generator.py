@@ -91,7 +91,7 @@ Generate clear, professional introductions that set the context for the software
         prompt = f"""Based on this project context, write an IEEE 830-compliant Introduction section including:
 1. Purpose
 2. Scope
-3. Definitions and Acronyms
+3. Definitions and Acronymsss
 4. References
 
 {context}

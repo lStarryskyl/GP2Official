@@ -182,14 +182,46 @@ class ProjectService:
 
         return self._build_response(project)
 
-    async def list_projects(self, current_user: User) -> List[ProjectResponse]:
-        """List all projects for user's organization."""
+    async def list_projects(
+        self,
+        current_user: User,
+        include_archived: bool = False,
+        only_archived: bool = False,
+    ) -> List[ProjectResponse]:
+        """List projects for user's organization. By default excludes archived."""
         projects = await self.project_repo.list_by_organization(
             current_user.organization,
             current_user.id,
         )
 
+        if only_archived:
+            projects = [p for p in projects if p.status == "archived"]
+        elif not include_archived:
+            projects = [p for p in projects if p.status != "archived"]
+
         return [self._build_response(p) for p in projects]
+
+    async def archive_project(self, project_id: str, current_user: User) -> ProjectResponse:
+        """Soft-delete: set project status to archived."""
+        project = await self.project_repo.update(
+            project_id,
+            current_user.organization,
+            ProjectUpdate(status="archived"),
+        )
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        return self._build_response(project)
+
+    async def restore_project(self, project_id: str, current_user: User) -> ProjectResponse:
+        """Restore an archived project to active status."""
+        project = await self.project_repo.update(
+            project_id,
+            current_user.organization,
+            ProjectUpdate(status="active"),
+        )
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        return self._build_response(project)
     
     async def update_project(
         self,

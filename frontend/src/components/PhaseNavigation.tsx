@@ -33,56 +33,120 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
 
   const getStatus = (id: string) => (phaseStatus[id] || 'locked').toLowerCase();
 
-  // ─── Horizontal Tab Bar (Dark Navy/Gold Theme) ───────────────────────────────────
+  // ─── Horizontal Timeline (Modern Brand Theme) ──────────────────────────────
   if (variant === 'horizontal') {
+    const completedCount = phaseConfigs.filter(p => {
+      const s = getStatus(p.id);
+      return s === 'completed' || s === 'ready';
+    }).length;
+    const overallPct = Math.round((completedCount / phaseConfigs.length) * 100);
+
     return (
-      <div className="w-full bg-[var(--brand-900)]/95 backdrop-blur-xl border-b border-[var(--brand-700)] sticky top-0 z-40">
+      <div
+        className="w-full"
+        style={{
+          background: 'linear-gradient(180deg, rgba(13,27,42,0.6) 0%, rgba(13,27,42,0.2) 100%)',
+          borderBottom: '1px solid rgba(26,111,212,0.2)',
+          padding: '14px 0 12px',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-thin">
-            {/* Overview link */}
+          <div className="flex items-center justify-between mb-2.5">
             <button
               onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-[var(--blue-400)] hover:bg-[#152238] transition-all whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--blue-300)] transition-colors"
             >
-              <Home className="h-3.5 w-3.5" />
-              Overview
+              <Home className="h-3.5 w-3.5" /> Project Overview
             </button>
+            <div className="text-xs text-[var(--text-faint)] font-semibold uppercase tracking-wider">
+              Journey · <span className="text-[var(--blue-300)]">{overallPct}%</span> complete
+            </div>
+          </div>
 
-            <ChevronRight className="h-4 w-4 text-[var(--brand-700)] flex-shrink-0" />
+          <div className="relative">
+            {/* Progress baseline */}
+            <div
+              style={{
+                position: 'absolute', top: '14px', left: '14px', right: '14px', height: '2px',
+                background: 'rgba(74,96,112,0.25)', borderRadius: '999px', zIndex: 0,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute', top: '14px', left: '14px',
+                width: `calc(${overallPct}% - ${overallPct > 0 ? '14px' : '0px'})`,
+                height: '2px',
+                background: 'linear-gradient(90deg, #22c55e, #1A6FD4, #F97316)',
+                borderRadius: '999px', zIndex: 1,
+                transition: 'width 0.6s var(--ease-out-expo, ease)',
+              }}
+            />
 
-            {/* Phase tabs */}
-            {phaseConfigs.map((phase, idx) => {
-              const isActive = currentPhaseId === phase.id;
-              const status = getStatus(phase.id);
-              const isCompleted = status === 'completed' || status === 'ready';
-              return (
-                <React.Fragment key={phase.id}>
+            <div className="relative flex items-start justify-between gap-1 overflow-x-auto pb-1" style={{ zIndex: 2 }}>
+              {phaseConfigs.map((phase) => {
+                const isActive    = currentPhaseId === phase.id;
+                const status      = getStatus(phase.id);
+                const isCompleted = status === 'completed' || status === 'ready';
+                const isProgress  = status === 'in_progress';
+                const isLocked    = status === 'locked';
+
+                let dotBg = 'rgba(74,96,112,0.6)';
+                let dotBorder = '#0d1b2a';
+                let dotText = 'var(--text-faint)';
+                if (isActive)         { dotBg = '#1A6FD4'; dotText = '#fff'; dotBorder = '#1A6FD4'; }
+                else if (isCompleted) { dotBg = '#22c55e'; dotText = '#fff'; dotBorder = '#22c55e'; }
+                else if (isProgress)  { dotBg = '#F97316'; dotText = '#fff'; dotBorder = '#F97316'; }
+
+                return (
                   <button
+                    key={phase.id}
                     onClick={() => handlePhaseClick(phase)}
-                    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[var(--blue-400)] to-[#b8962e] text-[var(--brand-900)] shadow-lg shadow-[var(--blue-400)]/30'
-                        : 'bg-[#152238] text-gray-400 hover:bg-[var(--brand-700)] hover:text-white'
-                    }`}
+                    disabled={isLocked && !isActive}
+                    title={`${phase.title}${isLocked ? ' (locked)' : ''}`}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                      background: 'transparent', border: 'none',
+                      cursor: isLocked && !isActive ? 'not-allowed' : 'pointer',
+                      opacity: isLocked && !isActive ? 0.5 : 1,
+                      minWidth: '70px', padding: '0 2px',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                    data-testid={`phase-nav-${phase.id}`}
                   >
-                    {/* Step number or check */}
-                    <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                      isActive
-                        ? 'bg-[var(--brand-900)]/20 text-[var(--brand-900)]'
-                        : isCompleted
-                          ? 'bg-blue-900/20 text-blue-400'
-                          : 'bg-[var(--brand-700)] text-gray-500'
-                    }`}>
-                      {isCompleted && !isActive ? <Check className="h-3 w-3" /> : phase.stepNumber}
-                    </span>
-                    <span>{phase.shortTitle}</span>
+                    <div
+                      style={{
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: dotBg, color: dotText,
+                        border: `3px solid ${dotBorder === '#0d1b2a' ? '#0d1b2a' : 'rgba(13,27,42,0.9)'}`,
+                        boxShadow: isActive
+                          ? '0 0 0 3px rgba(26,111,212,0.35), 0 4px 12px rgba(26,111,212,0.4)'
+                          : isCompleted
+                            ? '0 2px 8px rgba(34,197,94,0.3)'
+                            : 'none',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '11px', flexShrink: 0,
+                        transition: 'all 0.25s',
+                      }}
+                    >
+                      {isCompleted && !isActive ? <Check className="h-3.5 w-3.5" /> : phase.stepNumber}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '10.5px',
+                        fontWeight: isActive ? 700 : 500,
+                        color: isActive ? 'var(--blue-300)' : isCompleted ? '#86efac' : 'var(--text-muted)',
+                        textAlign: 'center', lineHeight: 1.2,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        maxWidth: '70px',
+                        fontFamily: isActive ? "'Syne', sans-serif" : "'DM Sans', sans-serif",
+                      }}
+                    >
+                      {phase.shortTitle}
+                    </div>
                   </button>
-                  {idx < phaseConfigs.length - 1 && (
-                    <ChevronRight className="h-4 w-4 text-[var(--brand-700)] flex-shrink-0" />
-                  )}
-                </React.Fragment>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

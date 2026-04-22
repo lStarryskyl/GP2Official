@@ -287,6 +287,16 @@ class ApiClient {
     await this.client.delete(`/projects/${id}`);
   }
 
+  async archiveProject(id: string): Promise<Project> {
+    const response = await this.client.post(`/projects/${id}/archive`);
+    return response.data;
+  }
+
+  async restoreProject(id: string): Promise<Project> {
+    const response = await this.client.post(`/projects/${id}/restore`);
+    return response.data;
+  }
+
   async generateProject(
     id: string,
     config: Record<string, any>

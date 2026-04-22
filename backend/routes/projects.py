@@ -134,9 +134,37 @@ async def create_project(
 
 
 @router.get("/", response_model=List[ProjectResponse])
-async def list_projects(current_user: User = Depends(get_current_user)):
-    """List all projects for user's organization."""
-    return await project_service.list_projects(current_user)
+async def list_projects(
+    current_user: User = Depends(get_current_user),
+    include_archived: bool = False,
+    only_archived: bool = False,
+):
+    """List projects for user's organization. By default excludes archived."""
+    return await project_service.list_projects(
+        current_user,
+        include_archived=include_archived,
+        only_archived=only_archived,
+    )
+
+
+@router.post("/{project_id}/archive", response_model=ProjectResponse)
+@router.post("/{project_id}/archive/", response_model=ProjectResponse, include_in_schema=False)
+async def archive_project(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Soft-delete: archive a project (recoverable from trash)."""
+    return await project_service.archive_project(project_id, current_user)
+
+
+@router.post("/{project_id}/restore", response_model=ProjectResponse)
+@router.post("/{project_id}/restore/", response_model=ProjectResponse, include_in_schema=False)
+async def restore_project(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Restore an archived project."""
+    return await project_service.restore_project(project_id, current_user)
 
 
 @router.post("/templates/resolve/", response_model=GuidedWorkspaceResponse)

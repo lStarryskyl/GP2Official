@@ -24,6 +24,7 @@ import { workspacePresets } from '@/constants/workspacePresets';
 import { useAuthStore } from '@/store/authStore';
 import ReactMarkdown from 'react-markdown';
 import { PhaseNavigation } from '@/components/PhaseNavigation';
+import { PhaseStickyHeader } from '@/components/PhaseStickyHeader';
 import { VersionHistory } from '@/components/VersionHistory';
 import { TraceabilityMatrix } from '@/components/TraceabilityMatrix';
 import { NegotiationThread } from '@/components/NegotiationThread';
@@ -4253,24 +4254,15 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   return (
     <Layout>
+      {id && phaseId && (
+        <PhaseStickyHeader
+          projectId={id}
+          projectName={project?.name}
+          currentPhaseId={phaseId}
+          phaseStatus={project?.phase_status}
+        />
+      )}
       <div className="space-y-6">
-        {/* Enhanced Header */}
-        <div className="relative">
-          <div className="absolute -top-10 -left-10 w-32 h-32 bg-amber-200/30 rounded-full blur-3xl"></div>
-          <div className="relative flex items-center justify-between flex-wrap gap-3">
-            <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Project
-            </Button>
-            <div className="text-right">
-              <p className="text-xs uppercase text-gray-500 tracking-wider">Phase</p>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                {phaseConfig.title}
-              </h1>
-              <p className="text-sm text-gray-500">{project.name}</p>
-            </div>
-          </div>
-        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">

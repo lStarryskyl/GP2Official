@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -30,6 +30,24 @@ interface TechStackItem {
 }
 
 type TechStackMap = Record<string, TechStackItem[]>;
+
+interface DevelopmentNotes {
+  bestPractices?: string[] | string;
+  watchOuts?: string[] | string;
+  flowSteps?: string[];
+  folderStructure?: string;
+  components?: string[];
+  requestPath?: string[];
+  responsePath?: string[];
+}
+
+interface RawStackItem {
+  name?: string;
+  category?: string;
+  description?: string;
+  icon?: string;
+  recommended?: boolean;
+}
 
 interface DevelopmentPhaseProps {
   projectId: string;
@@ -76,15 +94,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     ],
   };
 
-  const flowSteps = [
-    { id: 1, name: 'Client Request', description: 'User initiates action in browser', icon: Globe, color: 'blue' },
-    { id: 2, name: 'API Gateway', description: 'Request routing & authentication', icon: Shield, color: 'amber' },
-    { id: 3, name: 'Load Balancer', description: 'Distribute traffic across instances', icon: Zap, color: 'purple' },
-    { id: 4, name: 'Application Server', description: 'Business logic processing', icon: Server, color: 'blue' },
-    { id: 5, name: 'Database', description: 'Data persistence layer', icon: Database, color: 'red' },
-    { id: 6, name: 'Cache Layer', description: 'Fast data retrieval', icon: Zap, color: 'orange' },
-    { id: 7, name: 'Response', description: 'JSON response to client', icon: ArrowRight, color: 'cyan' },
-  ];
 
   const componentBreakdown = [
     {
@@ -113,34 +122,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     },
   ];
 
-  const folderStructure = `
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/          # Reusable UI components
-│   │   │   ├── phases/      # Phase-specific components
-│   │   │   └── layout/      # Layout components
-│   │   ├── pages/           # Route pages
-│   │   ├── lib/             # Utilities and API client
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── types/           # TypeScript interfaces
-│   │   └── constants/       # App constants
-│   └── public/              # Static assets
-│
-├── backend/
-│   ├── api/
-│   │   ├── views/           # API endpoints
-│   │   ├── serializers/     # Data serialization
-│   │   ├── models/          # Database models
-│   │   └── services/        # Business logic
-│   ├── core/                # Core settings
-│   └── utils/               # Helper functions
-│
-├── docker/                  # Docker configuration
-├── docs/                    # Documentation
-└── tests/                   # Test suites
-  `.trim();
-
   const colorMap: Record<string, { bg: string; border: string; text: string }> = {
     blue: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300' },
     purple: { bg: 'bg-purple-900/30', border: 'border-purple-600/50', text: 'text-purple-300' },
@@ -151,28 +132,92 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   };
 
   const [techStackData, setTechStackData] = useState<TechStackMap>(initialTechStack);
-  const [bestPractices, setBestPractices] = useState<string[]>([
-    'Use connection pooling for database',
-    'Implement Redis caching for hot data',
-    'Enable gzip compression for API responses',
-    'Use CDN for static assets',
-    'Implement lazy loading in frontend',
-  ]);
-  const [watchOuts, setWatchOuts] = useState<string[]>([
-    'N+1 query problems in ORM',
-    'Memory leaks in long-running processes',
-    'Unbounded pagination queries',
-    'Missing database indexes',
-    'Synchronous blocking operations',
-  ]);
+  const [bestPractices, setBestPractices] = useState<string[]>([]);
+  const [watchOuts, setWatchOuts] = useState<string[]>([]);
+  const [requestPath, setRequestPath] = useState<string[]>([]);
+  const [responsePath, setResponsePath] = useState<string[]>([]);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState({
-    bestPractices: bestPractices.join('\n'),
-    watchOuts: watchOuts.join('\n'),
+    bestPractices: '',
+    watchOuts: '',
   });
   const [flowStepsAi, setFlowStepsAi] = useState<string[] | null>(null);
   const [folderStructureAi, setFolderStructureAi] = useState<string | null>(null);
   const [componentsAi, setComponentsAi] = useState<string[] | null>(null);
+  const [developmentLoaded, setDevelopmentLoaded] = useState(false);
+  const lastAppliedContentRef = useRef<string | null>(null);
+
+  const parsedFromContent = React.useMemo(() => {
+    const result = {
+      bestPractices: [] as string[],
+      watchOuts: [] as string[],
+      requestPath: [] as string[],
+      responsePath: [] as string[],
+      folderStructure: null as string | null,
+      flowSteps: [] as string[],
+    };
+    if (!content) return result;
+
+    const lines = content.split('\n');
+    const sectionRegex = /^(#{1,6})\s+(.+?)\s*$/;
+    type Section = { title: string; level: number; lines: string[] };
+    const sections: Section[] = [];
+    let current: Section | null = null;
+    for (const line of lines) {
+      const m = line.match(sectionRegex);
+      if (m) {
+        current = { title: m[2].trim(), level: m[1].length, lines: [] };
+        sections.push(current);
+      } else if (current) {
+        current.lines.push(line);
+      }
+    }
+
+    const findSection = (matcher: (title: string) => boolean): Section | undefined =>
+      sections.find((s) => matcher(s.title.toLowerCase()));
+
+    const bulletRegex = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/;
+    const collectBullets = (sec: Section | undefined): string[] => {
+      if (!sec) return [];
+      const out: string[] = [];
+      for (const l of sec.lines) {
+        const trimmed = l.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith('#')) break;
+        const bm = trimmed.match(bulletRegex);
+        if (bm) out.push(bm[1].trim());
+      }
+      return out;
+    };
+
+    const bp = findSection((t) => t.includes('best practice'));
+    const wo = findSection((t) => t.includes('watch out') || t.includes('pitfall') || t.includes('common mistake'));
+    const rp = findSection((t) => t.includes('request path'));
+    const resp = findSection((t) => t.includes('response path'));
+    const flow = findSection((t) => t === 'flow' || t.includes('development flow') || t.includes('system flow') || t.includes('request flow'));
+    const folder = findSection((t) => t.includes('folder structure') || t.includes('directory structure') || t.includes('project structure'));
+
+    result.bestPractices = collectBullets(bp);
+    result.watchOuts = collectBullets(wo);
+    result.requestPath = collectBullets(rp);
+    result.responsePath = collectBullets(resp);
+    result.flowSteps = collectBullets(flow);
+
+    if (folder) {
+      const text = folder.lines.join('\n');
+      const codeMatch = text.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+      if (codeMatch) {
+        result.folderStructure = codeMatch[1].trimEnd();
+      } else {
+        const treeLines = folder.lines.filter((l) => /[├└│─]/.test(l) || /^\s*\w[\w./-]*\/?\s*$/.test(l));
+        if (treeLines.length >= 3) {
+          result.folderStructure = treeLines.join('\n');
+        }
+      }
+    }
+
+    return result;
+  }, [content]);
 
   const suggestedTechs = React.useMemo(() => {
     const suggestions: { label: string; details: string }[] = [];
@@ -326,7 +371,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
         if (Array.isArray(data.stack) && data.stack.length > 0) {
           const next: TechStackMap = { ...initialTechStack };
-          data.stack.forEach((raw: any) => {
+          (data.stack as RawStackItem[]).forEach((raw) => {
             const category = raw.category || 'frontend';
             const item: TechStackItem = {
               name: raw.name || '',
@@ -342,16 +387,17 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
         }
 
         if (data.notes && typeof data.notes === 'object') {
-          const bp = Array.isArray(data.notes.bestPractices)
-            ? data.notes.bestPractices
-            : typeof data.notes.bestPractices === 'string'
-            ? data.notes.bestPractices.split('\n').map((s: string) => s.trim()).filter(Boolean)
-            : bestPractices;
-          const wo = Array.isArray(data.notes.watchOuts)
-            ? data.notes.watchOuts
-            : typeof data.notes.watchOuts === 'string'
-            ? data.notes.watchOuts.split('\n').map((s: string) => s.trim()).filter(Boolean)
-            : watchOuts;
+          const notes = data.notes as DevelopmentNotes;
+          const bp = Array.isArray(notes.bestPractices)
+            ? notes.bestPractices
+            : typeof notes.bestPractices === 'string'
+            ? notes.bestPractices.split('\n').map((s) => s.trim()).filter(Boolean)
+            : [];
+          const wo = Array.isArray(notes.watchOuts)
+            ? notes.watchOuts
+            : typeof notes.watchOuts === 'string'
+            ? notes.watchOuts.split('\n').map((s) => s.trim()).filter(Boolean)
+            : [];
 
           setBestPractices(bp);
           setWatchOuts(wo);
@@ -360,18 +406,16 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             watchOuts: wo.join('\n'),
           });
 
-          if (Array.isArray((data.notes as any).flowSteps)) {
-            setFlowStepsAi((data.notes as any).flowSteps as string[]);
-          }
-          if (typeof (data.notes as any).folderStructure === 'string') {
-            setFolderStructureAi((data.notes as any).folderStructure as string);
-          }
-          if (Array.isArray((data.notes as any).components)) {
-            setComponentsAi((data.notes as any).components as string[]);
-          }
+          if (Array.isArray(notes.flowSteps)) setFlowStepsAi(notes.flowSteps);
+          if (typeof notes.folderStructure === 'string') setFolderStructureAi(notes.folderStructure);
+          if (Array.isArray(notes.components)) setComponentsAi(notes.components);
+          if (Array.isArray(notes.requestPath)) setRequestPath(notes.requestPath);
+          if (Array.isArray(notes.responsePath)) setResponsePath(notes.responsePath);
         }
       } catch (err) {
         console.error('Failed to load development data', err);
+      } finally {
+        if (!cancelled) setDevelopmentLoaded(true);
       }
     })();
     return () => {
@@ -379,7 +423,18 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     };
   }, [projectId]);
 
-  const persistDevelopment = async (nextStack: TechStackMap, nextBest: string[], nextWatch: string[]) => {
+  const persistDevelopment = async (
+    nextStack: TechStackMap,
+    nextBest: string[],
+    nextWatch: string[],
+    extras?: {
+      flowSteps?: string[] | null;
+      folderStructure?: string | null;
+      components?: string[] | null;
+      requestPath?: string[];
+      responsePath?: string[];
+    }
+  ) => {
     if (!projectId) return;
     const flatStack: any[] = [];
     Object.entries(nextStack).forEach(([category, items]) => {
@@ -393,16 +448,97 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
         });
       });
     });
-    const notes = {
+    const notes: DevelopmentNotes = {
       bestPractices: nextBest,
       watchOuts: nextWatch,
+      requestPath: extras?.requestPath ?? requestPath,
+      responsePath: extras?.responsePath ?? responsePath,
     };
+    const flowVal = extras?.flowSteps !== undefined ? extras.flowSteps : flowStepsAi;
+    if (flowVal && flowVal.length) notes.flowSteps = flowVal;
+    const folderVal = extras?.folderStructure !== undefined ? extras.folderStructure : folderStructureAi;
+    if (folderVal) notes.folderStructure = folderVal;
+    const compsVal = extras?.components !== undefined ? extras.components : componentsAi;
+    if (compsVal && compsVal.length) notes.components = compsVal;
     try {
       await api.saveDevelopment(projectId, { stack: flatStack, notes });
     } catch (err) {
       console.error('Failed to save development data', err);
     }
   };
+
+  // When the AI markdown content surfaces structured sections, hydrate state
+  // and persist them so the Development phase reflects this project's plan
+  // instead of static placeholder text.
+  //
+  // Apply rules:
+  //   - Wait until saved dev data has loaded (so we never overwrite stored
+  //     values with empty defaults on mount).
+  //   - On the first apply for any given content payload: refresh sections
+  //     from the parsed plan (regeneration should update stale notes).
+  //   - For the same content payload, only fill missing sections so we do
+  //     not clobber the user's manual edits between renders.
+  useEffect(() => {
+    if (!projectId) return;
+    if (!developmentLoaded) return;
+    if (!content) return;
+
+    const isNewContent = lastAppliedContentRef.current !== content;
+    const apply = (parsed: string[] | string | null, current: string[] | string | null) => {
+      if (parsed === null || (Array.isArray(parsed) && parsed.length === 0) || parsed === '') return false;
+      if (isNewContent) return true;
+      if (Array.isArray(current)) return current.length === 0;
+      return !current;
+    };
+
+    const updates: {
+      bp?: string[];
+      wo?: string[];
+      req?: string[];
+      res?: string[];
+      flow?: string[];
+      folder?: string;
+    } = {};
+    if (apply(parsedFromContent.bestPractices, bestPractices)) updates.bp = parsedFromContent.bestPractices;
+    if (apply(parsedFromContent.watchOuts, watchOuts)) updates.wo = parsedFromContent.watchOuts;
+    if (apply(parsedFromContent.requestPath, requestPath)) updates.req = parsedFromContent.requestPath;
+    if (apply(parsedFromContent.responsePath, responsePath)) updates.res = parsedFromContent.responsePath;
+    if (apply(parsedFromContent.flowSteps, flowStepsAi)) updates.flow = parsedFromContent.flowSteps;
+    if (apply(parsedFromContent.folderStructure, folderStructureAi)) {
+      updates.folder = parsedFromContent.folderStructure as string;
+    }
+
+    lastAppliedContentRef.current = content;
+
+    if (Object.keys(updates).length === 0) return;
+
+    const nextBest = updates.bp ?? bestPractices;
+    const nextWatch = updates.wo ?? watchOuts;
+    const nextReq = updates.req ?? requestPath;
+    const nextRes = updates.res ?? responsePath;
+    const nextFlow = updates.flow ?? flowStepsAi;
+    const nextFolder = updates.folder ?? folderStructureAi;
+
+    if (updates.bp) setBestPractices(nextBest);
+    if (updates.wo) setWatchOuts(nextWatch);
+    if (updates.req) setRequestPath(nextReq);
+    if (updates.res) setResponsePath(nextRes);
+    if (updates.flow) setFlowStepsAi(nextFlow ?? null);
+    if (updates.folder) setFolderStructureAi(nextFolder ?? null);
+    if (updates.bp || updates.wo) {
+      setNotesDraft({
+        bestPractices: nextBest.join('\n'),
+        watchOuts: nextWatch.join('\n'),
+      });
+    }
+    persistDevelopment(techStackData, nextBest, nextWatch, {
+      flowSteps: nextFlow,
+      folderStructure: nextFolder,
+      requestPath: nextReq,
+      responsePath: nextRes,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedFromContent, projectId, developmentLoaded, content]);
 
   const handleToggleRecommended = (category: string, idx: number) => {
     setTechStackData((prev) => {
@@ -430,8 +566,8 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
   const startEditingNotes = () => {
     setNotesDraft({
-      bestPractices: bestPractices.join('\n'),
-      watchOuts: watchOuts.join('\n'),
+      bestPractices: (bestPractices.length > 0 ? bestPractices : parsedFromContent.bestPractices).join('\n'),
+      watchOuts: (watchOuts.length > 0 ? watchOuts : parsedFromContent.watchOuts).join('\n'),
     });
     setEditingNotes(true);
   };
@@ -452,24 +588,27 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   };
 
   const resolvedFlowSteps = React.useMemo(() => {
-    if (flowStepsAi && flowStepsAi.length) {
-      return flowStepsAi.map((raw, index) => {
-        const [namePart, descPart] = raw.split(':');
-        const name = (namePart || `Step ${index + 1}`).trim();
-        const description = (descPart || name).trim();
-        return {
-          id: index + 1,
-          name,
-          description,
-          icon: GitBranch,
-          color: 'blue' as const,
-        };
-      });
-    }
-    return flowSteps;
-  }, [flowStepsAi]);
+    const source = flowStepsAi && flowStepsAi.length ? flowStepsAi : parsedFromContent.flowSteps;
+    if (!source || source.length === 0) return [];
+    return source.map((raw, index) => {
+      const [namePart, descPart] = raw.split(':');
+      const name = (namePart || `Step ${index + 1}`).trim();
+      const description = (descPart || name).trim();
+      return {
+        id: index + 1,
+        name,
+        description,
+        icon: GitBranch,
+        color: 'blue' as const,
+      };
+    });
+  }, [flowStepsAi, parsedFromContent.flowSteps]);
 
-  const resolvedFolderStructure = folderStructureAi || folderStructure;
+  const resolvedFolderStructure = folderStructureAi || parsedFromContent.folderStructure || '';
+  const resolvedRequestPath = requestPath.length > 0 ? requestPath : parsedFromContent.requestPath;
+  const resolvedResponsePath = responsePath.length > 0 ? responsePath : parsedFromContent.responsePath;
+  const resolvedBestPractices = bestPractices.length > 0 ? bestPractices : parsedFromContent.bestPractices;
+  const resolvedWatchOuts = watchOuts.length > 0 ? watchOuts : parsedFromContent.watchOuts;
 
   return (
     <div className="space-y-6">
@@ -702,6 +841,12 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             </CardHeader>
             <CardContent className="p-6">
               <div className="relative">
+                {resolvedFlowSteps.length === 0 && (
+                  <div className="text-sm text-gray-400 mb-4">
+                    No flow steps generated yet. Generate a Development Plan to render a system flow tailored to this
+                    project.
+                  </div>
+                )}
                 {/* Flow Steps */}
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {resolvedFlowSteps.map((step, idx) => {
@@ -726,26 +871,42 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 {/* Flow Legend */}
                 <div className="mt-6 p-4 bg-[var(--brand-850)] rounded-xl border border-[var(--brand-700)]">
                   <h4 className="font-medium text-gray-200 mb-3">Flow Details</h4>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <h5 className="font-medium text-gray-300 mb-2">Request Path</h5>
-                      <ol className="space-y-1 text-gray-400">
-                        <li>1. Client sends HTTP request</li>
-                        <li>2. API Gateway validates JWT token</li>
-                        <li>3. Load balancer routes to healthy instance</li>
-                        <li>4. Application processes business logic</li>
-                      </ol>
+                  {resolvedRequestPath.length === 0 && resolvedResponsePath.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      Request and response paths will appear here once you generate a Development Plan for this project.
+                    </p>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <h5 className="font-medium text-gray-300 mb-2">Request Path</h5>
+                        {resolvedRequestPath.length > 0 ? (
+                          <ol className="space-y-1 text-gray-400">
+                            {resolvedRequestPath.map((step, idx) => (
+                              <li key={idx}>
+                                {idx + 1}. {step}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="text-xs text-gray-500">No request path generated yet.</p>
+                        )}
+                      </div>
+                      <div>
+                        <h5 className="font-medium text-gray-300 mb-2">Response Path</h5>
+                        {resolvedResponsePath.length > 0 ? (
+                          <ol className="space-y-1 text-gray-400">
+                            {resolvedResponsePath.map((step, idx) => (
+                              <li key={idx}>
+                                {resolvedRequestPath.length + idx + 1}. {step}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="text-xs text-gray-500">No response path generated yet.</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="font-medium text-gray-300 mb-2">Response Path</h5>
-                      <ol className="space-y-1 text-gray-400">
-                        <li>5. Check cache for existing data</li>
-                        <li>6. Query database if cache miss</li>
-                        <li>7. Serialize response to JSON</li>
-                        <li>8. Return to client with headers</li>
-                      </ol>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -805,9 +966,16 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            <pre className="p-6 bg-gray-900 text-gray-100 text-sm font-mono overflow-x-auto">
-              {resolvedFolderStructure}
-            </pre>
+            {resolvedFolderStructure ? (
+              <pre className="p-6 bg-gray-900 text-gray-100 text-sm font-mono overflow-x-auto">
+                {resolvedFolderStructure}
+              </pre>
+            ) : (
+              <div className="p-6 text-sm text-gray-400">
+                No folder structure has been generated for this project yet. Generate a Development Plan to see a tree
+                tailored to your chosen stack.
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -892,12 +1060,16 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                   value={notesDraft.bestPractices}
                   onChange={(e) => setNotesDraft((prev) => ({ ...prev, bestPractices: e.target.value }))}
                 />
-              ) : (
+              ) : resolvedBestPractices.length > 0 ? (
                 <ul className="space-y-2 text-sm text-gray-400">
-                  {bestPractices.map((note, idx) => (
+                  {resolvedBestPractices.map((note, idx) => (
                     <li key={idx}>• {note}</li>
                   ))}
                 </ul>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Generate a Development Plan to populate stack-specific best practices, or click Edit Notes to add your own.
+                </p>
               )}
             </div>
             <div>
@@ -912,12 +1084,16 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                   value={notesDraft.watchOuts}
                   onChange={(e) => setNotesDraft((prev) => ({ ...prev, watchOuts: e.target.value }))}
                 />
-              ) : (
+              ) : resolvedWatchOuts.length > 0 ? (
                 <ul className="space-y-2 text-sm text-gray-400">
-                  {watchOuts.map((note, idx) => (
+                  {resolvedWatchOuts.map((note, idx) => (
                     <li key={idx}>• {note}</li>
                   ))}
                 </ul>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Generate a Development Plan to populate stack-specific pitfalls, or click Edit Notes to add your own.
+                </p>
               )}
             </div>
           </div>

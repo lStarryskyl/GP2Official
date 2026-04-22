@@ -175,6 +175,119 @@ const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = f
   );
 };
 
+// ─── Mobile-friendly vertical flowchart ──────────────────────────────────────
+interface MobileSDLCFlowchartProps {
+  visibleCount: number;
+}
+
+const MobileSDLCFlowchart: React.FC<MobileSDLCFlowchartProps> = ({ visibleCount }) => {
+  return (
+    <ol
+      style={{
+        listStyle: 'none',
+        margin: 0,
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        width: '100%',
+        maxWidth: '320px',
+      }}
+    >
+      {PHASES.map((phase, i) => {
+        if (i >= visibleCount) return null;
+        const isOrange = i >= ROW1_COUNT - 1;
+        const accent = isOrange ? '#F97316' : '#1A6FD4';
+        const bg = isOrange ? 'rgba(249,115,22,0.12)' : 'rgba(26,111,212,0.15)';
+        const isLast = i === PHASES.length - 1 || i === visibleCount - 1;
+        return (
+          <li
+            key={phase.id}
+            style={{
+              position: 'relative',
+              animation: 'nodeAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: bg,
+                border: `1px solid ${accent}`,
+                boxShadow: `0 0 12px ${isOrange ? 'rgba(249,115,22,0.18)' : 'rgba(26,111,212,0.22)'}`,
+              }}
+            >
+              <div
+                style={{
+                  flexShrink: 0,
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  background: accent,
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '12px',
+                }}
+              >
+                {i + 1}
+              </div>
+              <span
+                style={{
+                  color: '#E8EDF5',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontWeight: 600,
+                  fontSize: '14px',
+                }}
+              >
+                {phase.label}
+              </span>
+            </div>
+            {!isLast && (
+              <div
+                style={{
+                  width: '2px',
+                  height: '8px',
+                  margin: '0 auto',
+                  background: i + 1 >= ROW1_COUNT - 1 ? '#F97316' : '#1A6FD4',
+                  opacity: 0.7,
+                }}
+              />
+            )}
+          </li>
+        );
+      })}
+      <style>{`
+        @keyframes nodeAppear {
+          from { opacity: 0; transform: scale(0.6); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </ol>
+  );
+};
+
+// ─── Responsive helper ───────────────────────────────────────────────────────
+function useIsMobile(breakpoint: number = 600): boolean {
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < breakpoint;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // ─── Splash Screen ───────────────────────────────────────────────────────────
 interface SplashProps { onEnter: () => void; onViewDocs: () => void; onComplete?: () => void; }
 
@@ -197,6 +310,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete }
   const [visible, setVisible] = useState(0);
   const [showCTA, setShowCTA] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const isMobile = useIsMobile(600);
 
   useEffect(() => {
     if (visible < PHASES.length) {
@@ -215,9 +329,14 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete }
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center',
+      justifyContent: isMobile ? 'flex-start' : 'center',
+      paddingTop: isMobile ? '32px' : 0,
+      paddingBottom: isMobile ? '32px' : 0,
       background: 'linear-gradient(160deg, #0a1f3d 0%, #0D1B2A 55%, #0d1520 100%)',
-      position: 'relative', overflow: 'hidden',
+      position: 'relative',
+      overflowX: 'hidden',
+      overflowY: isMobile ? 'auto' : 'hidden',
     }}>
       <div className="bg-grid" style={{ position: 'absolute', inset: 0, opacity: 0.25 }} />
       <div className="glow-orb glow-orb-forest" style={{ width: '700px', height: '700px', top: '-25%', left: '-20%', opacity: 0.35 }} />
@@ -254,8 +373,15 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete }
         </p>
       </div>
 
-      <div style={{ position: 'relative', zIndex: 1, overflowX: 'auto', maxWidth: '100vw', padding: '0 16px' }}>
-        <SDLCFlowchart visibleCount={visible} />
+      <div style={{
+        position: 'relative', zIndex: 1,
+        overflowX: isMobile ? 'visible' : 'auto',
+        maxWidth: '100vw', padding: '0 16px',
+        display: 'flex', justifyContent: 'center',
+      }}>
+        {isMobile
+          ? <MobileSDLCFlowchart visibleCount={visible} />
+          : <SDLCFlowchart visibleCount={visible} />}
       </div>
 
       <p style={{
@@ -342,6 +468,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => !safeLocalStorage.getItem('acorn_visited'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile(600);
 
   if (showSplash) {
     return (
@@ -515,7 +642,7 @@ const LandingPage: React.FC = () => {
           </p>
 
           {/* Flowchart showcase */}
-          <div className="lp-flowchart-card" style={{ marginTop: '24px', padding: '28px 32px', ...card({ borderColor: 'rgba(26,111,212,0.25)' }), width: '100%', overflowX: 'auto' }}>
+          <div className="lp-flowchart-card" style={{ marginTop: '24px', padding: isMobile ? '20px 16px' : '28px 32px', ...card({ borderColor: 'rgba(26,111,212,0.25)' }), width: '100%', overflowX: isMobile ? 'visible' : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '8px' }}>
               <p style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
                 Complete SDLC Pipeline · 11 Phases
@@ -532,7 +659,9 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <SDLCFlowchart visibleCount={11} compact />
+              {isMobile
+                ? <MobileSDLCFlowchart visibleCount={11} />
+                : <SDLCFlowchart visibleCount={11} compact />}
             </div>
           </div>
         </div>

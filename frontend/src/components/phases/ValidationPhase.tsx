@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { Requirement } from '@/types';
+import { api } from '@/lib/api';
 import {
   CheckCircle2,
   XCircle,
@@ -14,10 +15,12 @@ import {
   ChevronUp,
   FileText,
   Users,
+  Loader2,
 } from 'lucide-react';
 
 interface ValidationItem {
   id: string;
+  requirementId?: string;
   name: string;
   description: string;
   status: 'approved' | 'pending' | 'rejected' | 'review';
@@ -39,9 +42,12 @@ const buildRequirementItems = (requirements?: Requirement[]): ValidationItem[] =
   let counter = 1;
   return requirements.map((req) => ({
     id: `r${counter++}`,
+    requirementId: req.requirement_id,
     name: req.title,
     description: req.description,
-    status: 'pending',
+    status: (req.status === 'approved' || req.status === 'rejected' || req.status === 'review')
+      ? req.status as ValidationItem['status']
+      : 'pending',
   }));
 };
 
@@ -81,6 +87,8 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
     setExpandedItems(newExpanded);
   };
 
+  const [savingId, setSavingId] = useState<string | null>(null);
+
   // Local editable state for all items parsed from AI content
   const [itemsById, setItemsById] = useState<Record<string, ValidationItem>>(() => {
     const map: Record<string, ValidationItem> = {};
@@ -89,6 +97,22 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
     });
     return map;
   });
+
+  const handleSetStatus = async (itemId: string, status: 'approved' | 'rejected') => {
+    const item = itemsById[itemId];
+    setItemsById((prev) => ({ ...prev, [itemId]: { ...prev[itemId], status } }));
+    if (!item?.requirementId) return;
+    setSavingId(itemId);
+    try {
+      await api.updateRequirement(item.requirementId, { status });
+    } catch (err) {
+      console.error('Failed to persist validation status', err);
+      setItemsById((prev) => ({ ...prev, [itemId]: { ...prev[itemId], status: item.status } }));
+      window.location.reload();
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const getStats = (items: ValidationItem[]) => {
     const approved = items.filter(i => i.status === 'approved').length;
@@ -229,33 +253,29 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
                             size="sm"
                             variant="outline"
                             className="flex items-center gap-1"
-                            onClick={() =>
-                              setItemsById((prev) => ({
-                                ...prev,
-                                [item.id]: {
-                                  ...prev[item.id],
-                                  status: 'approved',
-                                },
-                              }))
-                            }
+                            disabled={savingId === item.id}
+                            onClick={() => handleSetStatus(item.id, 'approved')}
                           >
-                            <ThumbsUp className="h-3 w-3" /> Approve
+                            {savingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ThumbsUp className="h-3 w-3" />
+                            )}{' '}
+                            Approve
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             className="flex items-center gap-1 text-red-600"
-                            onClick={() =>
-                              setItemsById((prev) => ({
-                                ...prev,
-                                [item.id]: {
-                                  ...prev[item.id],
-                                  status: 'rejected',
-                                },
-                              }))
-                            }
+                            disabled={savingId === item.id}
+                            onClick={() => handleSetStatus(item.id, 'rejected')}
                           >
-                            <ThumbsDown className="h-3 w-3" /> Reject
+                            {savingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ThumbsDown className="h-3 w-3" />
+                            )}{' '}
+                            Reject
                           </Button>
                         </div>
                       </div>

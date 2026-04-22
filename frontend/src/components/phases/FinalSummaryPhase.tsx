@@ -64,14 +64,6 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
     }
   };
 
-  const keyDecisions = [
-    { decision: 'Tech Stack: React + FastAPI + MongoDB', impact: 'High', date: 'Week 2' },
-    { decision: 'Single backend service with clear phase workflow', impact: 'High', date: 'Week 3' },
-    { decision: 'Optional LLM integration (Gemini / HuggingFace / stub)', impact: 'Medium', date: 'Week 4' },
-    { decision: 'Container-ready deployment with ASGI (uvicorn)', impact: 'High', date: 'Week 5' },
-    { decision: 'Iterative delivery across 8 planning phases', impact: 'Medium', date: 'Week 1' },
-  ];
-
   const risks = [
     { risk: 'Third-party API rate limits may affect performance', severity: 'Medium', mitigation: 'Implement caching and rate limit handling' },
     { risk: 'Team capacity constraints during Q4', severity: 'High', mitigation: 'Prioritize critical features, consider contractors' },
@@ -79,12 +71,32 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
     { risk: 'Security compliance requirements (GDPR)', severity: 'High', mitigation: 'Early legal review, privacy by design' },
   ];
 
-  const nextSteps = [
-    { step: 'Finalize development environment setup', owner: 'DevOps Team', dueDate: 'This week' },
-    { step: 'Begin Sprint 1 with core authentication module', owner: 'Backend Team', dueDate: 'Next week' },
-    { step: 'Set up CI/CD pipeline', owner: 'DevOps Team', dueDate: 'This week' },
-    { step: 'Schedule stakeholder review for MVP demo', owner: 'PM', dueDate: 'Month 2' },
-  ];
+  const nextSteps = phaseConfigs
+    .filter((p) => phaseStatus[p.id] !== 'completed')
+    .slice(0, 4)
+    .map((p) => ({
+      step: `Complete: ${p.title}`,
+      owner: 'Project Team',
+      dueDate: 'Upcoming',
+    }));
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      prompt('Copy this link:', window.location.href);
+    }
+  };
+
+  const handleEmail = () => {
+    const subject = encodeURIComponent(`Project Summary: ${projectName}`);
+    const body = encodeURIComponent(`View the full project summary at: ${window.location.href}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
 
   const completedPhases = Object.values(phaseStatus).filter(s => s === 'completed').length;
   const overallProgress = Math.round((completedPhases / phaseConfigs.length) * 100);
@@ -175,6 +187,49 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
       </Card>
 
 
+      {/* Key Decisions */}
+      <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <Flag className="h-5 w-5" style={{ color: '#1A6FD4' }} />
+            Key Decisions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: 'var(--brand-750, #152238)', border: '1px solid rgba(26,111,212,0.2)' }}>
+            <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: '#60a5fa' }} />
+            <p style={{ color: 'var(--text-muted)' }}>
+              Key decisions are captured in phase artifacts. Review the requirements, design, and planning phases for the full decision log.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Next Steps */}
+      {nextSteps.length > 0 && (
+        <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <ArrowRight className="h-5 w-5" style={{ color: '#1A6FD4' }} />
+              Next Steps
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {nextSteps.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--brand-750, #152238)', border: '1px solid var(--brand-700)' }}>
+                  <div>
+                    <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{item.step}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.owner}</div>
+                  </div>
+                  <Badge variant="secondary">{item.dueDate}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Export & Share */}
       <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.2)' }}>
         <CardHeader>
@@ -186,19 +241,19 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handlePrint}>
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
               Print Summary
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleEmail}>
               <Mail className="mr-2 h-4 w-4" />
               Email Report
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleShareLink}>
               <Share2 className="mr-2 h-4 w-4" />
               Share Link
             </Button>

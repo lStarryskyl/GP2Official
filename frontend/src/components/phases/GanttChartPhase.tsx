@@ -396,7 +396,33 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
                 </select>
               </div>
 
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const headers = ['ID', 'Name', 'Phase', 'Status', 'Priority', 'Start Date', 'Due Date', 'Progress (%)'];
+                  const rows = localTasks.map((t) => [
+                    t.task_id,
+                    `"${t.title.replace(/"/g, '""')}"`,
+                    `"${(t.phase || 'General').replace(/"/g, '""')}"`,
+                    t.status,
+                    t.priority,
+                    t.start_date || '',
+                    t.due_date || '',
+                    t.estimate_hours && t.actual_hours
+                      ? String(Math.min(100, Math.round((t.actual_hours / t.estimate_hours) * 100)))
+                      : '0',
+                  ]);
+                  const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'gantt-tasks.csv';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>

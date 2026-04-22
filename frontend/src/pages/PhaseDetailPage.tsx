@@ -1880,7 +1880,7 @@ export const PhaseDetailPage: React.FC = () => {
             {/* Cost vs Benefit Comparison card removed here; lives in cost_benefit phase instead */}
             <div className="bg-[var(--brand-900)] border border-[var(--brand-700)]/50 rounded-xl p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-900/200/20 rounded-lg border border-blue-500/30">
+                <div className="p-2 bg-blue-900/20 rounded-lg border border-blue-500/30">
                   <Shield className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>

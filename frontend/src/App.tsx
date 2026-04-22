@@ -28,10 +28,19 @@ import SDLCGuidePage from './pages/SDLCGuidePage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
+  const [isChecking, setIsChecking] = React.useState(true);
 
   useEffect(() => {
-    checkAuth();
+    checkAuth().finally(() => setIsChecking(false));
   }, []);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

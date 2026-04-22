@@ -70,7 +70,7 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                       isActive
                         ? 'bg-[var(--brand-900)]/20 text-[var(--brand-900)]'
                         : isCompleted
-                          ? 'bg-blue-900/200/20 text-blue-400'
+                          ? 'bg-blue-900/20 text-blue-400'
                           : 'bg-[var(--brand-700)] text-gray-500'
                     }`}>
                       {isCompleted && !isActive ? <Check className="h-3 w-3" /> : phase.stepNumber}

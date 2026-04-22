@@ -329,7 +329,7 @@ export const ProjectDetailPage: React.FC = () => {
   };
 
   const statusPillStyles: Record<string, string> = {
-    completed:   'bg-blue-900/200/20 text-blue-400 border border-blue-500/30',
+    completed:   'bg-blue-900/20 text-blue-400 border border-blue-500/30',
     ready:       'bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30',
     in_progress: 'bg-[var(--orange-400)]/20 text-[var(--orange-400)] border border-[var(--orange-400)]/30',
     locked:      'bg-[var(--brand-700)]/30 text-[var(--text-muted)] border border-[var(--brand-700)]',

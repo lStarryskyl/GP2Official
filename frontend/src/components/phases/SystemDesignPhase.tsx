@@ -9,7 +9,6 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Move,
   RotateCcw,
   Download,
   Database,
@@ -62,8 +61,50 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedDiagram, setSelectedDiagram] = useState<string | null>('architecture');
   const [expandedApi, setExpandedApi] = useState<Set<string>>(new Set(['auth']));
-  const [isPanning, setIsPanning] = useState(false);
   const diagramRef = useRef<HTMLDivElement>(null);
+
+  const handleMaximize = () => {
+    const el = diagramRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen().catch(() => {});
+    }
+  };
+
+  const handleDownloadDiagram = () => {
+    const el = diagramRef.current;
+    if (!el) return;
+    const svgEl = el.querySelector('svg');
+    if (svgEl) {
+      const blob = new Blob([svgEl.outerHTML], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedDiagram || 'diagram'}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    const w = Math.round(rect.width) || 800;
+    const h = Math.round(rect.height) || 500;
+    const svgContent = [
+      `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}">`,
+      `<foreignObject width="100%" height="100%">`,
+      `<div xmlns="http://www.w3.org/1999/xhtml" style="background:#f9fafb;padding:16px;box-sizing:border-box;">`,
+      el.innerHTML,
+      `</div></foreignObject></svg>`,
+    ].join('');
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedDiagram || 'diagram'}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const diagrams: DiagramType[] = [
     { id: 'architecture', name: 'Architecture Diagram', description: 'High-level system components', icon: <Layers className="h-5 w-5" />, status: 'complete', color: 'blue' },
@@ -188,18 +229,10 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
             <Button variant="outline" size="sm" onClick={resetView}>
               <RotateCcw className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsPanning(!isPanning)}
-              className={isPanning ? 'bg-blue-900/40 border-blue-500/50' : ''}
-            >
-              <Move className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleMaximize}>
               <Maximize2 className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleDownloadDiagram}>
               <Download className="h-4 w-4" />
             </Button>
           </div>
@@ -207,7 +240,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
         <CardContent className="p-0">
           <div
             ref={diagramRef}
-            className={`relative overflow-auto bg-[#152238] ${isPanning ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            className="relative overflow-auto bg-[#152238]"
             style={{ height: '500px' }}
           >
             <div

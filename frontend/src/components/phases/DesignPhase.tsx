@@ -73,8 +73,11 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
       case 'sequence':
         return 'sequence';
       case 'erd':
+        return 'erd';
       case 'state':
+        return 'state_machine';
       case 'activity':
+        return 'activity';
       default:
         return 'use_case';
     }

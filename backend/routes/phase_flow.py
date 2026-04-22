@@ -7,7 +7,7 @@ import time
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from openai import AsyncOpenAI
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 from models.user import User
@@ -223,17 +223,39 @@ async def unlock_phase(
         )
 
 
+class PhaseCompleteRequest(BaseModel):
+    notes: Optional[str] = Field(default="", max_length=2000)
+
+
 @router.post("/projects/{project_id}/phases/{phase}/complete/")
 async def mark_phase_complete(
     project_id: str,
     phase: str,
+    payload: Optional[PhaseCompleteRequest] = None,
     current_user: User = Depends(get_current_user),
 ):
-    """Mark a specific phase as completed."""
+    """Mark a specific phase as completed with optional completion notes."""
     project = await project_service.get_project(project_id, current_user)
+    notes = (payload.notes if payload else "") or ""
+    completed_by_name = (
+        getattr(current_user, "full_name", None)
+        or getattr(current_user, "email", None)
+        or current_user.id
+    )
     try:
-        phase_status = await phase_service.mark_complete(project_id, project.organization, phase)
-        return {"phases": phase_status, "order": PHASE_ORDER}
+        phase_status, completion_meta = await phase_service.mark_complete(
+            project_id,
+            project.organization,
+            phase,
+            notes=notes,
+            completed_by=current_user.id,
+            completed_by_name=completed_by_name,
+        )
+        return {
+            "phases": phase_status,
+            "order": PHASE_ORDER,
+            "completion_meta": completion_meta,
+        }
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -188,6 +188,7 @@ async def ensure_tables_exist():
                     status TEXT DEFAULT 'draft',
                     feature_tier TEXT DEFAULT 'pro',
                     phase_status JSONB DEFAULT '{}',
+                    phase_completion_meta JSONB DEFAULT '{}',
                     roadmap JSONB,
                     roadmap_summary JSONB,
                     feasibility_studies JSONB,
@@ -289,7 +290,15 @@ async def ensure_tables_exist():
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)')
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_ai_runs_project ON ai_runs(project_id)')
-        
+
+        # Migration: ensure phase_completion_meta column exists on existing projects tables
+        try:
+            await conn.execute(
+                "ALTER TABLE projects ADD COLUMN IF NOT EXISTS phase_completion_meta JSONB DEFAULT '{}'"
+            )
+        except Exception as exc:
+            print(f"[SUPABASE] Could not add phase_completion_meta column: {exc}")
+
     print("[SUPABASE] ✅ Database tables verified/created successfully!")
 
 

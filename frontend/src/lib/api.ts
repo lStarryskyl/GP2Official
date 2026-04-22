@@ -494,9 +494,22 @@ class ApiClient {
     return response.data.phases;
   }
 
-  async markPhaseComplete(projectId: string, phase: string): Promise<Record<string, string>> {
-    const response = await this.client.post(`/projects/${projectId}/phases/${phase}/complete/`);
-    return response.data.phases;
+  async markPhaseComplete(
+    projectId: string,
+    phase: string,
+    notes: string = ''
+  ): Promise<{
+    phases: Record<string, string>;
+    completion_meta: Record<string, import('@/types').PhaseCompletionMeta>;
+  }> {
+    const response = await this.client.post(
+      `/projects/${projectId}/phases/${phase}/complete/`,
+      { notes }
+    );
+    return {
+      phases: response.data.phases,
+      completion_meta: response.data.completion_meta || {},
+    };
   }
 
   async getRoadmap(projectId: string): Promise<{ milestones: any[]; summary?: any[] }> {

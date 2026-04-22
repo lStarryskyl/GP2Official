@@ -90,8 +90,18 @@ class PhaseFlowService:
         
         raise ValueError("Invalid phase")
 
-    async def mark_complete(self, project_id: str, organization: str, phase: str) -> Dict[str, str]:
-        """Mark a phase as completed and unlock the next phase."""
+    async def mark_complete(
+        self,
+        project_id: str,
+        organization: str,
+        phase: str,
+        notes: Optional[str] = None,
+        completed_by: Optional[str] = None,
+        completed_by_name: Optional[str] = None,
+    ) -> Tuple[Dict[str, str], Dict[str, dict]]:
+        """Mark a phase as completed, record completion metadata, and unlock the next phase."""
+        from datetime import datetime, timezone
+
         project = await self.project_repo.get_by_id(project_id, organization)
         if not project:
             raise ValueError("Project not found")
@@ -110,8 +120,18 @@ class PhaseFlowService:
             if status.get(next_phase) in ("locked", "not_started"):
                 status[next_phase] = "ready"
 
-        updated_project = await self.project_repo.update_phase_status(project_id, organization, status)
-        return updated_project.phase_status
+        completion_meta = dict(getattr(project, "phase_completion_meta", None) or {})
+        completion_meta[phase] = {
+            "completed_by": completed_by,
+            "completed_by_name": completed_by_name,
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "notes": (notes or "").strip(),
+        }
+
+        updated_project = await self.project_repo.update_phase_completion(
+            project_id, organization, status, completion_meta
+        )
+        return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
 
     async def generate_phase(
         self,

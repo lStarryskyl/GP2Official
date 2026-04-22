@@ -88,11 +88,19 @@ export interface Project {
   created_at: string;
   updated_at: string;
   phase_status?: Record<string, string>;
+  phase_completion_meta?: Record<string, PhaseCompletionMeta>;
   parent_project_id?: string | null;
   scenario_label?: string | null;
   scenario_metadata?: Record<string, any> | null;
   ui_preferences?: Record<string, any> | null;
   team_members?: ProjectTeamMember[];
+}
+
+export interface PhaseCompletionMeta {
+  completed_by?: string | null;
+  completed_by_name?: string | null;
+  completed_at?: string | null;
+  notes?: string | null;
 }
 
 export interface ProjectTeamMember {

@@ -49,6 +49,7 @@ class ProjectBase(BaseModel):
     questionnaire_data: Optional[Dict[str, Any]] = None
     feature_tier: str = "pro"
     phase_status: Dict[str, str] = Field(default_factory=default_phase_status)
+    phase_completion_meta: Dict[str, Any] = Field(default_factory=dict)
     roadmap: Optional[List[Dict[str, Any]]] = None
     roadmap_summary: Optional[List[Dict[str, Any]]] = None
     feasibility_studies: Optional[List[Dict[str, Any]]] = None
@@ -112,6 +113,7 @@ class ProjectResponse(BaseModel):
     organization: str
     feature_tier: str
     phase_status: Dict[str, str] = Field(default_factory=default_phase_status)
+    phase_completion_meta: Dict[str, Any] = Field(default_factory=dict)
     brief_text: Optional[str]
     roadmap: Optional[List[Dict[str, Any]]] = None
     roadmap_summary: Optional[List[Dict[str, Any]]] = None

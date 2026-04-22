@@ -18,6 +18,7 @@ import type {
   TraceabilityMatrixData,
   NegotiationThread as NegotiationThreadData,
   NegotiationComment,
+  PhaseCompletionMeta,
 } from '@/types';
 import { phaseConfigs, getPhaseConfig, getNextPhase, phaseColors } from '@/constants/phases';
 import { workspacePresets } from '@/constants/workspacePresets';
@@ -131,6 +132,9 @@ export const PhaseDetailPage: React.FC = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [phaseStatus, setPhaseStatus] = useState<Record<string, string>>({});
+  const [phaseCompletionMeta, setPhaseCompletionMeta] = useState<Record<string, PhaseCompletionMeta>>({});
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completionNotes, setCompletionNotes] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [localTaskStatus, setLocalTaskStatus] = useState<Record<string, string>>({});
   const [newTask, setNewTask] = useState({
@@ -409,6 +413,7 @@ export const PhaseDetailPage: React.FC = () => {
         setProject(proj);
         setArtifacts(arts);
         setPhaseStatus(status.phases);
+        setPhaseCompletionMeta(proj.phase_completion_meta ?? {});
         setTasks(taskData);
         setRequirements(reqData);
 
@@ -535,20 +540,28 @@ export const PhaseDetailPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
-  const handleMarkComplete = useCallback(async () => {
+  const handleOpenCompleteDialog = useCallback(() => {
+    setCompletionNotes('');
+    setCompletionDialogOpen(true);
+  }, []);
+
+  const handleConfirmMarkComplete = useCallback(async () => {
     if (!id || !phaseId) return;
     setIsMarkingComplete(true);
     try {
-      const updatedStatus = await api.markPhaseComplete(id, phaseId);
-      setPhaseStatus(updatedStatus);
+      const result = await api.markPhaseComplete(id, phaseId, completionNotes.trim());
+      setPhaseStatus(result.phases);
+      setPhaseCompletionMeta(result.completion_meta);
       toastSuccess(`${phaseConfig?.title || 'Phase'} marked as complete`);
+      setCompletionDialogOpen(false);
+      setCompletionNotes('');
     } catch (err) {
       console.error('Failed to mark phase complete', err);
       toastError('Failed to mark phase as complete');
     } finally {
       setIsMarkingComplete(false);
     }
-  }, [id, phaseId, phaseConfig, toastSuccess, toastError]);
+  }, [id, phaseId, phaseConfig, completionNotes, toastSuccess, toastError]);
 
   const handlePrintPhase = useCallback(() => {
     window.print();
@@ -1733,7 +1746,7 @@ export const PhaseDetailPage: React.FC = () => {
                       </Button>
                       {status !== 'completed' && !!phaseMarkdown && (
                         <Button
-                          onClick={handleMarkComplete}
+                          onClick={handleOpenCompleteDialog}
                           disabled={isMarkingComplete}
                           className="font-semibold text-sm"
                           style={{ background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.4)' }}
@@ -1761,6 +1774,24 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                   {phaseConfig.description && (
                     <p className="mt-2 text-sm text-[var(--text-muted)] max-w-2xl ml-16">{phaseConfig.description}</p>
+                  )}
+                  {phaseId && phaseCompletionMeta[phaseId]?.completed_at && (
+                    <div className="mt-3 ml-16 rounded-lg p-3"
+                      style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                      <p className="text-xs font-semibold text-[#22c55e] flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Confirmed by {phaseCompletionMeta[phaseId]?.completed_by_name || 'a team member'}
+                        {phaseCompletionMeta[phaseId]?.completed_at
+                          ? ` on ${new Date(phaseCompletionMeta[phaseId]!.completed_at as string).toLocaleString()}`
+                          : ''}
+                      </p>
+                      {phaseCompletionMeta[phaseId]?.notes && (
+                        <p className="mt-1.5 text-xs text-[var(--text-muted)] whitespace-pre-wrap">
+                          <span className="font-semibold text-[var(--text-primary)]">Notes:</span>{' '}
+                          {phaseCompletionMeta[phaseId]?.notes}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -4580,6 +4611,73 @@ export const PhaseDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+      {completionDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isMarkingComplete && setCompletionDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+            style={{ background: 'var(--brand-850)', border: '1px solid rgba(26,111,212,0.3)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-[#22c55e]" />
+                Mark {phaseConfig?.title || 'Phase'} as complete?
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Add an optional note to capture decisions, reviewers, or caveats. This will appear in the phase header.
+              </p>
+            </div>
+            <div className="p-5">
+              <label className="block text-xs font-semibold text-[var(--text-muted)] mb-2">
+                Completion notes (optional)
+              </label>
+              <textarea
+                value={completionNotes}
+                onChange={(e) => setCompletionNotes(e.target.value)}
+                placeholder="e.g., Reviewed with stakeholders, approved scope changes, etc."
+                rows={5}
+                disabled={isMarkingComplete}
+                maxLength={2000}
+                className="w-full rounded-lg p-3 text-sm bg-transparent text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-400)]"
+                style={{ border: '1px solid rgba(26,46,69,0.6)', resize: 'vertical' }}
+              />
+              <p className="mt-1 text-[10px] text-[var(--text-faint)] text-right">
+                {completionNotes.length}/2000
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCompletionDialogOpen(false)}
+                disabled={isMarkingComplete}
+                className="text-[var(--text-muted)] bg-transparent"
+                style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmMarkComplete}
+                disabled={isMarkingComplete}
+                className="font-semibold"
+                style={{ background: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}
+              >
+                {isMarkingComplete ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                )}
+                Confirm complete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

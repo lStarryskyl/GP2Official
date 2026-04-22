@@ -158,9 +158,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         }}>
           <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             {!sidebarCollapsed ? (
-              <img src="/acorn-logo.png" alt="Acorn" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+              <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             ) : (
-              <img src="/acorn-logo.png" alt="Acorn" style={{ height: '28px', width: '28px', objectFit: 'contain' }} />
+              <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '28px', width: '28px', objectFit: 'contain' }} />
             )}
           </Link>
           <button
@@ -487,7 +487,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         padding: '0 16px', zIndex: 50,
       }} className="lg:hidden">
         <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <img src="/acorn-logo.png" alt="Acorn" style={{ height: '34px', width: 'auto', objectFit: 'contain' }} />
+          <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '34px', width: 'auto', objectFit: 'contain' }} />
         </Link>
         <div style={{ display: 'flex', gap: '6px' }}>
           <button

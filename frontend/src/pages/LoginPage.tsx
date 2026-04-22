@@ -129,7 +129,7 @@ const LoginPage: React.FC = () => {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', zIndex: 1 }}>
-          <img src="/acorn-logo.png" alt="Acorn" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
+          <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         {/* Centre content */}
@@ -158,7 +158,7 @@ const LoginPage: React.FC = () => {
         <div style={{ width: '100%', maxWidth: '400px' }} className="animate-reveal-up">
           {/* Mobile logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }} className="lg:hidden">
-            <img src="/acorn-logo.png" alt="Acorn" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
+            <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
           </div>
 
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '28px', color: 'var(--text-primary)', marginBottom: '6px' }}>

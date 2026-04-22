@@ -521,7 +521,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
             }}
           >
             <img
-              src="/acorn-logo.png"
+              src="/acorn-logo-light.png"
               alt="Acorn"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
@@ -977,7 +977,7 @@ const LandingPage: React.FC = () => {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src="/acorn-logo.png" alt="Acorn" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+          <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         {/* Desktop nav links */}
@@ -1562,7 +1562,7 @@ const LandingPage: React.FC = () => {
           {/* Brand */}
           <div style={{ gridColumn: 'span 1' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <img src="/acorn-logo.png" alt="Acorn" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+              <img src="/acorn-logo-light.png" alt="Acorn" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             </div>
             <p style={{ color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.65, maxWidth: '200px' }}>
               AI-powered project intelligence for modern software teams.

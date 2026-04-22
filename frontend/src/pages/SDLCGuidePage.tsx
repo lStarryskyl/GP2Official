@@ -369,7 +369,11 @@ const PHASES = [
 const SDLCGuidePage: React.FC = () => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<string | null>('planning');
-  const [activeSection, setActiveSection] = useState<'overview' | 'acorn' | 'practices' | 'mistakes'>('overview');
+  type SectionKey = 'overview' | 'acorn' | 'practices' | 'mistakes';
+  const [activeSections, setActiveSections] = useState<Record<string, SectionKey>>({});
+  const getActiveSection = (phaseId: string): SectionKey => activeSections[phaseId] ?? 'overview';
+  const setActiveSection = (phaseId: string, section: SectionKey) =>
+    setActiveSections(prev => ({ ...prev, [phaseId]: section }));
 
   const card: React.CSSProperties = {
     background: 'rgba(26,46,69,0.5)',
@@ -541,13 +545,15 @@ const SDLCGuidePage: React.FC = () => {
                 </button>
 
                 {/* Expanded content */}
-                {isOpen && (
+                {isOpen && (() => {
+                  const activeSection = getActiveSection(phase.id);
+                  return (
                   <div className="sg-phase-body" style={{ padding: '0 24px 24px', borderTop: `1px solid ${phase.color}20` }}>
                     {/* Section tabs */}
                     <div style={{ display: 'flex', gap: '4px', padding: '12px 0', overflowX: 'auto' }}>
                       {(['overview', 'acorn', 'practices', 'mistakes'] as const).map(s => (
                         <button key={s}
-                          onClick={() => setActiveSection(s)}
+                          onClick={() => setActiveSection(phase.id, s)}
                           style={{
                             padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                             fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap',
@@ -620,7 +626,8 @@ const SDLCGuidePage: React.FC = () => {
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             );
           })}

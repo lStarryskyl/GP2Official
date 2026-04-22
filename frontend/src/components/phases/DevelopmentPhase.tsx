@@ -629,32 +629,55 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                     {visibleItems.map((item, idx) => (
                       <div
                         key={item.name}
-                        className="p-3 rounded-xl border border-[var(--brand-700)] bg-[var(--brand-850)] hover:border-blue-600/50 hover:bg-blue-900/20 transition-all"
+                        className="p-3 rounded-xl transition-all"
+                        style={{
+                          border: item.recommended
+                            ? '2px solid rgba(59,130,246,0.5)'
+                            : '1px solid var(--brand-700)',
+                          background: item.recommended
+                            ? 'rgba(59,130,246,0.06)'
+                            : 'var(--brand-850)',
+                          boxShadow: item.recommended ? '0 0 0 1px rgba(59,130,246,0.15)' : 'none',
+                        }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-gray-200 text-sm">{item.name}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-blue-400 px-1 h-6"
-                            onClick={() => handleToggleRecommended(category, idx)}
-                          >
-                            {item.recommended ? 'Recommended' : 'Mark' }
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            {item.recommended && (
+                              <span
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                                style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                Recommended
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-[11px] text-gray-400 mb-1">{item.description}</p>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {item.category}
-                        </Badge>
-                        <div className="mt-1 flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-red-500 px-1 h-6"
-                            onClick={() => handleDeleteTech(category, idx)}
-                          >
-                            Remove
-                          </Button>
+                        <p className="text-[11px] text-gray-400 mb-2">{item.description}</p>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary" className="text-[10px]">
+                            {item.category}
+                          </Badge>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-[10px] text-blue-400 px-1 h-6"
+                              onClick={() => handleToggleRecommended(category, idx)}
+                              title={item.recommended ? 'Remove recommended status' : 'Mark as recommended'}
+                            >
+                              {item.recommended ? 'Unmark' : 'Mark'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-[10px] text-red-500 px-1 h-6"
+                              onClick={() => handleDeleteTech(category, idx)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}

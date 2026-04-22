@@ -244,7 +244,14 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
         {phaseConfigs.map((phase) => {
           const isActive = currentPhaseId === phase.id;
           const status = getStatus(phase.id);
-          const isCompleted = status === 'completed' || status === 'ready';
+          const isCompleted = status === 'completed';
+          const isInProgress = status === 'in_progress';
+
+          const dotColor = isCompleted
+            ? '#3b82f6'
+            : isInProgress
+            ? '#f97316'
+            : '#374151';
 
           return (
             <button
@@ -266,7 +273,7 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                 className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all"
                 style={{ 
                   backgroundColor: isActive ? 'rgba(10, 15, 26, 0.2)' : '#152238',
-                  color: isCompleted && !isActive ? '#10b981' : 'inherit'
+                  color: isCompleted && !isActive ? '#3b82f6' : 'inherit'
                 }}
               >
                 {isCompleted && !isActive ? <Check className="h-4 w-4" /> : phase.stepNumber}
@@ -284,20 +291,18 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                 </div>
               )}
 
-              {/* Status Indicator */}
-              {!collapsed && (
-                <div className="flex-shrink-0">
-                  {isCompleted ? (
-                    <div className="w-5 h-5 rounded-full bg-blue-900/200 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  ) : isActive ? (
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--brand-900)' }} />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--brand-700)' }} />
-                  )}
-                </div>
-              )}
+              {/* Status Dot Indicator */}
+              <div className="flex-shrink-0">
+                <div
+                  className="rounded-full"
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: dotColor,
+                    boxShadow: isCompleted ? '0 0 6px #3b82f6' : isInProgress ? '0 0 6px #f97316' : 'none',
+                  }}
+                />
+              </div>
             </button>
           );
         })}

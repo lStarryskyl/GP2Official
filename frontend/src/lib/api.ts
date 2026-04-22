@@ -483,6 +483,11 @@ class ApiClient {
     return response.data.phases;
   }
 
+  async markPhaseComplete(projectId: string, phase: string): Promise<Record<string, string>> {
+    const response = await this.client.post(`/projects/${projectId}/phases/${phase}/complete/`);
+    return response.data.phases;
+  }
+
   async getRoadmap(projectId: string): Promise<{ milestones: any[]; summary?: any[] }> {
     const response = await this.client.get(`/projects/${projectId}/roadmap/`);
     return response.data;

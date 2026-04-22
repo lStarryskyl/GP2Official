@@ -90,6 +90,29 @@ class PhaseFlowService:
         
         raise ValueError("Invalid phase")
 
+    async def mark_complete(self, project_id: str, organization: str, phase: str) -> Dict[str, str]:
+        """Mark a phase as completed and unlock the next phase."""
+        project = await self.project_repo.get_by_id(project_id, organization)
+        if not project:
+            raise ValueError("Project not found")
+
+        if phase not in PHASE_ORDER:
+            raise ValueError("Invalid phase")
+
+        normalized_status = default_phase_status()
+        normalized_status.update(project.phase_status or {})
+        status = dict(normalized_status)
+
+        status[phase] = "completed"
+        next_index = PHASE_ORDER.index(phase) + 1
+        if next_index < len(PHASE_ORDER):
+            next_phase = PHASE_ORDER[next_index]
+            if status.get(next_phase) in ("locked", "not_started"):
+                status[next_phase] = "ready"
+
+        updated_project = await self.project_repo.update_phase_status(project_id, organization, status)
+        return updated_project.phase_status
+
     async def generate_phase(
         self,
         project_id: str,

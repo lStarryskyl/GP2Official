@@ -223,3 +223,21 @@ async def unlock_phase(
         )
 
 
+@router.post("/projects/{project_id}/phases/{phase}/complete/")
+async def mark_phase_complete(
+    project_id: str,
+    phase: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Mark a specific phase as completed."""
+    project = await project_service.get_project(project_id, current_user)
+    try:
+        phase_status = await phase_service.mark_complete(project_id, project.organization, phase)
+        return {"phases": phase_status, "order": PHASE_ORDER}
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+
+

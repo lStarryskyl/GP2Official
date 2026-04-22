@@ -533,6 +533,27 @@ export const PhaseDetailPage: React.FC = () => {
 
   // Copy-to-clipboard helper
   const [copied, setCopied] = useState(false);
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+
+  const handleMarkComplete = useCallback(async () => {
+    if (!id || !phaseId) return;
+    setIsMarkingComplete(true);
+    try {
+      const updatedStatus = await api.markPhaseComplete(id, phaseId);
+      setPhaseStatus(updatedStatus);
+      toastSuccess(`${phaseConfig?.title || 'Phase'} marked as complete`);
+    } catch (err) {
+      console.error('Failed to mark phase complete', err);
+      toastError('Failed to mark phase as complete');
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  }, [id, phaseId, phaseConfig, toastSuccess, toastError]);
+
+  const handlePrintPhase = useCallback(() => {
+    window.print();
+  }, []);
+
   const handleCopyContent = useCallback(() => {
     const text = phaseMarkdown || phaseRawMarkdown;
     if (!text) return;
@@ -1629,14 +1650,37 @@ export const PhaseDetailPage: React.FC = () => {
   const PhaseWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
       <Layout>
+        <style>{`
+          @media print {
+            .no-print {
+              display: none !important;
+            }
+            nav, aside, header, footer,
+            [data-testid="phase-nav"],
+            [role="navigation"],
+            [role="complementary"] {
+              display: none !important;
+            }
+            html, body { background: white !important; }
+            .print-content { padding: 0 !important; }
+            .print-content * {
+              color: black !important;
+              background: transparent !important;
+              border-color: #ccc !important;
+              box-shadow: none !important;
+            }
+          }
+        `}</style>
         <div className="min-h-[calc(100vh-4rem)] bg-[var(--brand-900)]">
           {/* Horizontal Navigation */}
-          <PhaseNavigation projectId={id} variant="horizontal" phaseStatus={phaseStatus} />
+          <div className="no-print">
+            <PhaseNavigation projectId={id} variant="horizontal" phaseStatus={phaseStatus} />
+          </div>
 
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 print-content">
             <div className="space-y-5">
               {/* Phase Header */}
-              <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
+              <div className="rounded-2xl overflow-hidden shadow-lg no-print" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
                 <div className="h-1" style={{ background: `linear-gradient(to right, ${phaseAccentColor}, ${phaseAccentColor}88)` }} />
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1655,7 +1699,7 @@ export const PhaseDetailPage: React.FC = () => {
                         </h1>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         variant="outline"
                         onClick={() => navigate(`/projects/${id}`)}
@@ -1671,9 +1715,36 @@ export const PhaseDetailPage: React.FC = () => {
                           onClick={handleDownload}
                           className="text-[var(--text-muted)] bg-transparent"
                           style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+                          title="Download phase content as Markdown"
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Export
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={handlePrintPhase}
+                        className="text-[var(--text-muted)] bg-transparent"
+                        style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+                        title="Export this phase as PDF"
+                      >
+                        <Printer className="mr-2 h-4 w-4" />
+                        Export PDF
+                      </Button>
+                      {status !== 'completed' && !!phaseMarkdown && (
+                        <Button
+                          onClick={handleMarkComplete}
+                          disabled={isMarkingComplete}
+                          className="font-semibold text-sm"
+                          style={{ background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.4)' }}
+                          title="Mark this phase as complete"
+                        >
+                          {isMarkingComplete ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                          )}
+                          Mark Complete
                         </Button>
                       )}
                       <span className="px-3 py-1.5 rounded-full text-xs font-semibold"
@@ -1739,71 +1810,133 @@ export const PhaseDetailPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Compact AI Regenerate Bar - only show if content exists or generating */}
-              {phaseId !== 'validation' && (
-                <div className="bg-[var(--brand-900)] rounded-xl border border-[var(--brand-700)] overflow-hidden">
-                  <div className="p-3 sm:p-4">
-                    {isGenerating ? (
-                      <div className="flex items-center justify-center gap-3 py-2">
-                        <Loader2 className="h-5 w-5 animate-spin text-[var(--blue-400)]" />
-                        <span className="text-sm font-medium text-gray-300">Generating content with AI...</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-[var(--blue-400)]" />
-                          <span className="text-sm text-gray-400">Content auto-generated</span>
+              {/* Compact AI Regenerate Bar / Empty State */}
+              {phaseId !== 'validation' && <div className="no-print">{(() => {
+                const phaseEmptyDescriptions: Record<string, string> = {
+                  planning: 'No planning roadmap yet — generate a high-level plan, objectives, and scope alignment with AI.',
+                  feasibility_study: 'No feasibility study yet — generate a market, technical, and economic analysis with AI.',
+                  requirements_gathering: 'No requirements document yet — generate functional and non-functional requirements with AI.',
+                  design: 'No system design yet — generate architecture diagrams and API specifications with AI.',
+                  development: 'No development plan yet — generate a tech stack, system flow, and folder structure with AI.',
+                  cost_benefit: 'No cost analysis yet — generate a cost breakdown, benefit estimates, and ROI analysis with AI.',
+                  risks: 'No risk register yet — generate a risk register with impact, likelihood, and mitigations with AI.',
+                  testing: 'No testing plan yet — generate test scenarios, edge cases, and coverage checklist with AI.',
+                  summary: 'No project summary yet — generate a final summary, lessons learned, and recommendations with AI.',
+                };
+                const emptyDescription = phaseId ? phaseEmptyDescriptions[phaseId] : null;
+                const showEmptyState = !phaseMarkdown && !isGenerating && !isStreaming && emptyDescription && canTriggerAi;
+
+                if (showEmptyState) {
+                  return (
+                    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--brand-850)', border: '1px dashed rgba(26,111,212,0.4)' }}>
+                      <div className="p-6 flex flex-col items-center text-center gap-4">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.25)' }}>
+                          <Sparkles className="h-7 w-7 text-[var(--blue-400)]" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleCopyContent}
-                            disabled={!phaseMarkdown && !phaseRawMarkdown}
-                            title="Copy content to clipboard"
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '6px',
-                              padding: '6px 10px', borderRadius: '8px',
-                              background: copied ? 'rgba(26,111,212,0.15)' : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${copied ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.6)'}`,
-                              color: copied ? '#3d8fe0' : '#4a6070',
-                              fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                            }}
-                          >
-                            {copied ? <Check size={13} /> : <Copy size={13} />}
-                            {copied ? 'Copied' : 'Copy'}
-                          </button>
-                          <input
-                            ref={regenerateInputRef}
-                            type="text"
-                            className="w-48 sm:w-64 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[var(--brand-700)] bg-[#152238] focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 transition-all"
-                            placeholder="Custom prompt (optional)"
-                          />
+                        <div>
+                          <p className="font-semibold text-white mb-1">No content yet</p>
+                          <p className="text-sm text-gray-400 max-w-md">{emptyDescription}</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
                           <Button
-                            disabled={isGenerating}
-                            onClick={() => {
-                              const prompt = regenerateInputRef.current?.value || `Regenerate ${phaseId?.replace('_', ' ')} content`;
-                              handleGenerate(prompt);
-                            }}
-                            className="bg-[#152238] hover:bg-[var(--brand-700)] text-[var(--blue-400)] border border-[var(--blue-400)]/30 hover:border-[var(--blue-400)] text-sm px-3 py-1.5 font-medium"
+                            onClick={() => handleGenerate(`Generate comprehensive ${phaseId?.replace(/_/g, ' ')} content for this project`)}
+                            className="font-semibold px-6"
+                            style={{ background: 'linear-gradient(135deg, var(--blue-600), var(--blue-400))', color: 'var(--brand-900)', border: 'none' }}
                           >
-                            <Undo2 className="h-3.5 w-3.5 mr-1.5" />
-                            Regenerate
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate with AI
                           </Button>
+                          <div className="flex items-center gap-2">
+                            <input
+                              ref={regenerateInputRef}
+                              type="text"
+                              className="w-56 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[var(--brand-700)] bg-[#152238] focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 transition-all"
+                              placeholder="Or enter a custom prompt..."
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                const prompt = regenerateInputRef.current?.value || `Generate ${phaseId?.replace(/_/g, ' ')} content`;
+                                handleGenerate(prompt);
+                              }}
+                              className="text-[var(--blue-400)] border-[var(--blue-400)]/30 text-sm"
+                            >
+                              Go
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="bg-[var(--brand-900)] rounded-xl border border-[var(--brand-700)] overflow-hidden">
+                    <div className="p-3 sm:p-4">
+                      {isGenerating ? (
+                        <div className="flex items-center justify-center gap-3 py-2">
+                          <Loader2 className="h-5 w-5 animate-spin text-[var(--blue-400)]" />
+                          <span className="text-sm font-medium text-gray-300">Generating content with AI...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-[var(--blue-400)]" />
+                            <span className="text-sm text-gray-400">Content auto-generated</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleCopyContent}
+                              disabled={!phaseMarkdown && !phaseRawMarkdown}
+                              title="Copy content to clipboard"
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 10px', borderRadius: '8px',
+                                background: copied ? 'rgba(26,111,212,0.15)' : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${copied ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.6)'}`,
+                                color: copied ? '#3d8fe0' : '#4a6070',
+                                fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                              }}
+                            >
+                              {copied ? <Check size={13} /> : <Copy size={13} />}
+                              {copied ? 'Copied' : 'Copy'}
+                            </button>
+                            <input
+                              ref={regenerateInputRef}
+                              type="text"
+                              className="w-48 sm:w-64 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[var(--brand-700)] bg-[#152238] focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 transition-all"
+                              placeholder="Custom prompt (optional)"
+                            />
+                            <Button
+                              disabled={isGenerating}
+                              onClick={() => {
+                                const prompt = regenerateInputRef.current?.value || `Regenerate ${phaseId?.replace('_', ' ')} content`;
+                                handleGenerate(prompt);
+                              }}
+                              className="bg-[#152238] hover:bg-[var(--brand-700)] text-[var(--blue-400)] border border-[var(--blue-400)]/30 hover:border-[var(--blue-400)] text-sm px-3 py-1.5 font-medium"
+                            >
+                              <Undo2 className="h-3.5 w-3.5 mr-1.5" />
+                              Regenerate
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}</div>}
 
               {/* AI Suggestions Panel */}
               {phaseId && project && (
-                <AISuggestionsPanel
-                  projectId={id || ''}
-                  phase={phaseId}
-                  phaseContent={phaseMarkdown}
-                  projectName={project.name}
-                  projectDescription={project.description || ''}
-                />
+                <div className="no-print">
+                  <AISuggestionsPanel
+                    projectId={id || ''}
+                    phase={phaseId}
+                    phaseContent={phaseMarkdown}
+                    projectName={project.name}
+                    projectDescription={project.description || ''}
+                  />
+                </div>
               )}
 
               {/* Phase Content */}
@@ -1814,12 +1947,14 @@ export const PhaseDetailPage: React.FC = () => {
 
         {/* Athena AI Chat Assistant — floating per-phase */}
         {project && phaseId && (
-          <AIChatAssistant
-            projectId={id || ''}
-            projectName={project.name}
-            phase={phaseId}
-            phaseName={phaseConfig?.title || phaseId}
-          />
+          <div className="no-print">
+            <AIChatAssistant
+              projectId={id || ''}
+              projectName={project.name}
+              phase={phaseId}
+              phaseName={phaseConfig?.title || phaseId}
+            />
+          </div>
         )}
       </Layout>
     );

@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import {
   LogOut, MessageCircle, FolderKanban, Search,
   Menu, X, ChevronRight, ChevronLeft, Plus, Sparkles, User as UserIcon,
-  BarChart3, Users, CreditCard, Zap, BookOpen, Bell, Layers,
+  BarChart3, Users, CreditCard, BookOpen, Bell, Layers,
   ChevronsUpDown, CheckCircle2, Circle, Loader2, Lock, Command,
   Archive,
 } from 'lucide-react';
@@ -157,14 +157,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           padding: '0 14px', borderBottom: '1px solid rgba(26,111,212,0.18)', flexShrink: 0,
         }}>
           <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', borderRadius: '10px', filter: 'blur(6px)', opacity: 0.5 }} />
-              <div style={{ position: 'relative', width: '34px', height: '34px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Zap size={16} color="#fff" />
-              </div>
-            </div>
-            {!sidebarCollapsed && (
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '17px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Acorn</span>
+            {!sidebarCollapsed ? (
+              <img src="/acorn-logo.png" alt="Acorn" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+            ) : (
+              <img src="/acorn-logo.png" alt="Acorn" style={{ height: '28px', width: '28px', objectFit: 'contain' }} />
             )}
           </Link>
           <button
@@ -491,14 +487,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         padding: '0 16px', zIndex: 50,
       }} className="lg:hidden">
         <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <div style={{
-            width: '34px', height: '34px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Zap size={16} color="#fff" />
-          </div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>Acorn</span>
+          <img src="/acorn-logo.png" alt="Acorn" style={{ height: '34px', width: 'auto', objectFit: 'contain' }} />
         </Link>
         <div style={{ display: 'flex', gap: '6px' }}>
           <button

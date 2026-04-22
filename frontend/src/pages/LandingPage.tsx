@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  ArrowRight, Sparkles, Zap, Shield, BarChart3, Users, FileText,
+  ArrowRight, Sparkles, Shield, BarChart3, Users, FileText,
   CheckCircle2, Star, Rocket, TrendingUp, Clock, Award, Cpu, Layers,
   GitBranch, MessageSquare, DollarSign, AlertTriangle,
   ClipboardList, Search, FlaskConical, Code2, LayoutDashboard, ChevronRight,
@@ -22,307 +22,6 @@ const PHASES = [
   { id: 'summary',       label: 'Summary',         icon: LayoutDashboard,color: '#F97316', desc: 'Executive dashboard with KPIs, timeline, and go/no-go decision support.' },
 ];
 
-const NODE_W = 100;
-const NODE_H = 56;
-const GAP_X  = 32;
-const ROW1_Y = 60;
-const ROW2_Y = 188;
-const ROW1_COUNT = 6;
-const ROW2_COUNT = 5;
-
-function nodeX(i: number): number {
-  if (i < ROW1_COUNT) return 20 + i * (NODE_W + GAP_X);
-  const j = i - ROW1_COUNT;
-  return 20 + (ROW2_COUNT - 1 - j) * (NODE_W + GAP_X);
-}
-function nodeY(i: number): number {
-  return i < ROW1_COUNT ? ROW1_Y : ROW2_Y;
-}
-
-const SVG_W = 20 + ROW1_COUNT * (NODE_W + GAP_X) - GAP_X + 20;
-const SVG_H = ROW2_Y + NODE_H + 40;
-
-// ─── SDLC Flowchart SVG ───────────────────────────────────────────────────────
-interface SDLCFlowchartProps {
-  visibleCount: number;
-  compact?: boolean;
-}
-
-const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = false }) => {
-  const scale = compact ? 0.72 : 1;
-
-  return (
-    <svg
-      width={SVG_W * scale}
-      height={SVG_H * scale}
-      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-      style={{ overflow: 'visible', display: 'block' }}
-    >
-      <defs>
-        <filter id="glow-node">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="glow-line">
-          <feGaussianBlur stdDeviation="2" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L8,3 z" fill="#1A6FD4" />
-        </marker>
-        <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="1" refY="3" orient="auto">
-          <path d="M8,0 L8,6 L0,3 z" fill="#F97316" />
-        </marker>
-        <marker id="arrow-down" markerWidth="8" markerHeight="8" refX="3" refY="7" orient="auto">
-          <path d="M0,0 L6,0 L3,8 z" fill="#F97316" />
-        </marker>
-      </defs>
-
-      {PHASES.map((phase, i) => {
-        if (i >= visibleCount - 1) return null;
-
-        if (i < ROW1_COUNT - 1) {
-          const x1 = nodeX(i) + NODE_W;
-          const y  = nodeY(i) + NODE_H / 2;
-          const x2 = nodeX(i + 1);
-          return (
-            <line key={`conn-${i}`}
-              x1={x1} y1={y} x2={x2 - 2} y2={y}
-              stroke="#1A6FD4" strokeWidth="2"
-              markerEnd="url(#arrow-blue)"
-              filter="url(#glow-line)"
-              style={{ animation: `fadeIn 0.3s ease forwards` }}
-            />
-          );
-        }
-
-        if (i === ROW1_COUNT - 1) {
-          const x  = nodeX(4) + NODE_W / 2;
-          const y1 = nodeY(4) + NODE_H;
-          const y2 = nodeY(5);
-          return (
-            <line key="conn-uturn"
-              x1={x} y1={y1} x2={x} y2={y2 - 2}
-              stroke="#F97316" strokeWidth="2"
-              markerEnd="url(#arrow-down)"
-              filter="url(#glow-line)"
-              style={{ animation: 'fadeIn 0.3s ease forwards' }}
-            />
-          );
-        }
-
-        if (i >= ROW1_COUNT && i < ROW1_COUNT + ROW2_COUNT - 1) {
-          const x1 = nodeX(i);
-          const x2 = nodeX(i + 1) + NODE_W;
-          const y  = nodeY(i) + NODE_H / 2;
-          return (
-            <line key={`conn-${i}`}
-              x1={x2} y1={y} x2={x1 + 2} y2={y}
-              stroke="#F97316" strokeWidth="2"
-              markerEnd="url(#arrow-orange)"
-              filter="url(#glow-line)"
-              style={{ animation: 'fadeIn 0.3s ease forwards' }}
-            />
-          );
-        }
-
-        return null;
-      })}
-
-      {PHASES.map((phase, i) => {
-        if (i >= visibleCount) return null;
-        const x = nodeX(i);
-        const y = nodeY(i);
-        const isOrange = i >= 5;
-
-        return (
-          <g key={phase.id} style={{ animation: 'nodeAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
-            <rect
-              x={x} y={y} width={NODE_W} height={NODE_H} rx={10}
-              fill={isOrange ? 'rgba(249,115,22,0.15)' : 'rgba(26,111,212,0.18)'}
-              stroke={isOrange ? '#F97316' : '#1A6FD4'}
-              strokeWidth="1.5"
-              filter="url(#glow-node)"
-            />
-            <circle cx={x + 14} cy={y + 14} r={10}
-              fill={isOrange ? '#F97316' : '#1A6FD4'}
-              opacity={0.9}
-            />
-            <text x={x + 14} y={y + 18} textAnchor="middle"
-              fill="#fff" fontSize="9" fontFamily="DM Sans, sans-serif" fontWeight="700">
-              {i + 1}
-            </text>
-            <text x={x + NODE_W / 2} y={y + NODE_H / 2 + 5}
-              textAnchor="middle"
-              fill="#E8EDF5" fontSize="11" fontFamily="DM Sans, sans-serif" fontWeight="600">
-              {phase.label}
-            </text>
-          </g>
-        );
-      })}
-
-      <style>{`
-        @keyframes nodeAppear {
-          from { opacity: 0; transform: scale(0.6); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-      `}</style>
-    </svg>
-  );
-};
-
-// ─── Mobile-friendly vertical flowchart ──────────────────────────────────────
-interface MobileSDLCFlowchartProps {
-  visibleCount: number;
-}
-
-const MobileSDLCFlowchart: React.FC<MobileSDLCFlowchartProps> = ({ visibleCount }) => {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  return (
-    <ol
-      style={{
-        listStyle: 'none',
-        margin: 0,
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        width: '100%',
-        maxWidth: '320px',
-      }}
-    >
-      {PHASES.map((phase, i) => {
-        if (i >= visibleCount) return null;
-        const isOrange = i >= ROW1_COUNT - 1;
-        const accent = isOrange ? '#F97316' : '#1A6FD4';
-        const bg = isOrange ? 'rgba(249,115,22,0.12)' : 'rgba(26,111,212,0.15)';
-        const isLast = i === PHASES.length - 1 || i === visibleCount - 1;
-        const isExpanded = expandedId === phase.id;
-        const panelId = `mobile-phase-desc-${phase.id}`;
-        const PhaseIcon = phase.icon;
-        return (
-          <li
-            key={phase.id}
-            style={{
-              position: 'relative',
-              animation: 'nodeAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards',
-            }}
-          >
-            <button
-              type="button"
-              aria-expanded={isExpanded}
-              aria-controls={panelId}
-              onClick={() => setExpandedId(prev => (prev === phase.id ? null : phase.id))}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: bg,
-                border: `1px solid ${accent}`,
-                boxShadow: `0 0 12px ${isOrange ? 'rgba(249,115,22,0.18)' : 'rgba(26,111,212,0.22)'}`,
-                cursor: 'pointer',
-                textAlign: 'left',
-                font: 'inherit',
-                color: 'inherit',
-              }}
-            >
-              <div
-                style={{
-                  flexShrink: 0,
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  background: accent,
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: 700,
-                  fontSize: '12px',
-                }}
-              >
-                {i + 1}
-              </div>
-              <PhaseIcon
-                size={18}
-                color={accent}
-                strokeWidth={2.25}
-                style={{ flexShrink: 0 }}
-                aria-hidden="true"
-              />
-              <span
-                style={{
-                  flex: 1,
-                  color: '#E8EDF5',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: '14px',
-                }}
-              >
-                {phase.label}
-              </span>
-              <ChevronRight
-                size={16}
-                color={accent}
-                style={{
-                  flexShrink: 0,
-                  transition: 'transform 0.2s ease',
-                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                }}
-                aria-hidden="true"
-              />
-            </button>
-            <div
-              id={panelId}
-              role="region"
-              aria-hidden={!isExpanded}
-              style={{
-                overflow: 'hidden',
-                maxHeight: isExpanded ? '160px' : '0',
-                opacity: isExpanded ? 1 : 0,
-                transition: 'max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease',
-                padding: isExpanded ? '8px 14px 4px 82px' : '0 14px 0 82px',
-                color: '#B8C2D0',
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: '13px',
-                lineHeight: 1.5,
-              }}
-            >
-              {phase.desc}
-            </div>
-            {!isLast && (
-              <div
-                style={{
-                  width: '2px',
-                  height: '8px',
-                  margin: '0 auto',
-                  background: i + 1 >= ROW1_COUNT - 1 ? '#F97316' : '#1A6FD4',
-                  opacity: 0.7,
-                }}
-              />
-            )}
-          </li>
-        );
-      })}
-      <style>{`
-        @keyframes nodeAppear {
-          from { opacity: 0; transform: scale(0.6); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
-    </ol>
-  );
-};
-
 // ─── Responsive helper ───────────────────────────────────────────────────────
 function useIsMobile(breakpoint: number = 600): boolean {
   const [isMobile, setIsMobile] = useState<boolean>(() => {
@@ -339,7 +38,7 @@ function useIsMobile(breakpoint: number = 600): boolean {
 }
 
 // ─── Splash Screen ───────────────────────────────────────────────────────────
-interface SplashProps { onEnter: () => void; onViewDocs: () => void; onComplete?: () => void; }
+interface SplashProps { onEnter: () => void; onViewDocs: () => void; onComplete?: () => void; onSkip?: () => void; }
 
 const SPLASH_STATS = [
   { value: '10x', label: 'Faster planning' },
@@ -356,133 +55,581 @@ const safeLocalStorage = {
   },
 };
 
-const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete }) => {
-  const [visible, setVisible] = useState(0);
-  const [showCTA, setShowCTA] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const isMobile = useIsMobile(600);
-
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
   useEffect(() => {
-    if (visible < PHASES.length) {
-      const t = setTimeout(() => setVisible(v => v + 1), 280);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => {
-        setShowCTA(true);
-        setShowStats(true);
-        onComplete?.();
-      }, 350);
-      return () => clearTimeout(t);
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+  return reduced;
+}
+
+function useReveal<T extends HTMLElement>(threshold = 0.15): [React.RefObject<T>, boolean] {
+  const ref = useRef<T>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setShown(true);
+      return;
     }
-  }, [visible]);
+    const io = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            setShown(true);
+            io.disconnect();
+          }
+        });
+      },
+      { threshold, rootMargin: '0px 0px -60px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [threshold]);
+  return [ref, shown];
+}
+
+interface RevealProps {
+  children: React.ReactNode;
+  delay?: number;
+  as?: keyof JSX.IntrinsicElements;
+  style?: React.CSSProperties;
+  className?: string;
+  y?: number;
+}
+const Reveal: React.FC<RevealProps> = ({ children, delay = 0, as = 'div', style, className, y = 24 }) => {
+  const [ref, shown] = useReveal<HTMLElement>();
+  const Tag = as as React.ElementType;
+  return (
+    <Tag
+      ref={ref as React.Ref<HTMLElement>}
+      className={className}
+      style={{
+        opacity: shown ? 1 : 0,
+        transform: shown ? 'translateY(0)' : `translateY(${y}px)`,
+        transition: `opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
+        willChange: 'opacity, transform',
+        ...style,
+      }}
+    >
+      {children}
+    </Tag>
+  );
+};
+
+interface TiltProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  max?: number;
+  scale?: number;
+  glow?: string;
+  onMouseEnter?: React.MouseEventHandler<HTMLDivElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
+}
+const Tilt: React.FC<TiltProps> = ({ children, className, style, max = 8, scale = 1.02, glow, onMouseEnter, onMouseLeave }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = usePrefersReducedMotion();
+
+  const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (reduced) return;
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    const rx = (0.5 - py) * (max * 2);
+    const ry = (px - 0.5) * (max * 2);
+    el.style.setProperty('--mx', `${px * 100}%`);
+    el.style.setProperty('--my', `${py * 100}%`);
+    el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale})`;
+  }, [max, scale, reduced]);
+
+  const handleLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (el) el.style.transform = 'perspective(900px) rotateX(0) rotateY(0) scale(1)';
+    onMouseLeave?.(e);
+  }, [onMouseLeave]);
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: isMobile ? 'flex-start' : 'center',
-      paddingTop: isMobile ? '32px' : 0,
-      paddingBottom: isMobile ? '32px' : 0,
-      background: 'linear-gradient(160deg, #0a1f3d 0%, #0D1B2A 55%, #0d1520 100%)',
-      position: 'relative',
-      overflowX: 'hidden',
-      overflowY: isMobile ? 'auto' : 'hidden',
-    }}>
-      <div className="bg-grid" style={{ position: 'absolute', inset: 0, opacity: 0.25 }} />
-      <div className="glow-orb glow-orb-forest" style={{ width: '700px', height: '700px', top: '-25%', left: '-20%', opacity: 0.35 }} />
-      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.08), transparent 70%)' }} />
+    <div
+      ref={ref}
+      className={`tilt-card ${className || ''}`}
+      style={{
+        transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s, box-shadow 0.3s',
+        transformStyle: 'preserve-3d',
+        position: 'relative',
+        '--glow-color': glow || 'rgba(26,111,212,0.18)',
+        ...style,
+      } as React.CSSProperties & Record<string, string>}
+      onMouseMove={handleMove}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={handleLeave}
+    >
+      {children}
+    </div>
+  );
+};
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
-        <div style={{
-          width: '48px', height: '48px', borderRadius: '13px',
-          background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 30px rgba(26,111,212,0.55)',
-        }}>
-          <Zap size={24} color="#fff" />
-        </div>
-        <div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '30px', color: '#E8EDF5', letterSpacing: '-0.03em', display: 'block', lineHeight: 1 }}>Acorn</span>
-          <span style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase' }}>Project Intelligence Platform</span>
-        </div>
-      </div>
+interface PipelineProps { compact?: boolean; }
+const SDLCPipeline: React.FC<PipelineProps> = ({ compact = false }) => {
+  const isMobile = useIsMobile(720);
+  const reduced = usePrefersReducedMotion();
+  const cols = isMobile ? 2 : (compact ? 6 : 6);
+  const cellGap = isMobile ? 10 : 14;
 
-      <div style={{ textAlign: 'center', marginBottom: '40px', position: 'relative', zIndex: 1, padding: '0 24px' }}>
-        <h1 style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 800,
-          fontSize: 'clamp(24px, 4vw, 42px)', color: '#E8EDF5',
-          lineHeight: 1.15, letterSpacing: '-0.03em', marginBottom: '12px',
-        }}>
-          Your entire SDLC,<br />
-          <span style={{ background: 'linear-gradient(135deg, #1A6FD4, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            generated in minutes.
-          </span>
-        </h1>
-        <p style={{ color: '#8899AA', fontSize: '15px', fontFamily: "'DM Sans', sans-serif", maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>
-          Describe any software project. Acorn builds every phase — requirements, architecture, tasks, costs, and risk analysis — automatically.
-        </p>
-      </div>
-
-      <div style={{
-        position: 'relative', zIndex: 1,
-        overflowX: isMobile ? 'visible' : 'auto',
-        maxWidth: '100vw', padding: '0 16px',
-        display: 'flex', justifyContent: 'center',
-      }}>
-        {isMobile
-          ? <MobileSDLCFlowchart visibleCount={visible} />
-          : <SDLCFlowchart visibleCount={visible} />}
-      </div>
-
-      <p style={{
-        marginTop: '16px', fontSize: '12px', color: 'rgba(136,153,170,0.7)',
-        fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.1em', textTransform: 'uppercase',
-        position: 'relative', zIndex: 1,
-        opacity: visible > 0 ? 1 : 0, transition: 'opacity 0.4s',
-      }}>
-        {visible < PHASES.length ? `Building pipeline · phase ${visible} of ${PHASES.length}` : 'All 11 phases ready'}
-      </p>
-
-      {showStats && (
-        <div style={{
-          display: 'flex', gap: '32px', marginTop: '28px', position: 'relative', zIndex: 1,
-          animation: 'nodeAppear 0.5s ease forwards', flexWrap: 'wrap', justifyContent: 'center',
-        }}>
-          {SPLASH_STATS.map(({ value, label }) => (
-            <div key={label} style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '22px', color: '#F97316' }}>{value}</div>
-              <div style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.05em' }}>{label}</div>
+  return (
+    <div className="sdlc-pipeline" style={{ width: '100%', position: 'relative' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gap: `${cellGap}px`,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {PHASES.map((phase, i) => {
+          const Icon = phase.icon;
+          const isOrange = i >= 5;
+          const accent = isOrange ? '#F97316' : '#1A6FD4';
+          const accent2 = isOrange ? '#fb9042' : '#3d8fe0';
+          return (
+            <div
+              key={phase.id}
+              className="sdlc-pipe-node"
+              style={{
+                position: 'relative',
+                padding: isMobile ? '12px 10px' : '14px 12px',
+                borderRadius: '14px',
+                background: `linear-gradient(155deg, rgba(${isOrange ? '249,115,22' : '26,111,212'},0.10), rgba(13,27,42,0.6))`,
+                border: `1px solid rgba(${isOrange ? '249,115,22' : '26,111,212'},0.32)`,
+                boxShadow: `0 4px 18px rgba(${isOrange ? '249,115,22' : '26,111,212'},0.10)`,
+                display: 'flex', flexDirection: 'column', gap: '8px',
+                animation: reduced ? 'none' : `sdlcNodeIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.04 * i}s both`,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: `radial-gradient(140px circle at var(--mx, 50%) var(--my, 50%), rgba(${isOrange ? '249,115,22' : '61,143,224'},0.20), transparent 70%)`,
+                  opacity: 0, transition: 'opacity 0.25s', pointerEvents: 'none',
+                }}
+                className="sdlc-pipe-glow"
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '8px',
+                  background: `linear-gradient(135deg, ${accent}, ${accent2})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `0 0 12px ${accent}55`,
+                  flexShrink: 0,
+                }}>
+                  <Icon size={14} color="#fff" strokeWidth={2.4} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: '9px', color: accent2,
+                    fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                    letterSpacing: '0.12em', textTransform: 'uppercase', lineHeight: 1,
+                  }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '12px' : '13px',
+                    fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#E8EDF5',
+                    letterSpacing: '-0.01em', lineHeight: 1.15, marginTop: '3px',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {phase.label}
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                height: '3px', borderRadius: '999px', position: 'relative', overflow: 'hidden',
+                background: `rgba(${isOrange ? '249,115,22' : '26,111,212'},0.18)`,
+              }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+                  width: '50%',
+                  animation: reduced ? 'none' : `sdlcShimmer 2.2s ease-in-out ${0.1 * i}s infinite`,
+                }} />
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
-      {showCTA && (
-        <div style={{ display: 'flex', gap: '12px', marginTop: '32px', position: 'relative', zIndex: 1, animation: 'nodeAppear 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <style>{`
+        @keyframes sdlcNodeIn {
+          from { opacity: 0; transform: translateY(14px) scale(0.92); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes sdlcShimmer {
+          0%   { transform: translateX(-110%); }
+          60%  { transform: translateX(220%); }
+          100% { transform: translateX(220%); }
+        }
+        .sdlc-pipe-node:hover .sdlc-pipe-glow { opacity: 1 !important; }
+        .sdlc-pipe-node {
+          transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+        }
+        .sdlc-pipe-node:hover {
+          transform: translateY(-3px);
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const SPLASH_PARTICLES = Array.from({ length: 28 }, (_, i) => {
+  const angle = (i / 28) * Math.PI * 2 + (i % 3) * 0.3;
+  const dist = 38 + (i * 7) % 28;
+  return {
+    id: i,
+    dx: Math.cos(angle) * dist,
+    dy: Math.sin(angle) * dist,
+    size: 2 + (i % 4),
+    delay: 0.05 + (i % 10) * 0.04,
+    color: i % 3 === 0 ? '#F97316' : i % 3 === 1 ? '#1A6FD4' : '#3d8fe0',
+  };
+});
+
+const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, onSkip }) => {
+  const isMobile = useIsMobile(600);
+  const reducedMotion = usePrefersReducedMotion();
+  const [skipped, setSkipped] = useState(false);
+
+  useEffect(() => {
+    const delay = reducedMotion ? 200 : 3000;
+    const t = setTimeout(() => onComplete?.(), delay);
+    return () => clearTimeout(t);
+  }, [reducedMotion]);
+
+  const skip = () => {
+    setSkipped(true);
+    onComplete?.();
+    onSkip?.();
+  };
+
+  const stageClass = `splash-stage${reducedMotion || skipped ? ' is-instant' : ''}`;
+
+  const logoSize = isMobile ? 96 : 128;
+  const haloSize = isMobile ? 240 : 360;
+  const orbitSize = isMobile ? 320 : 520;
+  const orbitRadius = orbitSize / 2 - (isMobile ? 22 : 28);
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Acorn intro"
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(ellipse at 50% 40%, #14315e 0%, #0a1a30 45%, #05080f 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        padding: isMobile ? '24px 16px' : '32px',
+        textAlign: 'center',
+      }}
+    >
+      <div className="splash-stars" aria-hidden />
+      <div className="splash-aurora splash-aurora-blue" aria-hidden />
+      <div className="splash-aurora splash-aurora-orange" aria-hidden />
+
+      <button
+        onClick={skip}
+        aria-label="Skip intro"
+        style={{
+          position: 'absolute',
+          top: isMobile ? '14px' : '22px',
+          right: isMobile ? '14px' : '24px',
+          padding: '8px 16px',
+          background: 'rgba(232,237,245,0.06)',
+          border: '1px solid rgba(232,237,245,0.18)',
+          borderRadius: '999px',
+          color: '#cdd5e0',
+          fontFamily: "'DM Sans', sans-serif",
+          fontWeight: 600,
+          fontSize: '12px',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          zIndex: 5,
+          backdropFilter: 'blur(8px)',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,237,245,0.14)'; e.currentTarget.style.color = '#fff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,237,245,0.06)'; e.currentTarget.style.color = '#cdd5e0'; }}
+      >
+        Skip →
+      </button>
+
+      <div
+        className={stageClass}
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '760px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 2,
+        }}
+      >
+        <div
+          className="splash-logo-wrap"
+          style={{ position: 'relative', width: orbitSize, height: orbitSize, marginBottom: isMobile ? '4px' : '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div className="splash-halo" style={{ width: haloSize, height: haloSize }} aria-hidden />
+          <div className="splash-ring splash-ring-1" style={{ width: haloSize, height: haloSize }} aria-hidden />
+          <div className="splash-ring splash-ring-2" style={{ width: haloSize, height: haloSize }} aria-hidden />
+          <div className="splash-ring splash-ring-3" style={{ width: haloSize, height: haloSize }} aria-hidden />
+
+          {/* SVG beams from each orbital node into center */}
+          {!reducedMotion && !skipped && (
+            <svg
+              className="splash-beams"
+              aria-hidden
+              width={orbitSize}
+              height={orbitSize}
+              viewBox={`0 0 ${orbitSize} ${orbitSize}`}
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+            >
+              <defs>
+                <radialGradient id="beamGradBlue" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#3d8fe0" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#3d8fe0" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="beamGradOrange" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#F97316" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              {PHASES.map((_, i) => {
+                const angle = ((i / PHASES.length) * 360 - 90) * Math.PI / 180;
+                const cx = orbitSize / 2;
+                const cy = orbitSize / 2;
+                const x = cx + orbitRadius * Math.cos(angle);
+                const y = cy + orbitRadius * Math.sin(angle);
+                const isOrange = i >= 5;
+                return (
+                  <line
+                    key={i}
+                    className="splash-beam"
+                    x1={cx} y1={cy} x2={x} y2={y}
+                    stroke={isOrange ? '#F97316' : '#3d8fe0'}
+                    strokeWidth={1.2}
+                    strokeOpacity={0.4}
+                    strokeDasharray="6 4"
+                    style={{ animationDelay: `${0.6 + i * 0.06}s` }}
+                  />
+                );
+              })}
+            </svg>
+          )}
+
+          {/* Orbital phase nodes */}
+          {!reducedMotion && !skipped && (
+            <div
+              className="splash-orbit-wrap"
+              aria-hidden
+              style={{
+                position: 'absolute',
+                width: orbitSize, height: orbitSize,
+                pointerEvents: 'none',
+              }}
+            >
+              {PHASES.map((phase, i) => {
+                const PhaseIcon = phase.icon;
+                const isOrange = i >= 5;
+                const accent = isOrange ? '#F97316' : '#3d8fe0';
+                const angle = (i / PHASES.length) * 360;
+                const dotSize = isMobile ? 32 : 44;
+                return (
+                  <div
+                    key={phase.id}
+                    className="splash-orbit-node"
+                    style={{
+                      position: 'absolute', top: '50%', left: '50%',
+                      width: 0, height: 0,
+                      transform: `rotate(${angle}deg) translate(${orbitRadius}px) rotate(-${angle}deg)`,
+                      animationDelay: `${0.45 + i * 0.04}s`,
+                    }}
+                  >
+                    <div className="splash-orbit-dot" style={{
+                      width: dotSize, height: dotSize,
+                      borderRadius: dotSize * 0.28,
+                      background: `linear-gradient(135deg, ${accent}, ${isOrange ? '#cc4900' : '#1452a0'})`,
+                      border: `1.5px solid ${accent}`,
+                      boxShadow: `0 0 ${dotSize * 0.7}px ${accent}aa, inset 0 0 ${dotSize * 0.3}px rgba(255,255,255,0.18)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      position: 'absolute', top: 0, left: 0,
+                      transform: 'translate(-50%, -50%)',
+                    }}>
+                      <PhaseIcon size={dotSize * 0.45} color="#fff" strokeWidth={2.4} />
+                      <div style={{
+                        position: 'absolute',
+                        bottom: -16, left: '50%', transform: 'translateX(-50%)',
+                        fontSize: '8px',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color: accent,
+                        letterSpacing: '0.1em',
+                        fontWeight: 700,
+                        textShadow: `0 0 8px ${accent}`,
+                      }}>{String(i + 1).padStart(2, '0')}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!reducedMotion && !skipped && SPLASH_PARTICLES.map(p => (
+            <span
+              key={p.id}
+              className="splash-particle"
+              style={{
+                width: p.size, height: p.size,
+                background: p.color,
+                boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+                '--dx': `${p.dx}px`,
+                '--dy': `${p.dy}px`,
+                animationDelay: `${p.delay}s`,
+              } as React.CSSProperties & Record<string, string | number>}
+            />
+          ))}
+
+          <div
+            className="splash-logo"
+            style={{
+              width: logoSize, height: logoSize,
+            }}
+          >
+            <img
+              src="/acorn-logo.png"
+              alt="Acorn"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
+        </div>
+
+        {/* Boot terminal */}
+        {!reducedMotion && !skipped && (
+          <div className="splash-boot" aria-hidden style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            marginTop: isMobile ? '10px' : '14px',
+            padding: '6px 14px',
+            background: 'rgba(13,27,42,0.6)',
+            border: '1px solid rgba(26,111,212,0.3)',
+            borderRadius: '999px',
+            backdropFilter: 'blur(8px)',
+            opacity: 0,
+            animation: 'splashBootIn 0.6s ease-out 1.4s forwards',
+          }}>
+            <span style={{
+              width: '8px', height: '8px', borderRadius: '50%',
+              background: '#3d8fe0', boxShadow: '0 0 10px #3d8fe0',
+              animation: 'splashBootPulse 1.2s ease-in-out infinite',
+            }} />
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: isMobile ? '10px' : '11px',
+              color: '#9bbbe0',
+              letterSpacing: '0.08em',
+            }}>
+              <span className="splash-boot-typer">SDLC_AGENTS_ONLINE · 11/11 PHASES READY</span>
+            </span>
+          </div>
+        )}
+
+        <p
+          className="splash-tagline"
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 500,
+            fontSize: isMobile ? '11px' : '13px',
+            color: '#8da4c4',
+            letterSpacing: '0.32em',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}
+        >
+          Project Intelligence Platform
+        </p>
+
+        <div
+          className="splash-headline"
+          style={{
+            marginTop: isMobile ? '28px' : '36px',
+            padding: '0 8px',
+            maxWidth: '640px',
+          }}
+        >
+          <h2 style={{
+            fontFamily: "'Syne', sans-serif", fontWeight: 700,
+            fontSize: isMobile ? '22px' : 'clamp(26px, 3.4vw, 38px)',
+            color: '#E8EDF5', lineHeight: 1.2, letterSpacing: '-0.02em', margin: 0,
+          }}>
+            Your entire SDLC,{' '}
+            <span style={{
+              background: 'linear-gradient(120deg, #3d8fe0, #F97316)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
+              generated in minutes.
+            </span>
+          </h2>
+          <p style={{
+            color: '#8899AA', fontSize: isMobile ? '13px' : '15px',
+            fontFamily: "'DM Sans', sans-serif",
+            maxWidth: '520px', margin: '14px auto 0', lineHeight: 1.6,
+          }}>
+            Eleven phases. One conversation. Requirements, architecture, tasks, costs, and risks — all automated.
+          </p>
+        </div>
+
+        <div className="splash-cta" style={{
+          display: 'flex', gap: '12px', marginTop: isMobile ? '24px' : '32px',
+          flexWrap: 'wrap', justifyContent: 'center',
+        }}>
           <button
             onClick={onEnter}
             style={{
-              padding: '14px 36px',
+              padding: '14px 32px',
               background: 'linear-gradient(135deg, #F97316, #cc4900)',
               border: 'none', borderRadius: '12px', cursor: 'pointer',
               color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700,
               fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px',
-              boxShadow: '0 4px 28px rgba(249,115,22,0.45)',
-              transition: 'all 0.2s',
+              boxShadow: '0 6px 32px rgba(249,115,22,0.5)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 36px rgba(249,115,22,0.55)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 28px rgba(249,115,22,0.45)'; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(249,115,22,0.6)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 32px rgba(249,115,22,0.5)'; }}
           >
             <ArrowRight size={18} /> Start Building Free
           </button>
           <button
             onClick={onViewDocs}
             style={{
-              padding: '14px 28px',
+              padding: '14px 26px',
               background: 'rgba(26,111,212,0.12)',
               border: '1px solid rgba(26,111,212,0.4)', borderRadius: '12px', cursor: 'pointer',
               color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
-              fontSize: '15px', transition: 'all 0.2s',
+              fontSize: '15px', transition: 'background 0.2s',
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,111,212,0.2)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,111,212,0.12)'; }}
@@ -490,13 +637,261 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete }
             View SDLC Guide
           </button>
         </div>
-      )}
 
-      {showCTA && (
-        <p style={{ marginTop: '24px', fontSize: '12px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", position: 'relative', zIndex: 1, animation: 'nodeAppear 0.5s ease 0.2s forwards', opacity: 0 }}>
-          No credit card required · Full SDLC automation · Export to PDF, Confluence & Jira
-        </p>
-      )}
+        <div className="splash-stats" style={{
+          display: 'flex', gap: isMobile ? '20px' : '36px', marginTop: '24px',
+          flexWrap: 'wrap', justifyContent: 'center',
+        }}>
+          {SPLASH_STATS.map(({ value, label }) => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '20px', color: '#F97316' }}>{value}</div>
+              <div style={{ fontSize: '10px', color: '#5a7088', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes splashFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes splashStarsDrift {
+          from { background-position: 0 0, 0 0; }
+          to   { background-position: 400px 200px, -300px 150px; }
+        }
+        @keyframes splashAuroraA {
+          0%, 100% { transform: translate3d(-10%, -10%, 0) scale(1); opacity: 0.55; }
+          50%      { transform: translate3d(8%, 6%, 0) scale(1.15); opacity: 0.75; }
+        }
+        @keyframes splashAuroraB {
+          0%, 100% { transform: translate3d(8%, 12%, 0) scale(1.05); opacity: 0.4; }
+          50%      { transform: translate3d(-6%, -8%, 0) scale(1.2); opacity: 0.6; }
+        }
+        @keyframes splashLogoIn {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-12deg); filter: blur(12px); }
+          60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(2deg); filter: blur(0); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); filter: blur(0); }
+        }
+        @keyframes splashLogoPulse {
+          0%, 100% { filter: drop-shadow(0 0 30px rgba(26,111,212,0.55)) drop-shadow(0 0 55px rgba(249,115,22,0.35)); }
+          50%      { filter: drop-shadow(0 0 50px rgba(26,111,212,0.8)) drop-shadow(0 0 90px rgba(249,115,22,0.55)); }
+        }
+        @keyframes splashHaloIn {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+          70%  { opacity: 0.9; transform: translate(-50%, -50%) scale(1.05); }
+          100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes splashRing {
+          0%   { opacity: 0.7; transform: translate(-50%, -50%) scale(0.4); }
+          100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.6); }
+        }
+        @keyframes splashClimaxBurst {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+          40%  { opacity: 0.9; }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); }
+        }
+        @keyframes splashParticle {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+          30%  { opacity: 1; }
+          100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); }
+        }
+        @keyframes splashRise {
+          0%   { opacity: 0; transform: translateY(14px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-stars {
+          position: absolute; inset: 0; pointer-events: none;
+          background-image:
+            radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.55) 50%, transparent 51%),
+            radial-gradient(1.5px 1.5px at 78% 32%, rgba(255,255,255,0.45) 50%, transparent 51%),
+            radial-gradient(1px 1px at 32% 72%, rgba(255,255,255,0.5) 50%, transparent 51%),
+            radial-gradient(1px 1px at 88% 84%, rgba(255,255,255,0.4) 50%, transparent 51%),
+            radial-gradient(1.5px 1.5px at 56% 12%, rgba(255,255,255,0.5) 50%, transparent 51%),
+            radial-gradient(1px 1px at 22% 92%, rgba(255,255,255,0.35) 50%, transparent 51%),
+            radial-gradient(1px 1px at 68% 58%, rgba(255,255,255,0.45) 50%, transparent 51%);
+          background-size: 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px;
+          opacity: 0; animation: splashFadeIn 0.6s ease forwards, splashStarsDrift 60s linear infinite;
+        }
+        .splash-aurora {
+          position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+          will-change: transform, opacity;
+        }
+        .splash-aurora-blue {
+          width: 70vmax; height: 70vmax; top: -20%; left: -15%;
+          background: radial-gradient(circle, rgba(26,111,212,0.55), transparent 65%);
+          animation: splashAuroraA 14s ease-in-out infinite;
+        }
+        .splash-aurora-orange {
+          width: 60vmax; height: 60vmax; bottom: -25%; right: -20%;
+          background: radial-gradient(circle, rgba(249,115,22,0.4), transparent 65%);
+          animation: splashAuroraB 16s ease-in-out infinite;
+        }
+
+        .splash-logo {
+          position: absolute; top: 50%; left: 50%;
+          display: flex; align-items: center; justify-content: center;
+          will-change: transform, opacity, filter;
+          animation: splashLogoIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both,
+                     splashLogoPulse 2.4s ease-in-out 1.6s infinite;
+          background: none;
+          border-radius: 0;
+        }
+        .splash-halo {
+          position: absolute; top: 50%; left: 50%;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(26,111,212,0.45) 0%, rgba(249,115,22,0.18) 35%, transparent 70%);
+          will-change: transform, opacity;
+          animation: splashHaloIn 1.2s ease-out both;
+        }
+        .splash-ring {
+          position: absolute; top: 50%; left: 50%;
+          width: 100%; height: 100%; border-radius: 50%;
+          border: 1.5px solid rgba(61,143,224,0.45);
+          opacity: 0; will-change: transform, opacity;
+        }
+        .splash-ring-2 { border-color: rgba(249,115,22,0.4); }
+        .splash-ring-3 { border-color: rgba(255,255,255,0.25); }
+        .splash-ring-1 { animation: splashRing 2.2s ease-out 0.4s infinite; }
+        .splash-ring-2 { animation: splashRing 2.2s ease-out 1.0s infinite; }
+        .splash-ring-3 { animation: splashClimaxBurst 1.0s ease-out 0.9s 1; }
+
+        .splash-particle {
+          position: absolute; top: 50%; left: 50%; border-radius: 50%;
+          opacity: 0; transform: translate(-50%, -50%) scale(0);
+          will-change: transform, opacity;
+          animation: splashParticle 1.6s ease-out both;
+        }
+
+        .splash-tagline {
+          will-change: transform, opacity;
+          animation: splashRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.95s both;
+        }
+        .splash-headline {
+          will-change: transform, opacity;
+          animation: splashRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.5s both;
+        }
+        .splash-cta {
+          will-change: transform, opacity;
+          animation: splashRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 2.4s both;
+        }
+        .splash-stats {
+          will-change: transform, opacity;
+          animation: splashRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 2.7s both;
+        }
+
+        .splash-stage.is-instant .splash-logo,
+        .splash-stage.is-instant .splash-halo,
+        .splash-stage.is-instant .splash-tagline,
+        .splash-stage.is-instant .splash-headline,
+        .splash-stage.is-instant .splash-cta,
+        .splash-stage.is-instant .splash-stats {
+          animation-delay: 0s !important;
+          animation-duration: 0.25s !important;
+        }
+        .splash-stage.is-instant .splash-ring,
+        .splash-stage.is-instant .splash-particle,
+        .splash-stage.is-instant .splash-orbit-wrap {
+          display: none !important;
+        }
+
+        .splash-orbit-wrap {
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%) rotate(0deg);
+          opacity: 0;
+          animation: splashOrbitFade 0.9s ease-out 0.6s forwards,
+                     splashOrbitSpin 38s linear 0.6s infinite;
+        }
+        @keyframes splashOrbitFade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes splashOrbitSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .splash-orbit-node {
+          opacity: 0;
+          animation: splashOrbitNodeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        @keyframes splashOrbitNodeIn {
+          0%   { opacity: 0; filter: blur(6px); }
+          60%  { opacity: 0.6; filter: blur(2px); }
+          100% { opacity: 1; filter: blur(0); }
+        }
+        .splash-orbit-dot {
+          animation: splashOrbitCounter 38s linear 0.6s infinite;
+          transform-origin: center;
+        }
+        @keyframes splashOrbitCounter {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+        .splash-beams {
+          opacity: 0;
+          animation: splashBeamsFade 1.2s ease-out 0.8s forwards;
+        }
+        @keyframes splashBeamsFade {
+          from { opacity: 0; }
+          to   { opacity: 0.55; }
+        }
+        .splash-beam {
+          stroke-dashoffset: 0;
+          animation: splashBeamFlow 3s linear infinite;
+        }
+        @keyframes splashBeamFlow {
+          from { stroke-dashoffset: 0; }
+          to   { stroke-dashoffset: -40; }
+        }
+        .splash-logo-scan {
+          background-size: 250% 100% !important;
+          background-position: 200% 0 !important;
+          animation: splashLogoScan 3.4s ease-in-out 1s infinite;
+        }
+        @keyframes splashLogoScan {
+          0%   { background-position: 200% 0; }
+          50%  { background-position: -100% 0; }
+          100% { background-position: -100% 0; }
+        }
+        @keyframes splashBootIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes splashBootPulse {
+          0%, 100% { opacity: 0.6; transform: scale(0.85); }
+          50%      { opacity: 1; transform: scale(1.2); }
+        }
+        .splash-boot-typer {
+          display: inline-block;
+          overflow: hidden;
+          white-space: nowrap;
+          border-right: 1.5px solid #3d8fe0;
+          width: 0;
+          animation: splashBootType 2s steps(40, end) 1.6s forwards,
+                     splashBootCaret 0.8s step-end 1.6s 6;
+        }
+        @keyframes splashBootType {
+          from { width: 0; }
+          to   { width: 100%; }
+        }
+        @keyframes splashBootCaret {
+          50% { border-color: transparent; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .splash-stars, .splash-aurora-blue, .splash-aurora-orange { animation: none !important; opacity: 0.5; }
+          .splash-logo, .splash-halo,
+          .splash-tagline, .splash-headline, .splash-cta, .splash-stats {
+            animation: none !important;
+            opacity: 1 !important;
+          }
+          .splash-logo, .splash-halo {
+            transform: translate(-50%, -50%) !important;
+          }
+          .splash-ring, .splash-particle { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 };
@@ -534,8 +929,9 @@ const LandingPage: React.FC = () => {
   if (showSplash) {
     return (
       <SplashScreen
-        onComplete={() => safeLocalStorage.setItem('acorn_visited', '1')}
+        onComplete={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
         onEnter={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
+        onSkip={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
         onViewDocs={() => { safeLocalStorage.setItem('acorn_visited', '1'); navigate('/sdlc-guide'); }}
       />
     );
@@ -581,10 +977,7 @@ const LandingPage: React.FC = () => {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(26,111,212,0.4)' }}>
-            <Zap size={16} color="#fff" />
-          </div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '20px', letterSpacing: '-0.02em' }}>Acorn</span>
+          <img src="/acorn-logo.png" alt="Acorn" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         {/* Desktop nav links */}
@@ -709,29 +1102,40 @@ const LandingPage: React.FC = () => {
             No credit card required &nbsp;·&nbsp; Free to start &nbsp;·&nbsp; Export to PDF, Confluence &amp; Jira
           </p>
 
-          {/* Flowchart showcase */}
-          <div className="lp-flowchart-card" style={{ marginTop: '24px', padding: isMobile ? '20px 16px' : '28px 32px', ...card({ borderColor: 'rgba(26,111,212,0.25)' }), width: '100%', overflowX: isMobile ? 'visible' : 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '8px' }}>
-              <p style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
-                Complete SDLC Pipeline · 11 Phases
-              </p>
+          {/* Pipeline showcase */}
+          <Reveal delay={150} y={32} className="lp-flowchart-card" style={{ marginTop: '24px', padding: isMobile ? '20px 14px' : '28px 32px', ...card({ borderColor: 'rgba(26,111,212,0.25)' }), width: '100%', position: 'relative', overflow: 'hidden' }}>
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5,
+              background: 'radial-gradient(800px circle at 30% 0%, rgba(26,111,212,0.15), transparent 60%), radial-gradient(600px circle at 90% 100%, rgba(249,115,22,0.12), transparent 60%)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '8px', position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#1A6FD4', boxShadow: '0 0 10px #1A6FD4', animation: 'pipelineLivePulse 1.6s ease-in-out infinite' }} />
+                <p style={{ fontSize: '11px', color: '#cdd5e0', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0, fontWeight: 600 }}>
+                  Complete SDLC Pipeline · 11 Phases
+                </p>
+              </div>
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#1A6FD4' }} />
-                  <span style={{ fontSize: '11px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif" }}>Planning phases</span>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'linear-gradient(135deg, #1A6FD4, #3d8fe0)' }} />
+                  <span style={{ fontSize: '11px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif" }}>Planning</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#F97316' }} />
-                  <span style={{ fontSize: '11px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif" }}>Execution phases</span>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'linear-gradient(135deg, #F97316, #fb9042)' }} />
+                  <span style={{ fontSize: '11px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif" }}>Execution</span>
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              {isMobile
-                ? <MobileSDLCFlowchart visibleCount={11} />
-                : <SDLCFlowchart visibleCount={11} compact />}
+            <div style={{ position: 'relative' }}>
+              <SDLCPipeline />
             </div>
-          </div>
+            <style>{`
+              @keyframes pipelineLivePulse {
+                0%, 100% { opacity: 0.5; transform: scale(0.85); }
+                50%      { opacity: 1; transform: scale(1.15); }
+              }
+            `}</style>
+          </Reveal>
         </div>
       </section>
 
@@ -782,22 +1186,30 @@ const LandingPage: React.FC = () => {
               color: '#1A6FD4', bg: 'rgba(26,111,212,0.12)',
             },
           ].map(({ step, icon: Icon, title, desc, color, bg }, idx) => (
-            <div key={step} style={{ padding: '32px 28px', ...card(), position: 'relative', overflow: 'hidden', transition: 'border-color 0.2s, transform 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}50`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
-            >
-              <div style={{ position: 'absolute', top: '16px', right: '20px', fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '80px', color: 'rgba(255,255,255,0.025)', lineHeight: 1, userSelect: 'none' }}>{step}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: bg, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={24} color={color} />
+            <Reveal key={step} delay={idx * 120}>
+              <Tilt
+                glow={`${color}33`}
+                style={{ padding: '32px 28px', ...card(), position: 'relative', overflow: 'hidden', height: '100%' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}60`; (e.currentTarget as HTMLElement).style.boxShadow = `0 18px 48px ${color}25`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              >
+                <div aria-hidden style={{
+                  position: 'absolute', inset: 0, pointerEvents: 'none',
+                  background: `radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), ${color}20, transparent 70%)`,
+                }} />
+                <div style={{ position: 'absolute', top: '16px', right: '20px', fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '80px', color: 'rgba(255,255,255,0.04)', lineHeight: 1, userSelect: 'none' }}>{step}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', position: 'relative' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: bg, border: `1px solid ${color}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `inset 0 0 18px ${color}22` }}>
+                    <Icon size={24} color={color} />
+                  </div>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 16px ${color}66` }}>
+                    <span style={{ color: '#fff', fontSize: '12px', fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>{idx + 1}</span>
+                  </div>
                 </div>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ color: '#fff', fontSize: '12px', fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>{idx + 1}</span>
-                </div>
-              </div>
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '20px', marginBottom: '12px', letterSpacing: '-0.01em' }}>{title}</h3>
-              <p style={{ color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.75 }}>{desc}</p>
-            </div>
+                <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '20px', marginBottom: '12px', letterSpacing: '-0.01em', position: 'relative' }}>{title}</h3>
+                <p style={{ color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.75, position: 'relative' }}>{desc}</p>
+              </Tilt>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -821,26 +1233,36 @@ const LandingPage: React.FC = () => {
             {PHASES.map((phase, i) => {
               const Icon = phase.icon;
               const isOrange = i >= 5;
+              const accent = isOrange ? '#F97316' : '#1A6FD4';
               return (
-                <div key={phase.id} style={{
-                  padding: '20px', ...card({ border: `1px solid ${isOrange ? 'rgba(249,115,22,0.2)' : 'rgba(26,111,212,0.18)'}` }),
-                  display: 'flex', flexDirection: 'column', gap: '12px',
-                  transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = isOrange ? 'rgba(249,115,22,0.45)' : 'rgba(26,111,212,0.45)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = isOrange ? '0 8px 24px rgba(249,115,22,0.12)' : '0 8px 24px rgba(26,111,212,0.15)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = isOrange ? 'rgba(249,115,22,0.2)' : 'rgba(26,111,212,0.18)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: `rgba(${isOrange ? '249,115,22' : '26,111,212'},0.14)`, border: `1px solid rgba(${isOrange ? '249,115,22' : '26,111,212'},0.3)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon size={16} color={isOrange ? '#F97316' : '#1A6FD4'} />
+                <Reveal key={phase.id} delay={(i % 4) * 80} y={20}>
+                  <Tilt
+                    max={6}
+                    scale={1.025}
+                    style={{
+                      padding: '20px', ...card({ border: `1px solid ${isOrange ? 'rgba(249,115,22,0.22)' : 'rgba(26,111,212,0.2)'}` }),
+                      display: 'flex', flexDirection: 'column', gap: '12px', height: '100%',
+                      position: 'relative', overflow: 'hidden',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = isOrange ? 'rgba(249,115,22,0.55)' : 'rgba(26,111,212,0.55)'; (e.currentTarget as HTMLElement).style.boxShadow = isOrange ? '0 14px 32px rgba(249,115,22,0.18)' : '0 14px 32px rgba(26,111,212,0.2)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = isOrange ? 'rgba(249,115,22,0.22)' : 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                  >
+                    <div aria-hidden style={{
+                      position: 'absolute', inset: 0, pointerEvents: 'none',
+                      background: `radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), ${accent}1f, transparent 65%)`,
+                    }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: `linear-gradient(135deg, ${accent}33, ${accent}10)`, border: `1px solid ${accent}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `inset 0 0 12px ${accent}22` }}>
+                        <Icon size={16} color={isOrange ? '#fb9042' : '#3d8fe0'} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: isOrange ? '#fb9042' : '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1px' }}>Phase {i + 1}</div>
+                        <div style={{ fontSize: '13px', fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#E8EDF5', lineHeight: 1.2 }}>{phase.label}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: '10px', color: isOrange ? '#fb9042' : '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1px' }}>Phase {i + 1}</div>
-                      <div style={{ fontSize: '13px', fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#E8EDF5', lineHeight: 1.2 }}>{phase.label}</div>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: '12px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.65, margin: 0 }}>{phase.desc}</p>
-                </div>
+                    <p style={{ fontSize: '12px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.65, margin: 0, position: 'relative' }}>{phase.desc}</p>
+                  </Tilt>
+                </Reveal>
               );
             })}
           </div>
@@ -870,17 +1292,33 @@ const LandingPage: React.FC = () => {
             { icon: BarChart3,  title: 'Cost Estimator',    desc: 'Detailed budget breakdowns with team composition, hourly rates, timeline projections, and ROI forecasting.', color: '#F97316', bg: 'rgba(249,115,22,0.08)' },
             { icon: GitBranch,  title: 'Task Planner',      desc: 'Sprint-ready backlog with story points, priorities, dependencies, and acceptance criteria — Jira-ready on day one.', color: '#1A6FD4', bg: 'rgba(26,111,212,0.1)' },
             { icon: TrendingUp, title: 'AI Explainability',  desc: 'Confidence scores and transparent reasoning trails for every AI output so your team can validate and trust the results.', color: '#F97316', bg: 'rgba(249,115,22,0.08)' },
-          ].map(({ icon: Icon, title, desc, color, bg }) => (
-            <div key={title} style={{ padding: '26px', ...card(), transition: 'border-color 0.2s, transform 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}55`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
-            >
-              <div style={{ width: '48px', height: '48px', borderRadius: '13px', background: bg, border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
-                <Icon size={22} color={color} />
-              </div>
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '16px', marginBottom: '10px', letterSpacing: '-0.01em' }}>{title}</h3>
-              <p style={{ color: '#8899AA', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>{desc}</p>
-            </div>
+          ].map(({ icon: Icon, title, desc, color, bg }, i) => (
+            <Reveal key={title} delay={(i % 3) * 100} y={20}>
+              <Tilt
+                max={7}
+                glow={`${color}40`}
+                style={{ padding: '26px', ...card(), height: '100%', position: 'relative', overflow: 'hidden' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}66`; (e.currentTarget as HTMLElement).style.boxShadow = `0 16px 38px ${color}25`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              >
+                <div aria-hidden style={{
+                  position: 'absolute', inset: 0, pointerEvents: 'none',
+                  background: `radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), ${color}24, transparent 65%)`,
+                }} />
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '13px',
+                  background: `linear-gradient(135deg, ${color}45, ${color}15)`,
+                  border: `1px solid ${color}55`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '18px', position: 'relative',
+                  boxShadow: `inset 0 0 14px ${color}22, 0 6px 20px ${color}25`,
+                }}>
+                  <Icon size={22} color="#fff" strokeWidth={2.2} />
+                </div>
+                <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '16px', marginBottom: '10px', letterSpacing: '-0.01em', position: 'relative' }}>{title}</h3>
+                <p style={{ color: '#8899AA', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, position: 'relative' }}>{desc}</p>
+              </Tilt>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -901,22 +1339,36 @@ const LandingPage: React.FC = () => {
               { quote: 'Acorn cut our pre-dev planning phase from 3 weeks to 2 days. The SRS output is genuinely production-quality.', name: 'Sarah M.', role: 'VP Engineering', stars: 5 },
               { quote: 'The AI personas feature alone is worth it. No more guessing who our users are — we have data-backed profiles from day one.', name: 'James K.', role: 'Product Manager', stars: 5 },
               { quote: 'Risk analysis caught three architectural issues we would have missed. Saved us from a very painful sprint 4.', name: 'Priya L.', role: 'Tech Lead', stars: 5 },
-            ].map(({ quote, name, role, stars }) => (
-              <div key={name} style={{ padding: '28px', ...card(), display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', gap: '3px' }}>
-                  {Array.from({ length: stars }).map((_, i) => <Star key={i} size={14} color="#F97316" fill="#F97316" />)}
-                </div>
-                <p style={{ color: '#C8D5E5', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.8, fontStyle: 'italic', flex: 1 }}>"{quote}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid rgba(26,111,212,0.12)', paddingTop: '16px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ color: '#fff', fontSize: '13px', fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{name[0]}</span>
+            ].map(({ quote, name, role, stars }, i) => (
+              <Reveal key={name} delay={i * 120}>
+                <Tilt
+                  max={5}
+                  scale={1.015}
+                  glow="rgba(249,115,22,0.25)"
+                  style={{ padding: '28px', ...card(), display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', position: 'relative', overflow: 'hidden' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(249,115,22,0.4)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 36px rgba(249,115,22,0.18)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(26,111,212,0.2)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                >
+                  <div aria-hidden style={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    background: 'radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), rgba(249,115,22,0.18), transparent 65%)',
+                  }} />
+                  <div style={{ position: 'absolute', top: '14px', right: '20px', fontFamily: "'Syne', sans-serif", fontSize: '90px', color: 'rgba(249,115,22,0.07)', lineHeight: 1, userSelect: 'none', fontWeight: 800 }}>"</div>
+                  <div style={{ display: 'flex', gap: '3px', position: 'relative' }}>
+                    {Array.from({ length: stars }).map((_, j) => <Star key={j} size={14} color="#F97316" fill="#F97316" />)}
                   </div>
-                  <div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '14px', color: '#E8EDF5' }}>{name}</div>
-                    <div style={{ color: '#8899AA', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>{role}</div>
+                  <p style={{ color: '#C8D5E5', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.8, fontStyle: 'italic', flex: 1, position: 'relative' }}>"{quote}"</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid rgba(26,111,212,0.12)', paddingTop: '16px', position: 'relative' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 16px rgba(26,111,212,0.4)' }}>
+                      <span style={{ color: '#fff', fontSize: '13px', fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{name[0]}</span>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '14px', color: '#E8EDF5' }}>{name}</div>
+                      <div style={{ color: '#8899AA', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>{role}</div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </Tilt>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -1110,10 +1562,7 @@ const LandingPage: React.FC = () => {
           {/* Brand */}
           <div style={{ gridColumn: 'span 1' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '7px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Zap size={14} color="#fff" />
-              </div>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '18px', letterSpacing: '-0.02em' }}>Acorn</span>
+              <img src="/acorn-logo.png" alt="Acorn" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             </div>
             <p style={{ color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.65, maxWidth: '200px' }}>
               AI-powered project intelligence for modern software teams.

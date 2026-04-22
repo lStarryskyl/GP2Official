@@ -133,6 +133,88 @@ class PhaseFlowService:
         )
         return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
 
+    async def edit_completion_note(
+        self,
+        project_id: str,
+        organization: str,
+        phase: str,
+        notes: str,
+        actor_id: str,
+        actor_authority: int = 0,
+        actor_name: Optional[str] = None,
+    ) -> Tuple[Dict[str, str], Dict[str, dict]]:
+        """Update the completion note on a previously completed phase."""
+        from datetime import datetime, timezone
+
+        if phase not in PHASE_ORDER:
+            raise ValueError("Invalid phase")
+
+        project = await self.project_repo.get_by_id(project_id, organization)
+        if not project:
+            raise ValueError("Project not found")
+
+        normalized_status = default_phase_status()
+        normalized_status.update(project.phase_status or {})
+        if normalized_status.get(phase) != "completed":
+            raise ValueError("Phase is not currently marked complete")
+
+        completion_meta = dict(getattr(project, "phase_completion_meta", None) or {})
+        existing = dict(completion_meta.get(phase) or {})
+        if not existing:
+            raise ValueError("No completion record exists for this phase")
+
+        original_user = existing.get("completed_by")
+        if actor_id != original_user and actor_authority < 4:
+            raise PermissionError("Only the original confirmer or a Program Manager can edit this note")
+
+        existing["notes"] = (notes or "").strip()
+        existing["edited_by"] = actor_id
+        existing["edited_by_name"] = actor_name
+        existing["edited_at"] = datetime.now(timezone.utc).isoformat()
+        completion_meta[phase] = existing
+
+        updated_project = await self.project_repo.update_phase_completion(
+            project_id, organization, normalized_status, completion_meta
+        )
+        return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
+
+    async def unmark_complete(
+        self,
+        project_id: str,
+        organization: str,
+        phase: str,
+        actor_id: str,
+        actor_authority: int = 0,
+    ) -> Tuple[Dict[str, str], Dict[str, dict]]:
+        """Reset a completed phase back to ready and clear its completion record."""
+        if phase not in PHASE_ORDER:
+            raise ValueError("Invalid phase")
+
+        project = await self.project_repo.get_by_id(project_id, organization)
+        if not project:
+            raise ValueError("Project not found")
+
+        normalized_status = default_phase_status()
+        normalized_status.update(project.phase_status or {})
+        if normalized_status.get(phase) != "completed":
+            raise ValueError("Phase is not currently marked complete")
+
+        completion_meta = dict(getattr(project, "phase_completion_meta", None) or {})
+        existing = completion_meta.get(phase) or {}
+        original_user = existing.get("completed_by")
+        if actor_id != original_user and actor_authority < 4:
+            raise PermissionError("Only the original confirmer or a Program Manager can undo this completion")
+
+        status = dict(normalized_status)
+        status[phase] = "ready"
+        if phase in completion_meta:
+            del completion_meta[phase]
+
+        updated_project = await self.project_repo.update_phase_completion(
+            project_id, organization, status, completion_meta
+        )
+        return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
+
     async def generate_phase(
         self,
         project_id: str,

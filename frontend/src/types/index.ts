@@ -101,6 +101,9 @@ export interface PhaseCompletionMeta {
   completed_by_name?: string | null;
   completed_at?: string | null;
   notes?: string | null;
+  edited_by?: string | null;
+  edited_by_name?: string | null;
+  edited_at?: string | null;
 }
 
 export interface ProjectTeamMember {

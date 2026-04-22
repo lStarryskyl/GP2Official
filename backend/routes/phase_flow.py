@@ -263,3 +263,67 @@ async def mark_phase_complete(
         )
 
 
+class PhaseEditNoteRequest(BaseModel):
+    notes: str = Field(default="", max_length=2000)
+
+
+@router.patch("/projects/{project_id}/phases/{phase}/complete/")
+async def edit_phase_completion_note(
+    project_id: str,
+    phase: str,
+    payload: PhaseEditNoteRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Edit the completion note on an already-completed phase."""
+    project = await project_service.get_project(project_id, current_user)
+    actor_name = (
+        getattr(current_user, "full_name", None)
+        or getattr(current_user, "email", None)
+        or current_user.id
+    )
+    try:
+        phase_status, completion_meta = await phase_service.edit_completion_note(
+            project_id,
+            project.organization,
+            phase,
+            notes=payload.notes,
+            actor_id=current_user.id,
+            actor_authority=getattr(current_user, "role_authority", 0) or 0,
+            actor_name=actor_name,
+        )
+        return {
+            "phases": phase_status,
+            "order": PHASE_ORDER,
+            "completion_meta": completion_meta,
+        }
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.delete("/projects/{project_id}/phases/{phase}/complete/")
+async def undo_phase_completion(
+    project_id: str,
+    phase: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Reset a completed phase to ready and clear its completion record."""
+    project = await project_service.get_project(project_id, current_user)
+    try:
+        phase_status, completion_meta = await phase_service.unmark_complete(
+            project_id,
+            project.organization,
+            phase,
+            actor_id=current_user.id,
+            actor_authority=getattr(current_user, "role_authority", 0) or 0,
+        )
+        return {
+            "phases": phase_status,
+            "order": PHASE_ORDER,
+            "completion_meta": completion_meta,
+        }
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

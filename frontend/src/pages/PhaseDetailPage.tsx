@@ -539,6 +539,57 @@ export const PhaseDetailPage: React.FC = () => {
   // Copy-to-clipboard helper
   const [copied, setCopied] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [editNoteDialogOpen, setEditNoteDialogOpen] = useState(false);
+  const [editNoteValue, setEditNoteValue] = useState('');
+  const [isSavingEditedNote, setIsSavingEditedNote] = useState(false);
+  const [undoDialogOpen, setUndoDialogOpen] = useState(false);
+  const [isUndoingComplete, setIsUndoingComplete] = useState(false);
+
+  const currentCompletionMeta = phaseId ? phaseCompletionMeta[phaseId] : undefined;
+  const canManageCompletion = useMemo(() => {
+    if (!currentCompletionMeta) return false;
+    if (userAuthority >= 4) return true;
+    return !!user && currentCompletionMeta.completed_by === user.id;
+  }, [currentCompletionMeta, user, userAuthority]);
+
+  const handleOpenEditNoteDialog = useCallback(() => {
+    setEditNoteValue((currentCompletionMeta?.notes as string) || '');
+    setEditNoteDialogOpen(true);
+  }, [currentCompletionMeta]);
+
+  const handleConfirmEditNote = useCallback(async () => {
+    if (!id || !phaseId) return;
+    setIsSavingEditedNote(true);
+    try {
+      const result = await api.editPhaseCompletionNote(id, phaseId, editNoteValue.trim());
+      setPhaseStatus(result.phases);
+      setPhaseCompletionMeta(result.completion_meta);
+      toastSuccess('Completion note updated');
+      setEditNoteDialogOpen(false);
+    } catch (err: any) {
+      console.error('Failed to edit completion note', err);
+      toastError(err?.response?.data?.detail || 'Failed to edit completion note');
+    } finally {
+      setIsSavingEditedNote(false);
+    }
+  }, [id, phaseId, editNoteValue, toastSuccess, toastError]);
+
+  const handleConfirmUndoComplete = useCallback(async () => {
+    if (!id || !phaseId) return;
+    setIsUndoingComplete(true);
+    try {
+      const result = await api.undoPhaseCompletion(id, phaseId);
+      setPhaseStatus(result.phases);
+      setPhaseCompletionMeta(result.completion_meta);
+      toastSuccess(`${phaseConfig?.title || 'Phase'} completion undone`);
+      setUndoDialogOpen(false);
+    } catch (err: any) {
+      console.error('Failed to undo completion', err);
+      toastError(err?.response?.data?.detail || 'Failed to undo completion');
+    } finally {
+      setIsUndoingComplete(false);
+    }
+  }, [id, phaseId, phaseConfig, toastSuccess, toastError]);
 
   const handleOpenCompleteDialog = useCallback(() => {
     setCompletionNotes('');
@@ -1778,19 +1829,52 @@ export const PhaseDetailPage: React.FC = () => {
                   {phaseId && phaseCompletionMeta[phaseId]?.completed_at && (
                     <div className="mt-3 ml-16 rounded-lg p-3"
                       style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                      <p className="text-xs font-semibold text-[#22c55e] flex items-center gap-2">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Confirmed by {phaseCompletionMeta[phaseId]?.completed_by_name || 'a team member'}
-                        {phaseCompletionMeta[phaseId]?.completed_at
-                          ? ` on ${new Date(phaseCompletionMeta[phaseId]!.completed_at as string).toLocaleString()}`
-                          : ''}
-                      </p>
-                      {phaseCompletionMeta[phaseId]?.notes && (
-                        <p className="mt-1.5 text-xs text-[var(--text-muted)] whitespace-pre-wrap">
-                          <span className="font-semibold text-[var(--text-primary)]">Notes:</span>{' '}
-                          {phaseCompletionMeta[phaseId]?.notes}
-                        </p>
-                      )}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#22c55e] flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Confirmed by {phaseCompletionMeta[phaseId]?.completed_by_name || 'a team member'}
+                            {phaseCompletionMeta[phaseId]?.completed_at
+                              ? ` on ${new Date(phaseCompletionMeta[phaseId]!.completed_at as string).toLocaleString()}`
+                              : ''}
+                          </p>
+                          {phaseCompletionMeta[phaseId]?.notes && (
+                            <p className="mt-1.5 text-xs text-[var(--text-muted)] whitespace-pre-wrap">
+                              <span className="font-semibold text-[var(--text-primary)]">Notes:</span>{' '}
+                              {phaseCompletionMeta[phaseId]?.notes}
+                            </p>
+                          )}
+                          {phaseCompletionMeta[phaseId]?.edited_at && (
+                            <p className="mt-1.5 text-[10px] text-[var(--text-faint)] italic">
+                              Edited by {phaseCompletionMeta[phaseId]?.edited_by_name || 'a team member'}
+                              {' on '}
+                              {new Date(phaseCompletionMeta[phaseId]!.edited_at as string).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        {canManageCompletion && (
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              onClick={handleOpenEditNoteDialog}
+                              className="text-[var(--text-muted)] bg-transparent text-xs h-7 px-2"
+                              style={{ borderColor: 'rgba(34,197,94,0.35)' }}
+                              title="Edit completion note"
+                            >
+                              <Edit3 className="h-3 w-3 mr-1" /> Edit note
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setUndoDialogOpen(true)}
+                              className="text-[var(--text-muted)] bg-transparent text-xs h-7 px-2"
+                              style={{ borderColor: 'rgba(212,160,23,0.35)' }}
+                              title="Unmark this phase as complete"
+                            >
+                              <Undo2 className="h-3 w-3 mr-1" /> Unmark
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -4611,6 +4695,119 @@ export const PhaseDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+      {editNoteDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isSavingEditedNote && setEditNoteDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+            style={{ background: 'var(--brand-850)', border: '1px solid rgba(34,197,94,0.3)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-[#22c55e]" />
+                Edit completion note
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Update the note recorded when this phase was confirmed complete.
+              </p>
+            </div>
+            <div className="p-5">
+              <textarea
+                value={editNoteValue}
+                onChange={(e) => setEditNoteValue(e.target.value)}
+                placeholder="Completion note..."
+                rows={5}
+                disabled={isSavingEditedNote}
+                maxLength={2000}
+                className="w-full rounded-lg p-3 text-sm bg-transparent text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
+                style={{ border: '1px solid rgba(26,46,69,0.6)', resize: 'vertical' }}
+              />
+              <p className="mt-1 text-[10px] text-[var(--text-faint)] text-right">
+                {editNoteValue.length}/2000
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditNoteDialogOpen(false)}
+                disabled={isSavingEditedNote}
+                className="text-[var(--text-muted)] bg-transparent"
+                style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmEditNote}
+                disabled={isSavingEditedNote}
+                className="font-semibold"
+                style={{ background: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}
+              >
+                {isSavingEditedNote ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save note
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {undoDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isUndoingComplete && setUndoDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+            style={{ background: 'var(--brand-850)', border: '1px solid rgba(212,160,23,0.35)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Undo2 className="h-5 w-5 text-[#D4A017]" />
+                Unmark {phaseConfig?.title || 'phase'} as complete?
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                This resets the phase status to ready and removes the saved completion note. You can mark it complete again later.
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex justify-end gap-2 mt-5">
+              <Button
+                variant="outline"
+                onClick={() => setUndoDialogOpen(false)}
+                disabled={isUndoingComplete}
+                className="text-[var(--text-muted)] bg-transparent"
+                style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmUndoComplete}
+                disabled={isUndoingComplete}
+                className="font-semibold"
+                style={{ background: 'rgba(212,160,23,0.18)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.45)' }}
+              >
+                {isUndoingComplete ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Undo2 className="mr-2 h-4 w-4" />
+                )}
+                Yes, unmark complete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {completionDialogOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"

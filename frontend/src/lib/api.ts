@@ -512,6 +512,40 @@ class ApiClient {
     };
   }
 
+  async editPhaseCompletionNote(
+    projectId: string,
+    phase: string,
+    notes: string
+  ): Promise<{
+    phases: Record<string, string>;
+    completion_meta: Record<string, import('@/types').PhaseCompletionMeta>;
+  }> {
+    const response = await this.client.patch(
+      `/projects/${projectId}/phases/${phase}/complete/`,
+      { notes }
+    );
+    return {
+      phases: response.data.phases,
+      completion_meta: response.data.completion_meta || {},
+    };
+  }
+
+  async undoPhaseCompletion(
+    projectId: string,
+    phase: string
+  ): Promise<{
+    phases: Record<string, string>;
+    completion_meta: Record<string, import('@/types').PhaseCompletionMeta>;
+  }> {
+    const response = await this.client.delete(
+      `/projects/${projectId}/phases/${phase}/complete/`
+    );
+    return {
+      phases: response.data.phases,
+      completion_meta: response.data.completion_meta || {},
+    };
+  }
+
   async getRoadmap(projectId: string): Promise<{ milestones: any[]; summary?: any[] }> {
     const response = await this.client.get(`/projects/${projectId}/roadmap/`);
     return response.data;

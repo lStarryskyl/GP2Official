@@ -176,7 +176,7 @@ const SDLCFlowchart: React.FC<SDLCFlowchartProps> = ({ visibleCount, compact = f
 };
 
 // ─── Splash Screen ───────────────────────────────────────────────────────────
-interface SplashProps { onEnter: () => void; onViewDocs: () => void; }
+interface SplashProps { onEnter: () => void; onViewDocs: () => void; onComplete?: () => void; }
 
 const SPLASH_STATS = [
   { value: '10x', label: 'Faster planning' },
@@ -184,7 +184,16 @@ const SPLASH_STATS = [
   { value: '< 5 min', label: 'From idea to SRS' },
 ];
 
-const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs }) => {
+const safeLocalStorage = {
+  getItem: (key: string) => {
+    try { return typeof window !== 'undefined' ? localStorage.getItem(key) : null; } catch { return null; }
+  },
+  setItem: (key: string, value: string) => {
+    try { if (typeof window !== 'undefined') localStorage.setItem(key, value); } catch { /* noop */ }
+  },
+};
+
+const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete }) => {
   const [visible, setVisible] = useState(0);
   const [showCTA, setShowCTA] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -194,7 +203,11 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs }) => {
       const t = setTimeout(() => setVisible(v => v + 1), 280);
       return () => clearTimeout(t);
     } else {
-      const t = setTimeout(() => { setShowCTA(true); setShowStats(true); }, 350);
+      const t = setTimeout(() => {
+        setShowCTA(true);
+        setShowStats(true);
+        onComplete?.();
+      }, 350);
       return () => clearTimeout(t);
     }
   }, [visible]);
@@ -327,11 +340,17 @@ const scrollTo = (id: string) => {
 // ─── Main Landing Page ────────────────────────────────────────────────────────
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => !safeLocalStorage.getItem('acorn_visited'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (showSplash) {
-    return <SplashScreen onEnter={() => setShowSplash(false)} onViewDocs={() => navigate('/sdlc-guide')} />;
+    return (
+      <SplashScreen
+        onComplete={() => safeLocalStorage.setItem('acorn_visited', '1')}
+        onEnter={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
+        onViewDocs={() => { safeLocalStorage.setItem('acorn_visited', '1'); navigate('/sdlc-guide'); }}
+      />
+    );
   }
 
   const card = (style?: React.CSSProperties): React.CSSProperties => ({

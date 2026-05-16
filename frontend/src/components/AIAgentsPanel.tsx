@@ -253,11 +253,11 @@ export const AIAgentsPanel: React.FC<Props> = ({
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(o => !o)}
-        className="fixed bottom-24 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-xl transition-all hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-xl transition-all hover:scale-105"
         style={{ background: 'linear-gradient(135deg, var(--brand-600), var(--blue-400))', color: 'var(--brand-900)', boxShadow: '0 8px 24px rgba(26,111,212,0.25)' }}
       >
         <Sparkles className="w-4 h-4" />
-        AI Agents
+{isOpen ? 'Close' : 'AI Agents'}
       </button>
 
       {/* Slide-in Panel */}

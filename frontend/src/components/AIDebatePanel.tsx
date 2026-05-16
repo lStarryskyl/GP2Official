@@ -60,7 +60,7 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
         title="AI Debate"
         style={{
           position: 'fixed',
-          bottom: '90px',
+          bottom: '80px',
           right: '24px',
           zIndex: 1000,
           width: '48px',

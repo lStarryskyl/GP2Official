@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/Layout';
 import {
-  Plus, FolderOpen, Calendar, Upload, Lightbulb, HelpCircle, MoreVertical,
-  Clock, CheckCircle, AlertCircle, Loader2, Sparkles, ArrowRight, TrendingUp,
-  Search, Filter, Grid3X3, List, Trash2, Edit3, ExternalLink, FileText,
+  Plus, FolderOpen, Calendar, Upload, MoreVertical,
+  Clock, CheckCircle, Loader2, Sparkles, ArrowRight, TrendingUp,
+  Search, Grid3X3, List, Trash2, ExternalLink, FileText,
   TreePine, Activity, Zap, Archive, RotateCcw, Layers, Crown, Lock,
 } from 'lucide-react';
 import type { Project } from '@/types';
@@ -27,10 +27,8 @@ function getHealthColor(score: number) {
 }
 
 const quickActions = [
-  { icon: Plus,       label: 'New Project',  description: 'Start from scratch',   action: 'new',     color: 'forest' },
-  { icon: Upload,     label: 'Import',       description: 'Upload documents',     action: 'import',  color: 'sage' },
-  { icon: Lightbulb,  label: 'AI Insights',  description: 'Get recommendations',  action: 'insights',color: 'amber' },
-  { icon: HelpCircle, label: 'Documentation',description: 'Learn more',           action: 'docs',    color: 'blue' },
+  { icon: Plus,   label: 'New Project', description: 'Start from scratch', action: 'new',    color: 'forest' },
+  { icon: Upload, label: 'Import',      description: 'Upload documents',   action: 'import', color: 'sage' },
 ];
 
 type ViewTab = 'active' | 'archived';

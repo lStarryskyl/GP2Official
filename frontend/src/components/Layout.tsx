@@ -2,13 +2,11 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import {
-  LogOut, MessageCircle, FolderKanban, Search,
-  Menu, X, ChevronRight, ChevronLeft, Plus, Sparkles, User as UserIcon,
-  BarChart3, Users, CreditCard, BookOpen, Bell, Layers,
-  ChevronsUpDown, CheckCircle2, Circle, Loader2, Lock, Command,
-  Archive,
+  LogOut, FolderKanban, Search,
+  Menu, X, ChevronRight, ChevronLeft, Plus, User as UserIcon,
+  BarChart3, BookOpen,
+  ChevronsUpDown, CheckCircle2, Circle, Loader2, Lock,
 } from 'lucide-react';
-import { ConversationalDock } from '@/components/ConversationalDock';
 import { AIDebatePanel } from '@/components/AIDebatePanel';
 import { CommandPalette } from '@/components/CommandPalette';
 import { AcornLogo } from '@/components/AcornLogo';
@@ -47,7 +45,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout }          = useAuthStore();
   const navigate                  = useNavigate();
   const location                  = useLocation();
-  const [assistantOpen, setAssistantOpen]       = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen]     = useState(false);
   const [paletteOpen, setPaletteOpen]           = useState(false);
@@ -70,15 +67,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const activeProjectId = projectMatch && projectMatch[1]?.length > 6 ? projectMatch[1] : null;
   const phaseMatch      = useMemo(() => location.pathname.match(/\/phases\/([^/]+)/), [location.pathname]);
   const activePhaseId   = phaseMatch ? phaseMatch[1] : null;
-  const onPhasePage     = !!activePhaseId;
 
-  // Track recents
   useEffect(() => { if (activeProjectId) trackRecent(activeProjectId); }, [activeProjectId]);
 
-  // Load projects for sidebar (lightly cached)
   useEffect(() => {
     if (!user) return;
-    api.getProjects().then(setProjects).catch(() => { /* ignore */ });
+    api.getProjects().then(setProjects).catch(() => {});
   }, [user, activeProjectId]);
 
   const activeProject = useMemo(
@@ -94,9 +88,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       .slice(0, 4) as Project[];
   }, [projects, activeProjectId, location.pathname]);
 
-  useEffect(() => { if (!activeProjectId) setAssistantOpen(false); }, [activeProjectId]);
-
-  // Cmd/Ctrl + K opens command palette globally
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -108,7 +99,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
-  // Close switcher on outside click
   useEffect(() => {
     if (!switcherOpen) return;
     const onClick = (e: MouseEvent) => {
@@ -125,7 +115,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const sidebarW = sidebarCollapsed ? '72px' : '264px';
 
-  // Status indicator helpers for phase pips
   const phaseIcon = (status?: string) => {
     const s = (status || '').toLowerCase();
     if (s === 'completed')   return { Icon: CheckCircle2, color: '#22c55e' };
@@ -498,87 +487,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <Search size={18} />
           </button>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px' }}
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
       </header>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 40, paddingTop: '60px',
-          background: 'rgba(13,27,42,0.97)', backdropFilter: 'blur(16px)',
-          overflowY: 'auto',
-        }} className="lg:hidden animate-reveal-down">
-          <nav style={{ padding: '16px' }}>
-            {navItems.map(item => {
-              const Icon   = item.icon;
-              const active = isActive(item.path);
-              return (
-                <button key={item.id}
-                  onClick={() => { navigate(item.path); setMobileMenuOpen(false); }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '16px',
-                    padding: '14px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                    background: active ? 'rgba(26,111,212,0.15)' : 'transparent',
-                    color: active ? 'var(--blue-300)' : 'var(--text-muted)',
-                    fontSize: '15px', fontFamily: "'DM Sans', sans-serif", marginBottom: '4px',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-            {activeProjectId && (
-              <>
-                <div style={{ marginTop: '12px', padding: '10px 16px 6px', fontSize: '11px', color: 'var(--text-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Phases
-                </div>
-                {phaseConfigs.map(ph => {
-                  const status = activeProject?.phase_status?.[ph.id];
-                  const isLocked = status === 'locked';
-                  return (
-                    <button key={ph.id}
-                      onClick={() => { if (!isLocked) { navigate(`/projects/${activeProjectId}/phases/${ph.id}`); setMobileMenuOpen(false); } }}
-                      disabled={isLocked}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '11px 16px', borderRadius: '10px', border: 'none',
-                        cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1,
-                        background: 'transparent', color: 'var(--text-muted)', fontSize: '14px', textAlign: 'left',
-                      }}
-                    >
-                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(26,46,69,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
-                        {ph.stepNumber}
-                      </span>
-                      <span>{ph.title}</span>
-                    </button>
-                  );
-                })}
-              </>
-            )}
-            <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(26,111,212,0.15)', marginTop: '8px' }}>
-              <button
-                onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '16px',
-                  padding: '14px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                  background: 'transparent', color: '#f87171', fontSize: '15px',
-                }}
-              >
-                <LogOut size={20} />
-                <span>Logout</span>
-              </button>
-            </div>
-          </nav>
-        </div>
-      )}
 
       {/* ── Main content ── */}
       <main style={{
@@ -593,47 +503,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </main>
 
-      {/* ── AI Debate Panel (visible on any project page) ── */}
+      {/* ── AI Debate Panel ── */}
       {activeProjectId && (
         <AIDebatePanel projectId={activeProjectId} />
-      )}
-
-      {/* ── AI Chat FAB (hidden on phase pages where Athena is shown) ── */}
-      {activeProjectId && !onPhasePage && (
-        <>
-          {!assistantOpen && (
-            <button
-              onClick={() => setAssistantOpen(true)}
-              style={{
-                position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
-                width: '52px', height: '52px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(26,111,212,0.45)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-            >
-              <MessageCircle size={22} color="#fff" />
-            </button>
-          )}
-          {assistantOpen && (
-            <div style={{
-              position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
-              width: '380px', maxHeight: '580px',
-              borderRadius: '20px', overflow: 'hidden',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-            }} className="animate-reveal-up">
-              <ConversationalDock
-                projectId={activeProjectId}
-                open={assistantOpen}
-                onClose={() => setAssistantOpen(false)}
-              />
-            </div>
-          )}
-        </>
       )}
 
       {/* ── Command palette (global ⌘K) ── */}

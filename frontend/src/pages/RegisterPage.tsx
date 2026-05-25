@@ -88,7 +88,7 @@ export const RegisterPage: React.FC = () => {
         <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24 w-full">
           {/* Logo */}
           <div className={`flex items-center gap-4 mb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
-            <AcornLogo height={52} />
+            <AcornLogo height={52} white />
           </div>
 
           {/* Headline */}
@@ -133,7 +133,7 @@ export const RegisterPage: React.FC = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-3">
-              <AcornLogo height={40} />
+              <AcornLogo height={40} white />
             </Link>
           </div>
 

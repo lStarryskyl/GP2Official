@@ -159,9 +159,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         }}>
           <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             {!sidebarCollapsed ? (
-              <AcornLogo height={36} />
+              <AcornLogo height={36} white />
             ) : (
-              <AcornLogo variant="mark" height={28} width={28} />
+              <AcornLogo variant="mark" height={28} width={28} white />
             )}
           </Link>
           <button
@@ -488,7 +488,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         padding: '0 16px', zIndex: 50,
       }} className="lg:hidden">
         <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <AcornLogo height={34} />
+          <AcornLogo height={34} white />
         </Link>
         <div style={{ display: 'flex', gap: '6px' }}>
           <button

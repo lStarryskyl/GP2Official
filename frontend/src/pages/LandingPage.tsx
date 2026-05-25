@@ -7,6 +7,7 @@ import {
   ClipboardList, Search, FlaskConical, Code2, LayoutDashboard, ChevronRight,
 } from 'lucide-react';
 import { AcornLogo } from '../components/AcornLogo';
+import OnboardingScreen from '../components/OnboardingScreen';
 
 // ─── Phase data ──────────────────────────────────────────────────────────────
 const PHASES = [
@@ -122,6 +123,19 @@ const Reveal: React.FC<RevealProps> = ({ children, delay = 0, as = 'div', style,
     >
       {children}
     </Tag>
+  );
+};
+
+const WaveReveal: React.FC<{ children: React.ReactNode; className?: string; style?: React.CSSProperties }> = ({ children, className, style }) => {
+  const [ref, shown] = useReveal<HTMLDivElement>(0.1);
+  return (
+    <div
+      ref={ref}
+      className={`${className || ''} ${shown ? 'wave-revealed' : ''}`}
+      style={style}
+    >
+      {children}
+    </div>
   );
 };
 
@@ -909,29 +923,42 @@ const scrollTo = (id: string) => {
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showSplash, setShowSplash] = useState(() => !safeLocalStorage.getItem('acorn_visited'));
+  const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [heroReady, setHeroReady] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile(600);
 
   useEffect(() => {
-    if (!showSplash && location.hash) {
+    if (!showSplash && !showOnboarding && location.hash) {
       const id = location.hash.slice(1);
       const el = document.getElementById(id);
       if (el) {
         setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
       }
     }
-  }, [showSplash, location.hash]);
+  }, [showSplash, showOnboarding, location.hash]);
+
+  useEffect(() => {
+    if (!showSplash && !showOnboarding) {
+      const t = setTimeout(() => setHeroReady(true), 300);
+      return () => clearTimeout(t);
+    }
+  }, [showSplash, showOnboarding]);
 
   if (showSplash) {
     return (
       <SplashScreen
-        onComplete={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
-        onEnter={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
-        onSkip={() => { safeLocalStorage.setItem('acorn_visited', '1'); setShowSplash(false); }}
-        onViewDocs={() => { safeLocalStorage.setItem('acorn_visited', '1'); navigate('/sdlc-guide'); }}
+        onComplete={() => { setShowSplash(false); setShowOnboarding(true); }}
+        onEnter={() => { setShowSplash(false); setShowOnboarding(true); }}
+        onSkip={() => { setShowSplash(false); }}
+        onViewDocs={() => { navigate('/sdlc-guide'); }}
       />
     );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingScreen onDone={() => setShowOnboarding(false)} />;
   }
 
   const card = (style?: React.CSSProperties): React.CSSProperties => ({
@@ -974,7 +1001,7 @@ const LandingPage: React.FC = () => {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <AcornLogo height={40} />
+          <AcornLogo height={40} white />
         </div>
 
         {/* Desktop nav links */}
@@ -1055,16 +1082,30 @@ const LandingPage: React.FC = () => {
 
       {/* ── HERO ── */}
       <section style={{ padding: 'clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px) 60px', maxWidth: '1200px', margin: '0 auto' }}>
+        <style>{`
+          @keyframes heroSlideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '28px' }}>
 
           {/* Badge */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.3)', borderRadius: '999px' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px',
+            background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.3)', borderRadius: '999px',
+            opacity: heroReady ? 1 : 0,
+            animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 0ms forwards' : 'none',
+          }}>
             <Sparkles size={14} color="#3d8fe0" />
             <span style={{ fontSize: '13px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: '0.02em' }}>AI-Powered SDLC Platform</span>
           </div>
 
           {/* Headline */}
-          <div>
+          <div style={{
+            opacity: heroReady ? 1 : 0,
+            animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 80ms forwards' : 'none',
+          }}>
             <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(36px, 6vw, 68px)', lineHeight: 1.08, maxWidth: '820px', letterSpacing: '-0.03em', margin: '0 auto 20px' }}>
               Ship better software,{' '}
               <span style={{ background: 'linear-gradient(135deg, #1A6FD4 30%, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -1077,7 +1118,11 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* CTAs */}
-          <div className="lp-hero-ctas" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+          <div className="lp-hero-ctas" style={{
+            display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center',
+            opacity: heroReady ? 1 : 0,
+            animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 160ms forwards' : 'none',
+          }}>
             <button onClick={() => navigate('/register')}
               style={{ padding: '15px 36px', background: 'linear-gradient(135deg, #F97316, #cc4900)', border: 'none', borderRadius: '12px', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 28px rgba(249,115,22,0.4)', transition: 'all 0.25s' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(249,115,22,0.5)'; }}
@@ -1094,13 +1139,13 @@ const LandingPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Trust micro-copy */}
-          <p style={{ fontSize: '12px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.03em' }}>
-            No credit card required &nbsp;·&nbsp; Free to start &nbsp;·&nbsp; Export to PDF, Confluence &amp; Jira
-          </p>
-
           {/* Pipeline showcase */}
-          <Reveal delay={150} y={32} className="lp-flowchart-card" style={{ marginTop: '24px', padding: isMobile ? '20px 14px' : '28px 32px', ...card({ borderColor: 'rgba(26,111,212,0.25)' }), width: '100%', position: 'relative', overflow: 'hidden' }}>
+          <div style={{
+            width: '100%', marginTop: '24px',
+            opacity: heroReady ? 1 : 0,
+            animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 240ms forwards' : 'none',
+          }}>
+          <Reveal delay={0} y={0} className="lp-flowchart-card" style={{ padding: isMobile ? '20px 14px' : '28px 32px', ...card({ borderColor: 'rgba(26,111,212,0.25)' }), width: '100%', position: 'relative', overflow: 'hidden' }}>
             <div aria-hidden style={{
               position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5,
               background: 'radial-gradient(800px circle at 30% 0%, rgba(26,111,212,0.15), transparent 60%), radial-gradient(600px circle at 90% 100%, rgba(249,115,22,0.12), transparent 60%)',
@@ -1133,6 +1178,7 @@ const LandingPage: React.FC = () => {
               }
             `}</style>
           </Reveal>
+          </div>
         </div>
       </section>
 
@@ -1165,7 +1211,7 @@ const LandingPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+        <WaveReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
           {[
             {
               step: '01', icon: MessageSquare, title: 'Describe Your Project',
@@ -1183,7 +1229,7 @@ const LandingPage: React.FC = () => {
               color: '#1A6FD4', bg: 'rgba(26,111,212,0.12)',
             },
           ].map(({ step, icon: Icon, title, desc, color, bg }, idx) => (
-            <Reveal key={step} delay={idx * 120}>
+            <div key={step}>
               <Tilt
                 glow={`${color}33`}
                 style={{ padding: '32px 28px', ...card(), position: 'relative', overflow: 'hidden', height: '100%' }}
@@ -1206,9 +1252,9 @@ const LandingPage: React.FC = () => {
                 <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '20px', marginBottom: '12px', letterSpacing: '-0.01em', position: 'relative' }}>{title}</h3>
                 <p style={{ color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.75, position: 'relative' }}>{desc}</p>
               </Tilt>
-            </Reveal>
+            </div>
           ))}
-        </div>
+        </WaveReveal>
       </section>
 
       {/* ── PHASES GRID ── */}
@@ -1226,13 +1272,13 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+          <WaveReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
             {PHASES.map((phase, i) => {
               const Icon = phase.icon;
               const isOrange = i >= 5;
               const accent = isOrange ? '#F97316' : '#1A6FD4';
               return (
-                <Reveal key={phase.id} delay={(i % 4) * 80} y={20}>
+                <div key={phase.id}>
                   <Tilt
                     max={6}
                     scale={1.025}
@@ -1259,10 +1305,10 @@ const LandingPage: React.FC = () => {
                     </div>
                     <p style={{ fontSize: '12px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.65, margin: 0, position: 'relative' }}>{phase.desc}</p>
                   </Tilt>
-                </Reveal>
+                </div>
               );
             })}
-          </div>
+          </WaveReveal>
         </div>
       </section>
 
@@ -1281,7 +1327,7 @@ const LandingPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+        <WaveReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
           {[
             { icon: FileText,   title: 'SRS Generator',     desc: 'Full software requirements specification with functional and non-functional requirements, acceptance criteria, and edge cases.', color: '#1A6FD4', bg: 'rgba(26,111,212,0.1)' },
             { icon: Users,      title: 'Persona Builder',   desc: 'AI-generated user personas with detailed pain points, goals, motivations, and user stories mapped to your product.', color: '#F97316', bg: 'rgba(249,115,22,0.08)' },
@@ -1290,7 +1336,7 @@ const LandingPage: React.FC = () => {
             { icon: GitBranch,  title: 'Task Planner',      desc: 'Sprint-ready backlog with story points, priorities, dependencies, and acceptance criteria — Jira-ready on day one.', color: '#1A6FD4', bg: 'rgba(26,111,212,0.1)' },
             { icon: TrendingUp, title: 'AI Explainability',  desc: 'Confidence scores and transparent reasoning trails for every AI output so your team can validate and trust the results.', color: '#F97316', bg: 'rgba(249,115,22,0.08)' },
           ].map(({ icon: Icon, title, desc, color, bg }, i) => (
-            <Reveal key={title} delay={(i % 3) * 100} y={20}>
+            <div key={title}>
               <Tilt
                 max={7}
                 glow={`${color}40`}
@@ -1315,9 +1361,9 @@ const LandingPage: React.FC = () => {
                 <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '16px', marginBottom: '10px', letterSpacing: '-0.01em', position: 'relative' }}>{title}</h3>
                 <p style={{ color: '#8899AA', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, position: 'relative' }}>{desc}</p>
               </Tilt>
-            </Reveal>
+            </div>
           ))}
-        </div>
+        </WaveReveal>
       </section>
 
       {/* ── TESTIMONIALS ── */}
@@ -1331,13 +1377,13 @@ const LandingPage: React.FC = () => {
               See what engineering leaders and product managers are saying.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+          <WaveReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
             {[
               { quote: 'Acorn cut our pre-dev planning phase from 3 weeks to 2 days. The SRS output is genuinely production-quality.', name: 'Sarah M.', role: 'VP Engineering', stars: 5 },
               { quote: 'The AI personas feature alone is worth it. No more guessing who our users are — we have data-backed profiles from day one.', name: 'James K.', role: 'Product Manager', stars: 5 },
               { quote: 'Risk analysis caught three architectural issues we would have missed. Saved us from a very painful sprint 4.', name: 'Priya L.', role: 'Tech Lead', stars: 5 },
             ].map(({ quote, name, role, stars }, i) => (
-              <Reveal key={name} delay={i * 120}>
+              <div key={name}>
                 <Tilt
                   max={5}
                   scale={1.015}
@@ -1365,9 +1411,9 @@ const LandingPage: React.FC = () => {
                     </div>
                   </div>
                 </Tilt>
-              </Reveal>
+              </div>
             ))}
-          </div>
+          </WaveReveal>
         </div>
       </section>
 
@@ -1511,12 +1557,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* FAQ-style reassurance */}
-          <div style={{ textAlign: 'center', marginTop: '36px' }}>
-            <p style={{ color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>
-              No credit card required for Free tier &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp; Upgrade or downgrade at any time
-            </p>
-          </div>
+          <div style={{ textAlign: 'center', marginTop: '36px' }} />
         </div>
       </section>
 
@@ -1559,7 +1600,7 @@ const LandingPage: React.FC = () => {
           {/* Brand */}
           <div style={{ gridColumn: 'span 1' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <AcornLogo height={36} />
+              <AcornLogo height={36} white />
             </div>
             <p style={{ color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.65, maxWidth: '200px' }}>
               AI-powered project intelligence for modern software teams.

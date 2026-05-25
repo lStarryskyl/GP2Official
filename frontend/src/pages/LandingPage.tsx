@@ -363,7 +363,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
   const [skipped, setSkipped] = useState(false);
 
   useEffect(() => {
-    const delay = reducedMotion ? 200 : 3000;
+    const delay = reducedMotion ? 200 : 5500;
     const t = setTimeout(() => onComplete?.(), delay);
     return () => clearTimeout(t);
   }, [reducedMotion]);

@@ -359,6 +359,7 @@ const WarpOverlay: React.FC<WarpOverlayProps> = ({ active }) => {
 };
 
 const SWIPE_THRESHOLD = 60;
+const VERTICAL_SWIPE_THRESHOLD = 80;
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
   const [visible, setVisible] = useState(false);
@@ -368,6 +369,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
   const reducedMotion = usePrefersReducedMotion();
   const advancingRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 60);
@@ -415,13 +417,29 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+    const dy = e.changedTouches[0].clientY - touchStartYRef.current;
     touchStartXRef.current = null;
-    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    touchStartYRef.current = null;
+
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (absDy >= VERTICAL_SWIPE_THRESHOLD && absDy > absDx) {
+      if (dy > 0) {
+        onDone();
+      } else {
+        transition(0);
+      }
+      return;
+    }
+
+    if (absDx < SWIPE_THRESHOLD) return;
     if (dx < 0) {
       advanceSlide();
     } else {

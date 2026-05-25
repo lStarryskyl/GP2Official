@@ -858,7 +858,6 @@ export const PhaseDetailPage: React.FC = () => {
       es.addEventListener('error', (event) => {
         es.close();
         setIsStreaming(false);
-        setError('Streaming generation failed. Falling back to standard generation.');
         resolve();
       });
 

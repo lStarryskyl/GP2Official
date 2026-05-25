@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { Requirement } from '@/types';
 import { api } from '@/lib/api';
+import { useToast } from '@/contexts/ToastContext';
 import {
   FlaskConical,
   ShieldCheck,
@@ -150,6 +151,7 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
   const [expandedScenarios, setExpandedScenarios] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { error: toastError } = useToast();
 
   const funcReqs = (requirements || []).filter(
     r => r.type === 'functional' || (r.type || '').toLowerCase().includes('functional')
@@ -184,11 +186,11 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
       }
     } catch (err: any) {
       console.error('Test generation failed', err);
-      setError(err?.response?.data?.detail || 'Test generation failed. Make sure you have generated requirements first.');
+      toastError(err?.response?.data?.detail || 'Test generation failed. Make sure you have generated requirements first.');
     } finally {
       setLoadingTests(false);
     }
-  }, [projectId]);
+  }, [projectId, toastError]);
 
   /* ---------- Run coverage audit ---------- */
   const handleCoverageAudit = useCallback(async () => {

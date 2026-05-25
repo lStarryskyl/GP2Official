@@ -646,9 +646,9 @@ export const DevelopmentUpdatesPage: React.FC = () => {
                 {entries.map(entry => {
                   const isOpen = expandedEntries[entry.id];
                   const typeColors: Record<string, { bg: string; text: string; border: string }> = {
-                    manual:   { bg: 'rgba(26,111,212,0.1)',  text: '#3d8fe0', border: 'rgba(26,111,212,0.3)' },
-                    upload:   { bg: 'rgba(249,115,22,0.1)',  text: '#F97316', border: 'rgba(249,115,22,0.3)' },
-                    ai:       { bg: 'rgba(139,92,246,0.1)', text: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
+                    manual: { bg: 'rgba(26,111,212,0.1)', text: '#3d8fe0', border: 'rgba(26,111,212,0.3)' },
+                    upload: { bg: 'rgba(249,115,22,0.1)', text: '#F97316', border: 'rgba(249,115,22,0.3)' },
+                    ai: { bg: 'rgba(139,92,246,0.1)', text: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
                   };
                   const tc = typeColors[entry.entry_type] || typeColors.manual;
 

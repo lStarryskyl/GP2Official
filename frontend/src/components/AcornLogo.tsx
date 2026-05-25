@@ -10,9 +10,14 @@ type AcornLogoProps = {
   title?: string;
 };
 
-const ACORN_ORANGE = '#E89244';
-const ACORN_NAVY = '#1F3A5F';
-
+/**
+ * Unified platform logo component.
+ *
+ * - `variant="full"` → logo image + "Acorn" wordmark side by side.
+ * - `variant="mark"` → logo image only (icon-only contexts).
+ *
+ * The image is served from `/logo.png` in the public directory.
+ */
 export function AcornLogo({
   variant = 'full',
   height = 36,
@@ -23,77 +28,64 @@ export function AcornLogo({
   title = 'Acorn',
 }: AcornLogoProps) {
   const isMark = variant === 'mark';
-  const viewBox = isMark ? '0 0 64 64' : '0 0 220 64';
-  const computedStyle: CSSProperties = {
-    height,
-    width: width ?? 'auto',
-    display: 'block',
-    color: color ?? 'currentColor',
-    ...style,
-  };
+  const numericHeight = typeof height === 'number' ? height : undefined;
 
+  if (isMark) {
+    // Icon-only mode: just the logo image
+    return (
+      <img
+        src="/logo.png"
+        alt={title}
+        className={className}
+        draggable={false}
+        style={{
+          height,
+          width: width ?? (numericHeight ? numericHeight : 'auto'),
+          objectFit: 'contain',
+          display: 'block',
+          ...style,
+        }}
+      />
+    );
+  }
+
+  // Full mode: logo image + wordmark
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={viewBox}
-      role="img"
-      aria-label={title}
-      style={computedStyle}
+    <div
       className={className}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: numericHeight ? Math.max(6, numericHeight * 0.2) : 8,
+        height,
+        ...style,
+      }}
     >
-      <title>{title}</title>
-      <defs>
-        <linearGradient id="acorn-arrow-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={ACORN_ORANGE} />
-          <stop offset="100%" stopColor={ACORN_NAVY} />
-        </linearGradient>
-      </defs>
-
-      {/* Acorn mark */}
-      <g
-        fill="none"
-        stroke={ACORN_ORANGE}
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <img
+        src="/logo.png"
+        alt={title}
+        draggable={false}
+        style={{
+          height: '100%',
+          width: 'auto',
+          objectFit: 'contain',
+          display: 'block',
+        }}
+      />
+      <span
+        style={{
+          fontFamily: "'Syne', 'Inter', sans-serif",
+          fontWeight: 700,
+          fontSize: numericHeight ? Math.max(14, numericHeight * 0.55) : 20,
+          letterSpacing: '-0.03em',
+          color: color ?? '#E8EDF5',
+          lineHeight: 1,
+          whiteSpace: 'nowrap',
+        }}
       >
-        {/* Cap */}
-        <path d="M 12 24 Q 22 14 32 24 Z" fill={ACORN_ORANGE} fillOpacity="0.08" />
-        {/* Cap underline */}
-        <path d="M 12 24 L 32 24" />
-        {/* Body */}
-        <path d="M 14 24 Q 13 40 22 44 Q 31 44 30 24" />
-        {/* Stem */}
-        <path d="M 22 14 Q 22 8 27 8" />
-      </g>
-
-      {/* Arrow growing up-right */}
-      <g
-        fill="none"
-        stroke="url(#acorn-arrow-gradient)"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M 26 36 Q 36 32 44 22 L 54 12" />
-        <path d="M 46 12 L 54 12 L 54 20" />
-      </g>
-
-      {/* Wordmark */}
-      {!isMark && (
-        <text
-          x="72"
-          y="44"
-          fontFamily="'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif"
-          fontSize="36"
-          fontWeight="700"
-          letterSpacing="-0.5"
-          fill="currentColor"
-        >
-          Acorn
-        </text>
-      )}
-    </svg>
+        Acorn
+      </span>
+    </div>
   );
 }
 

@@ -21,6 +21,7 @@ import {
   Shield,
   DollarSign,
   Circle,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -50,16 +51,16 @@ const PHASE_COLORS: Record<string, string> = {
 };
 
 const PHASE_META: { key: string; name: string; color: string }[] = [
-  { key: 'planning',               name: 'Planning',         color: '#D4A017' },
-  { key: 'feasibility_study',      name: 'Feasibility',      color: '#7BA05B' },
-  { key: 'requirements_gathering', name: 'Requirements',     color: 'var(--blue-500)' },
-  { key: 'validation',             name: 'Validation',       color: '#5F7A8A' },
-  { key: 'design',                 name: 'Design',           color: '#6B4C8A' },
-  { key: 'development',            name: 'Development',      color: '#8B5E3C' },
-  { key: 'tasks',                  name: 'Tasks',            color: '#D4A017' },
-  { key: 'cost_benefit',           name: 'Costs & Benefits', color: '#2A9D8F' },
-  { key: 'risks',                  name: 'Risks',            color: '#C1440E' },
-  { key: 'summary',                name: 'Summary',          color: 'var(--blue-400)' },
+  { key: 'planning', name: 'Planning', color: '#D4A017' },
+  { key: 'feasibility_study', name: 'Feasibility', color: '#7BA05B' },
+  { key: 'requirements_gathering', name: 'Requirements', color: 'var(--blue-500)' },
+  { key: 'validation', name: 'Validation', color: '#5F7A8A' },
+  { key: 'design', name: 'Design', color: '#6B4C8A' },
+  { key: 'development', name: 'Development', color: '#8B5E3C' },
+  { key: 'tasks', name: 'Tasks', color: '#D4A017' },
+  { key: 'cost_benefit', name: 'Costs & Benefits', color: '#2A9D8F' },
+  { key: 'risks', name: 'Risks', color: '#C1440E' },
+  { key: 'summary', name: 'Summary', color: 'var(--blue-400)' },
 ];
 
 export const AnalyticsDashboardPage: React.FC = () => {
@@ -218,9 +219,9 @@ export const AnalyticsDashboardPage: React.FC = () => {
   }, [id]);
 
   const getRiskConfig = (risk: string) => ({
-    low:    { color: 'var(--blue-400)', bg: 'rgba(26,111,212,0.12)',  label: 'Low Risk' },
-    medium: { color: '#D4A017', bg: 'rgba(212,160,23,0.12)',  label: 'Medium Risk' },
-    high:   { color: '#C1440E', bg: 'rgba(193,68,14,0.12)',   label: 'High Risk' },
+    low: { color: 'var(--blue-400)', bg: 'rgba(26,111,212,0.12)', label: 'Low Risk' },
+    medium: { color: '#D4A017', bg: 'rgba(212,160,23,0.12)', label: 'Medium Risk' },
+    high: { color: '#C1440E', bg: 'rgba(193,68,14,0.12)', label: 'High Risk' },
   }[risk] || { color: 'var(--text-muted)', bg: 'rgba(107,158,122,0.12)', label: 'Unknown' });
 
   const maxActivity = Math.max(1, ...(analytics?.weeklyActivity.map(d => d.count) || []));
@@ -252,6 +253,18 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+              style={{
+                background: 'rgba(26,111,212,0.1)',
+                border: '1px solid rgba(26,111,212,0.25)',
+                color: 'var(--blue-400)',
+              }}
+              title="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, var(--blue-600), var(--blue-400))', boxShadow: '0 10px 30px rgba(26,111,212,0.2)' }}>
               <BarChart3 className="w-7 h-7 text-[var(--brand-900)]" />
@@ -325,7 +338,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
               </div>
               <div className="flex items-end justify-between h-40 gap-2">
                 {analytics?.weeklyActivity.map((day, i) => {
-                  const colors = ['var(--blue-400)','#D4A017','#2A9D8F','#6B4C8A','var(--blue-400)','#7BA05B','#8B5E3C'];
+                  const colors = ['var(--blue-400)', '#D4A017', '#2A9D8F', '#6B4C8A', 'var(--blue-400)', '#7BA05B', '#8B5E3C'];
                   const c = colors[i % colors.length];
                   return (
                     <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
@@ -366,8 +379,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
                           background: phase.status === 'completed'
                             ? phase.color
                             : phase.status === 'in_progress'
-                            ? `linear-gradient(to right, ${phase.color}88, ${phase.color})`
-                            : 'rgba(26,46,69,0.2)',
+                              ? `linear-gradient(to right, ${phase.color}88, ${phase.color})`
+                              : 'rgba(26,46,69,0.2)',
                         }}
                       />
                     </div>
@@ -399,7 +412,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
                     style={{
                       background: phase.status === 'completed' ? phase.color
                         : phase.status === 'in_progress' ? `${phase.color}55`
-                        : 'rgba(26,46,69,0.4)',
+                          : 'rgba(26,46,69,0.4)',
                     }}
                   />
                 ))}
@@ -464,8 +477,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
                     {status === 'completed'
                       ? <CheckCircle2 size={14} color={color} />
                       : status === 'in_progress'
-                      ? <Activity size={14} color={color} />
-                      : <Circle size={14} color="rgba(26,46,69,0.5)" />}
+                        ? <Activity size={14} color={color} />
+                        : <Circle size={14} color="rgba(26,46,69,0.5)" />}
                   </div>
                   <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">{name}</p>
                   <p className="text-xs capitalize" style={{ color: status === 'completed' ? color : status === 'in_progress' ? '#F97316' : 'var(--text-faint)' }}>

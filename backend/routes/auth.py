@@ -60,3 +60,25 @@ async def logout(payload: RefreshRequest):
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current user info."""
     return build_user_response(current_user)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
+@router.post("/change-password")
+async def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Change the authenticated user's password."""
+    if payload.new_password != payload.confirm_password:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password and confirmation do not match"
+        )
+    await auth_service.change_password(current_user, payload.current_password, payload.new_password)
+    return {"detail": "Password updated successfully"}

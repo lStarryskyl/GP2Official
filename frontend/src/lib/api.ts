@@ -182,6 +182,14 @@ class ApiClient {
     return response.data;
   }
 
+  async changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> {
+    await this.client.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    });
+  }
+
   async getWorkspaceInvites(): Promise<WorkspaceInvite[]> {
     const response = await this.client.get('/users/invites/');
     return response.data;

@@ -152,6 +152,24 @@ class AuthService:
     
         return user
 
+    async def change_password(self, user: User, current_password: str, new_password: str) -> None:
+        """Verify current password and set a new one."""
+        if not self.user_repo.verify_password(current_password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect"
+            )
+        self._validate_password_strength(new_password)
+        if current_password == new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be different from current password"
+            )
+        import bcrypt
+        password_bytes = new_password.encode("utf-8")[:72]
+        new_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode()
+        await self.user_repo.update_password(user.id, new_hash)
+
     async def _apply_workspace_invite(self, user: User) -> User:
         """If an invite exists for this email, join the associated workspace."""
         invite = await self.invite_repo.find_pending_for_email(user.email)

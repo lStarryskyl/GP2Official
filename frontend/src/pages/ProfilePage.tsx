@@ -79,6 +79,15 @@ const ProfilePage: React.FC = () => {
     contact_email: '',
   });
 
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -130,6 +139,31 @@ const ProfilePage: React.FC = () => {
       console.error('Failed to save profile:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+    if (!passwordForm.current_password || !passwordForm.new_password || !passwordForm.confirm_password) {
+      setPasswordError('All password fields are required.');
+      return;
+    }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      setPasswordError('New password and confirmation do not match.');
+      return;
+    }
+    try {
+      setPasswordSaving(true);
+      await api.changePassword(passwordForm.current_password, passwordForm.new_password, passwordForm.confirm_password);
+      setPasswordSuccess(true);
+      setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
+      setTimeout(() => setPasswordSuccess(false), 4000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Failed to update password.';
+      setPasswordError(msg);
+    } finally {
+      setPasswordSaving(false);
     }
   };
 
@@ -313,8 +347,11 @@ const ProfilePage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                 <input
                   type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
                   placeholder="Enter current password"
+                  autoComplete="current-password"
                 />
               </div>
               <div className="grid md:grid-cols-2 gap-5">
@@ -322,22 +359,54 @@ const ProfilePage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                   <input
                     type="password"
+                    value={passwordForm.new_password}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
                     placeholder="Enter new password"
+                    autoComplete="new-password"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
                   <input
                     type="password"
+                    value={passwordForm.confirm_password}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
                     placeholder="Confirm new password"
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
-              <Button variant="outline" className="border-2 border-acorn-blue-200 text-acorn-blue-600 hover:bg-acorn-blue-50">
-                Update Password
+
+              {passwordError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  <Shield className="w-4 h-4 flex-shrink-0" />
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                  Password updated successfully!
+                </div>
+              )}
+
+              <Button
+                onClick={handlePasswordChange}
+                disabled={passwordSaving}
+                className="bg-gradient-to-r from-acorn-blue-500 to-acorn-blue-600 hover:from-acorn-blue-600 hover:to-acorn-blue-700 text-white font-semibold"
+              >
+                {passwordSaving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating…</>
+                ) : (
+                  <><Key className="w-4 h-4 mr-2" />Update Password</>
+                )}
               </Button>
+
+              <p className="text-xs text-gray-400">
+                Password must be at least 8 characters and include uppercase, lowercase, and a number.
+              </p>
             </div>
           </CardSection>
 

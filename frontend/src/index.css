@@ -489,6 +489,28 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
     animation-iteration-count:1 !important;
     transition-duration:0.01ms !important;
   }
+
+  /* heading-reveal: skip the opacity-0 initial state so content is
+     always visible, even before the IntersectionObserver fires */
+  .heading-reveal,
+  .heading-revealed {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+
+  /* wave-reveal: make child elements immediately visible with no delays */
+  .wave-revealed > *,
+  .wave-revealed > *:nth-child(1),
+  .wave-revealed > *:nth-child(2),
+  .wave-revealed > *:nth-child(3),
+  .wave-revealed > *:nth-child(4),
+  .wave-revealed > *:nth-child(5),
+  .wave-revealed > *:nth-child(6),
+  .wave-revealed > *:nth-child(n+7) {
+    opacity: 1 !important;
+    animation: none !important;
+    animation-delay: 0ms !important;
+  }
 }
 
 /* ── Wave-reveal section animation ── */

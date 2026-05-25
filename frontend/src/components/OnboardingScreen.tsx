@@ -345,7 +345,7 @@ const WarpOverlay: React.FC<WarpOverlayProps> = ({ active }) => {
             width: `${s.length}vmax`,
             height: `${s.thickness}px`,
             transformOrigin: '0% 50%',
-            transform: `rotate(${s.angle}deg) scaleX(0)`,
+            ['--angle' as string]: `${s.angle}deg`,
             background: s.isOrange
               ? 'linear-gradient(to right, rgba(249,115,22,0.9), rgba(249,115,22,0.1), transparent)'
               : 'linear-gradient(to right, rgba(200,225,255,0.7), rgba(26,111,212,0.2), transparent)',

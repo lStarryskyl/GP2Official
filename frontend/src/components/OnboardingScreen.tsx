@@ -58,11 +58,12 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'clamp(20px, 4vw, 48px)',
+        padding: 'clamp(16px, 4vw, 48px)',
         background: 'rgba(7, 14, 24, 0.97)',
         backdropFilter: 'blur(20px)',
         opacity: visible ? 1 : 0,
         transition: 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
+        overflowY: 'auto',
       }}
     >
       <div
@@ -78,26 +79,27 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '780px', textAlign: 'center' }}>
         <p
           style={{
-            fontSize: '12px',
+            fontSize: 'clamp(10px, 2.5vw, 12px)',
             color: '#3d8fe0',
             fontFamily: "'DM Sans', sans-serif",
             fontWeight: 700,
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            marginBottom: '14px',
+            marginBottom: '12px',
           }}
         >
           Welcome to Acorn
         </p>
 
         <h1
+          className="onboarding-headline"
           style={{
             fontFamily: "'Syne', sans-serif",
             fontWeight: 800,
-            fontSize: 'clamp(28px, 4.5vw, 44px)',
+            fontSize: 'clamp(24px, 6vw, 44px)',
             color: '#E8EDF5',
             letterSpacing: '-0.02em',
-            marginBottom: '12px',
+            marginBottom: '10px',
             lineHeight: 1.1,
           }}
         >
@@ -107,31 +109,23 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
         <p
           style={{
             color: '#8899AA',
-            fontSize: 'clamp(14px, 1.6vw, 16px)',
+            fontSize: 'clamp(13px, 2vw, 16px)',
             fontFamily: "'DM Sans', sans-serif",
-            marginBottom: '40px',
+            marginBottom: 'clamp(24px, 4vw, 40px)',
             lineHeight: 1.65,
           }}
         >
           Everything you need to go from idea to production-ready plan.
         </p>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '16px',
-            marginBottom: '40px',
-            textAlign: 'left',
-          }}
-        >
+        <div className="onboarding-grid" style={{ marginBottom: 'clamp(24px, 4vw, 40px)', textAlign: 'left' }}>
           {FEATURE_CARDS.map((card, idx) => {
             const Icon = card.icon;
             return (
               <div
                 key={card.title}
                 style={{
-                  padding: '24px',
+                  padding: 'clamp(16px, 3vw, 24px)',
                   background: 'rgba(20,38,60,0.7)',
                   border: `1px solid ${card.border}`,
                   borderRadius: '16px',
@@ -141,12 +135,14 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
                   alignItems: 'flex-start',
                   opacity: 0,
                   animation: `onboardCardIn 0.55s cubic-bezier(0.22,1,0.36,1) ${idx * 80}ms forwards`,
+                  minHeight: '44px',
                 }}
               >
                 <div
                   style={{
                     width: '44px',
                     height: '44px',
+                    minWidth: '44px',
                     borderRadius: '12px',
                     background: card.bg,
                     border: `1px solid ${card.border}`,
@@ -163,7 +159,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
                     style={{
                       fontFamily: "'Syne', sans-serif",
                       fontWeight: 700,
-                      fontSize: '15px',
+                      fontSize: 'clamp(14px, 2vw, 15px)',
                       color: '#E8EDF5',
                       marginBottom: '6px',
                     }}
@@ -173,7 +169,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
                   <p
                     style={{
                       color: '#8899AA',
-                      fontSize: '13px',
+                      fontSize: 'clamp(12px, 1.8vw, 13px)',
                       fontFamily: "'DM Sans', sans-serif",
                       lineHeight: 1.65,
                     }}
@@ -187,6 +183,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
         </div>
 
         <button
+          className="onboarding-cta"
           onClick={onDone}
           style={{
             padding: '16px 44px',
@@ -200,11 +197,14 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '10px',
             boxShadow: '0 4px 28px rgba(249,115,22,0.45)',
             transition: 'all 0.25s',
             opacity: 0,
             animation: 'onboardCardIn 0.55s cubic-bezier(0.22,1,0.36,1) 400ms forwards',
+            minHeight: '52px',
+            touchAction: 'manipulation',
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'translateY(-2px)';
@@ -223,6 +223,28 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
         @keyframes onboardCardIn {
           from { opacity: 0; transform: translateY(28px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .onboarding-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+          gap: 14px;
+        }
+
+        @media (max-width: 639px) {
+          .onboarding-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+
+          .onboarding-cta {
+            width: 100% !important;
+            padding: 16px 24px !important;
+          }
+
+          .onboarding-headline {
+            font-size: clamp(22px, 8vw, 32px) !important;
+          }
         }
       `}</style>
     </div>

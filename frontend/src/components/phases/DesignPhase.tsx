@@ -47,9 +47,12 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramType>('use_case');
   const [diagramUrl, setDiagramUrl] = useState<string>('');
   const [isRendering, setIsRendering] = useState(false);
+  const [imgLoading, setImgLoading] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [showCode, setShowCode] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatSuccess, setChatSuccess] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [isUmlGenerating, setIsUmlGenerating] = useState(false);
   const [diagramCodes, setDiagramCodes] = useState<Record<DiagramType, string>>(() => {
@@ -86,12 +89,14 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
   const renderDiagram = async (code: string) => {
     setIsRendering(true);
     setRenderError(null);
+    setImgLoading(true);
     try {
       const url = getPlantUMLUrl(code, 'svg');
       setDiagramUrl(url);
     } catch (error) {
-      console.error('Failed to render diagram:', error);
-      setRenderError('Failed to encode diagram. Please check the PlantUML syntax.');
+      console.error('Failed to encode diagram:', error);
+      setRenderError('Failed to encode diagram. Check the PlantUML syntax in the code panel below.');
+      setImgLoading(false);
     } finally {
       setIsRendering(false);
     }
@@ -133,19 +138,32 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
     if (!projectId || !chatInput.trim()) return;
     const umlType = mapDiagramToUmlType(selectedDiagram);
     const message = `Update the existing PlantUML ${selectedDiagram} diagram based on this request: "${chatInput.trim()}"`;
+    const savedInput = chatInput.trim();
     setChatInput('');
+    setChatError(null);
+    setChatSuccess(false);
     setIsUmlGenerating(true);
-    setRenderError(null);
     try {
       const artifact = await api.chatUmlDiagram(projectId, umlType, message);
       const plantuml = (artifact.content_json as any)?.plantuml || '';
       if (plantuml) {
         setDiagramCodes((prev) => ({ ...prev, [selectedDiagram]: plantuml }));
         await renderDiagram(plantuml);
+        setChatSuccess(true);
+        setTimeout(() => setChatSuccess(false), 3000);
+      } else {
+        setChatError('AI returned an empty response. Try rephrasing your request.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to apply chat update to UML diagram:', error);
-      setRenderError('AI could not apply that change. Please try again.');
+      const status = error?.response?.status;
+      if (status === 400) {
+        setChatError(`Diagram type not supported for AI editing. Try Use Case, ERD, Class, or Sequence.`);
+      } else if (status === 401 || status === 403) {
+        setChatError('Authentication error. Please refresh and try again.');
+      } else {
+        setChatError(`AI edit failed — try again or rephrase: "${savedInput}"`);
+      }
     } finally {
       setIsUmlGenerating(false);
     }
@@ -196,9 +214,9 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
             <input
               type="text"
               value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
+              onChange={(e) => { setChatInput(e.target.value); setChatError(null); }}
               onKeyDown={(e) => e.key === 'Enter' && handleChatSubmit()}
-              placeholder="e.g., Create a use case diagram showing user interactions..."
+              placeholder="e.g., Add a payment gateway to the class diagram..."
               className="flex-1 px-4 py-3 text-base border border-[var(--brand-700)] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-[#152238] text-white placeholder-gray-500"
             />
             <Button
@@ -211,9 +229,20 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
           </div>
 
           {isUmlGenerating && (
-            <div className="flex items-center justify-center gap-3 py-4 bg-[#152238] rounded-xl border border-blue-700/40">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
-              <span className="text-blue-300 font-medium">AI is generating your diagram...</span>
+            <div className="flex items-center gap-3 py-3 px-4 bg-blue-900/20 rounded-xl border border-blue-700/40">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-400 flex-shrink-0" />
+              <span className="text-blue-300 text-sm">AI is updating your diagram…</span>
+            </div>
+          )}
+          {chatSuccess && (
+            <div className="flex items-center gap-3 py-3 px-4 bg-green-900/20 rounded-xl border border-green-700/40">
+              <span className="text-green-400 text-sm font-medium">✓ Diagram updated successfully</span>
+            </div>
+          )}
+          {chatError && (
+            <div className="flex items-start gap-3 py-3 px-4 bg-red-900/20 rounded-xl border border-red-700/40">
+              <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+              <span className="text-red-300 text-sm">{chatError}</span>
             </div>
           )}
         </CardContent>
@@ -268,25 +297,28 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
         <CardContent className="p-0">
           {/* Diagram Display - LARGE */}
           <div
-            className="bg-[#152238] overflow-auto flex items-center justify-center"
+            className="bg-[#152238] overflow-auto flex items-center justify-center relative"
             style={{ minHeight: '600px', maxHeight: '80vh' }}
           >
-            {isRendering ? (
-              <div className="flex flex-col items-center gap-4 text-gray-400">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-400" />
-                <p className="text-gray-300">Rendering diagram...</p>
+            {(isRendering || imgLoading) && !renderError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#152238] z-10">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-400" />
+                <p className="text-gray-400 text-sm">
+                  {isRendering ? 'Encoding diagram…' : 'Fetching diagram from PlantUML server…'}
+                </p>
               </div>
-            ) : renderError ? (
+            )}
+            {renderError ? (
               <div className="flex flex-col items-center gap-4 text-red-400 p-8">
-                <AlertTriangle className="h-16 w-16" />
-                <p className="text-lg font-medium">Diagram Rendering Error</p>
+                <AlertTriangle className="h-14 w-14" />
+                <p className="text-lg font-medium">Diagram Error</p>
                 <p className="text-sm text-gray-400 text-center max-w-md">{renderError}</p>
                 <div className="flex gap-3 mt-2">
-                  <Button onClick={handleRetry} variant="outline" size="sm">
+                  <Button onClick={handleRetry} variant="outline" size="sm" className="border-[var(--brand-700)] text-gray-300">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Retry
                   </Button>
-                  <Button onClick={() => setShowCode(true)} variant="outline" size="sm">
+                  <Button onClick={() => setShowCode(true)} variant="outline" size="sm" className="border-[var(--brand-700)] text-gray-300">
                     <Code className="h-4 w-4 mr-2" />
                     View Code
                   </Button>
@@ -296,16 +328,27 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
               <img
                 src={diagramUrl}
                 alt={`${currentInfo.name} Diagram`}
-                style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center' }}
-                className="transition-transform duration-200"
-                onError={() => setRenderError('Failed to load diagram from PlantUML server.')}
+                style={{
+                  transform: `scale(${zoom / 100})`,
+                  transformOrigin: 'center',
+                  opacity: imgLoading ? 0 : 1,
+                  transition: 'opacity 0.3s ease, transform 0.2s ease',
+                }}
+                onLoad={() => setImgLoading(false)}
+                onError={() => {
+                  setImgLoading(false);
+                  setRenderError(
+                    'PlantUML server could not render this diagram. ' +
+                    'Check for syntax errors in the code panel, or click Retry.'
+                  );
+                }}
               />
-            ) : (
+            ) : !isRendering && !imgLoading ? (
               <div className="flex flex-col items-center gap-4 text-gray-500">
                 <Layers className="h-20 w-20" />
                 <p className="text-lg">Select a diagram type to preview</p>
               </div>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

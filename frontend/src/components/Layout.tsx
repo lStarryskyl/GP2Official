@@ -70,8 +70,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => { if (activeProjectId) trackRecent(activeProjectId); }, [activeProjectId]);
 
-  useEffect(() => { if (!activeProjectId) setAssistantOpen(false); }, [activeProjectId]);
-
   // Ctrl+K opens AI chat on any project page
   useEffect(() => {
     if (!user) return;

@@ -26,20 +26,6 @@ function getHealthColor(score: number) {
   return { color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', label: 'Starting' };
 }
 
-// ── Health score helpers ─────────────────────────────────────────────────────
-const PHASE_KEYS = ['planning','feasibility_study','requirements_gathering','validation','design','development','tasks','cost_benefit','risks','summary'];
-
-function getHealthScore(phaseStatus?: Record<string, string>): number {
-  if (!phaseStatus) return 0;
-  const completed = PHASE_KEYS.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
-  return Math.round((completed / PHASE_KEYS.length) * 100);
-}
-
-function getHealthColor(score: number) {
-  if (score >= 70) return { color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', label: 'Healthy' };
-  if (score >= 40) return { color: '#F97316', bg: 'rgba(249,115,22,0.12)', label: 'In Progress' };
-  return { color: '#4a6070', bg: 'rgba(74,96,112,0.15)', label: 'Starting' };
-}
 
 function getPhaseCompletionText(phaseStatus?: Record<string, string>): string {
   if (!phaseStatus) return '0 / 10 phases';
@@ -538,10 +524,6 @@ export const ProjectsPage: React.FC = () => {
                   const healthColor = getHealthColor(healthScore);
                   const completedCount = PHASE_KEYS.filter(k => (project.phase_status?.[k] || '').toLowerCase() === 'completed').length;
                   const isArchivedCard = tab === 'archived';
-
-                  const healthScore = getHealthScore(project.phase_status);
-                  const healthColor = getHealthColor(healthScore);
-                  const phaseText   = getPhaseCompletionText(project.phase_status);
 
                   return (
                     <div

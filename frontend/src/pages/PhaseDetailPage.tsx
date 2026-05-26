@@ -3133,16 +3133,14 @@ export const PhaseDetailPage: React.FC = () => {
   // TESTING PHASE
   // ============================================
   if (phaseId === 'testing') {
-    return (
-      <PhaseWrapper>
-        <TestingPhase
-          projectId={id || ''}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          content={phaseMarkdown}
-          requirements={requirements}
-        />
-      </PhaseWrapper>
+    return renderPhaseWrapper(
+      <TestingPhase
+        projectId={id || ''}
+        onGenerate={handleGenerate}
+        isGenerating={isGenerating}
+        content={phaseMarkdown}
+        requirements={requirements}
+      />
     );
   }
 

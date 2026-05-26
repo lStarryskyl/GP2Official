@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Silky smooth scrolling ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+* {
+  scroll-behavior: smooth;
+}
+
 /* ============================================================
    ACORN — Brand Token System
    Primary: #1A6FD4 (blue)  Accent: #F97316 (orange)
@@ -582,13 +591,68 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 }
 .splash-aurora-orange {
   width: 60vmax; height: 60vmax; bottom: -25%; right: -20%;
-  background: radial-gradient(circle, rgba(249,115,22,0.4), transparent 65%);
+  background: radial-gradient(circle, rgba(249,115,22,0.35), transparent 65%);
   animation: splashAuroraB 16s ease-in-out infinite;
 }
+.splash-aurora-purple {
+  width: 55vmax; height: 55vmax; top: 10%; right: -10%;
+  background: radial-gradient(circle, rgba(120,60,220,0.22), transparent 65%);
+  animation: splashAuroraA 20s ease-in-out 4s infinite reverse;
+}
+
+/* Extra dense star layers */
+.splash-stars-2 {
+  background-image:
+    radial-gradient(1px 1px at 8% 44%, rgba(255,255,255,0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 45% 22%, rgba(200,220,255,0.5) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 92% 14%, rgba(255,255,255,0.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 88%, rgba(255,255,255,0.4) 50%, transparent 51%),
+    radial-gradient(1px 1px at 17% 66%, rgba(180,200,255,0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 74% 48%, rgba(255,255,255,0.35) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 95%, rgba(255,255,255,0.45) 50%, transparent 51%);
+  background-size: 800px 800px;
+  animation: splashFadeIn 1.2s ease forwards, splashStarsDrift 90s linear 2s infinite reverse;
+}
+.splash-stars-3 {
+  background-image:
+    radial-gradient(1px 1px at 55% 5%, rgba(255,255,255,0.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 3% 30%, rgba(200,215,255,0.55) 50%, transparent 51%),
+    radial-gradient(2px 2px at 82% 70%, rgba(255,255,255,0.3) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 48%, rgba(255,255,255,0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 96% 55%, rgba(180,200,255,0.4) 50%, transparent 51%),
+    radial-gradient(1px 1px at 49% 78%, rgba(255,255,255,0.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 11% 82%, rgba(255,255,255,0.35) 50%, transparent 51%);
+  background-size: 500px 500px;
+  animation: splashFadeIn 1.8s ease forwards, splashStarsDrift 45s linear 1s infinite;
+}
+
+/* Shooting stars */
+@keyframes shootingStarMove {
+  0%   { transform: translate(0, 0) rotate(-35deg); opacity: 0; width: 0; }
+  5%   { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translate(120vw, 60vh) rotate(-35deg); opacity: 0; width: clamp(80px, 15vw, 180px); }
+}
+.splash-shoot-wrap {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.splash-shoot {
+  position: absolute;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(to right, rgba(255,255,255,0), rgba(200,225,255,0.9) 60%, rgba(255,255,255,1));
+  opacity: 0;
+}
+.splash-shoot-0 { top: 12%; left: -10%; width: 120px; animation: shootingStarMove 3s ease-in 1.5s infinite; }
+.splash-shoot-1 { top: 28%; left: -5%;  width: 90px;  animation: shootingStarMove 3.5s ease-in 4.2s infinite; }
+.splash-shoot-2 { top: 7%;  left: -15%; width: 150px; animation: shootingStarMove 2.8s ease-in 7.8s infinite; }
+.splash-shoot-3 { top: 45%; left: -8%;  width: 100px; animation: shootingStarMove 4s ease-in 11s infinite; }
+.splash-shoot-4 { top: 18%; left: -12%; width: 130px; animation: shootingStarMove 3.2s ease-in 15s infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-stars  { animation: none !important; opacity: 1 !important; }
+  .splash-stars, .splash-stars-2, .splash-stars-3 { animation: none !important; opacity: 1 !important; }
   .splash-aurora { animation: none !important; opacity: 0.5 !important; }
+  .splash-shoot  { display: none !important; }
 }
 
 /* ── Phase workspace animations ── */

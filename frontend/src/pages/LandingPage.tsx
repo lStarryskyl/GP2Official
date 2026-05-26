@@ -381,16 +381,35 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'radial-gradient(ellipse at 50% 40%, #14315e 0%, #0a1a30 45%, #05080f 100%)',
+        background: '#06090f',
         position: 'relative',
         overflow: 'hidden',
         padding: isMobile ? '24px 16px' : '32px',
         textAlign: 'center',
       }}
     >
+      {/* Deep-space star layers */}
       <div className="splash-stars" aria-hidden />
+      <div className="splash-stars splash-stars-2" aria-hidden />
+      <div className="splash-stars splash-stars-3" aria-hidden />
+
+      {/* Nebula aurora blobs */}
       <div className="splash-aurora splash-aurora-blue" aria-hidden />
       <div className="splash-aurora splash-aurora-orange" aria-hidden />
+      <div className="splash-aurora splash-aurora-purple" aria-hidden />
+
+      {/* Deep nebula glow behind center */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 60% 45% at 50% 50%, rgba(26,111,212,0.18) 0%, rgba(61,143,224,0.07) 45%, transparent 70%)',
+      }} />
+
+      {/* Shooting stars */}
+      <div className="splash-shoot-wrap" aria-hidden>
+        {[0,1,2,3,4].map(i => (
+          <div key={i} className={`splash-shoot splash-shoot-${i}`} />
+        ))}
+      </div>
 
       <button
         onClick={skip}

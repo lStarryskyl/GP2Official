@@ -2346,13 +2346,9 @@ export const PhaseDetailPage: React.FC = () => {
                                           priority: editingRequirementDraft.priority,
                                           status: editingRequirementDraft.status,
                                         } as any;
-                                        const updated = await api.updateRequirement(req.requirement_id, patch);
-                                        setRequirements((prev) =>
-                                          prev.map((r) =>
-                                            r.requirement_id === req.requirement_id ? updated : r
-                                          )
-                                        );
+                                        await api.updateRequirement(req.requirement_id, patch);
                                         setEditingRequirementId(null);
+                                        await handleSyncRequirements();
                                       } catch (err) {
                                         console.error('Update requirement failed', err);
                                       }

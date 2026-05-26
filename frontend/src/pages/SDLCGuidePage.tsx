@@ -428,7 +428,6 @@ const SDLCGuidePage: React.FC = () => {
           <div className="sg-nav-brand-divider" style={{ width: '1px', height: '16px', background: 'rgba(26,111,212,0.3)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <AcornLogo height={36} style={{ flexShrink: 0 }} />
-            <span className="sg-nav-brand-sub" style={{ color: '#4a6070', fontSize: '13px' }}>/ SDLC Guide</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>

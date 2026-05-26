@@ -706,13 +706,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             animation: 'splashLogoSpin 5s linear infinite reverse',
           }} />
           <AcornLogo height={72} white style={{ position: 'relative', zIndex: 1 }} />
-          <div style={{
-            fontSize: '11px', fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase',
-            color: 'rgba(200,220,255,0.5)', position: 'relative', zIndex: 1,
-          }}>
-            AI-Powered SDLC
-          </div>
           <style>{`
             @keyframes splashLogoSpin {
               from { transform: rotate(0deg); }

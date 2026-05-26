@@ -1478,7 +1478,7 @@ const LandingPage: React.FC = () => {
             animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 0ms forwards' : 'none',
           }}>
             <Sparkles size={14} color="#3d8fe0" />
-            <span style={{ fontSize: '13px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: '0.02em' }}>AI-Powered SDLC Platform</span>
+            <span style={{ fontSize: '13px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: '0.02em' }}>AI-Powered Planning Platform</span>
           </div>
 
           {/* Headline — word-by-word reveal */}

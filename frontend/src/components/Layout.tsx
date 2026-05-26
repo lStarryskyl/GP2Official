@@ -165,7 +165,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* ── Sidebar Desktop ── */}
       <aside style={{
-        display: 'none',
         position: 'fixed', left: 0, top: 0, height: '100vh', width: sidebarW,
         background: 'var(--brand-850)',
         borderRight: '1px solid rgba(26,111,212,0.18)',
@@ -173,7 +172,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         zIndex: 40,
         transition: 'width 0.3s var(--ease-out-expo)',
       }}
-        className="lg:flex flex-col"
+        className="hidden lg:flex flex-col"
       >
         {/* Logo */}
         <div style={{
@@ -653,12 +652,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* ── Main content ── */}
       <main style={{
-        flex: 1, marginLeft: 0, paddingTop: '60px',
+        flex: 1,
         position: 'relative', zIndex: 10,
       }}
-        className="lg:pt-0"
       >
-        <style>{`@media (min-width:1024px) { main { margin-left: ${sidebarW}; padding-top: 0; } }`}</style>
+        <style>{`main { margin-left: 0; padding-top: 60px; } @media (min-width:1024px) { main { margin-left: ${sidebarW}; padding-top: 0; } }`}</style>
         <div style={{ padding: '24px 32px' }}>
           {children}
         </div>

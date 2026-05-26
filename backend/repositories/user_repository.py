@@ -45,6 +45,9 @@ class UserRepository:
     async def update_profile(self, user_id: str, updates: Dict[str, Any]) -> Optional[User]:
         return await self._repo.update_profile(user_id, updates)
     
+    async def update_password(self, user_id: str, new_hashed_password: str) -> None:
+        return await self._repo.update_password(user_id, new_hashed_password)
+
     async def update_workspace(self, user_id: str, organization: str, role: str) -> Optional[User]:
         return await self._repo.update_workspace(user_id, organization, role)
     

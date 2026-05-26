@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -59,13 +59,18 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
   const [viewMode, setViewMode] = useState<'days' | 'weeks' | 'months'>('weeks');
   const [showDependencies, setShowDependencies] = useState(true);
   const [showCriticalPath, setShowCriticalPath] = useState(true);
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null);
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(externalTasks);
+  const [barsMounted, setBarsMounted] = useState(false);
 
   // Keep localTasks in sync when externalTasks change
-  React.useEffect(() => {
+  useEffect(() => {
+    setBarsMounted(false);
     setLocalTasks(externalTasks);
+    const t = setTimeout(() => setBarsMounted(true), 60);
+    return () => clearTimeout(t);
   }, [externalTasks]);
 
   // Derive Gantt tasks from real project tasks
@@ -443,7 +448,7 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <div style={{ minWidth: `${(totalDays * dayWidth * zoomLevel) / 100 + 300}px` }}>
+            <div style={{ minWidth: `${(totalDays * dayWidth * zoomLevel) / 100 + 300}px`, position: 'relative' }}>
               {/* Header Row */}
               <div className="flex border-b border-[var(--brand-700)] bg-[var(--brand-850)] sticky top-0 z-10">
                 <div className="w-72 flex-shrink-0 p-3 border-r border-[var(--brand-700)] font-medium text-gray-300 bg-[var(--brand-850)]">
@@ -461,6 +466,36 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
                   ))}
                 </div>
               </div>
+
+              {/* Today line */}
+              {(() => {
+                const tasksWithDates = localTasks.filter(t => t.start_date || t.due_date);
+                if (!tasksWithDates.length || !totalDays) return null;
+                const dates: Date[] = [];
+                tasksWithDates.forEach(t => {
+                  if (t.start_date) dates.push(new Date(t.start_date));
+                  if (t.due_date) dates.push(new Date(t.due_date));
+                });
+                const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+                const now = new Date();
+                const todayDay = Math.round((now.getTime() - minDate.getTime()) / 86400000);
+                const todayPct = (todayDay / totalDays) * 100;
+                if (todayPct < 0 || todayPct > 100) return null;
+                return (
+                  <div
+                    className="absolute top-0 bottom-0 z-20 pointer-events-none animate-today-pulse"
+                    style={{
+                      left: `calc(288px + ${todayPct}%)`,
+                      width: '2px',
+                      background: 'rgba(26,111,212,0.7)',
+                    }}
+                  >
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: 'var(--blue-500)', color: '#fff', whiteSpace: 'nowrap' }}>
+                      Today
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Tasks by Phase */}
               {phases.map(([phase, phaseTasks]) => (
@@ -518,16 +553,38 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
 
                           {/* Task Bar */}
                           <div
-                            className={`absolute top-1/2 -translate-y-1/2 h-7 rounded-md cursor-pointer transition-all hover:scale-y-110 ${
+                            className={`absolute top-1/2 -translate-y-1/2 h-7 rounded-md cursor-pointer hover:scale-y-110 ${
                               task.isMilestone ? 'w-4 h-4 rotate-45' : ''
                             } ${isCritical ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
                             style={{
                               left: `${barLeft}%`,
-                              width: task.isMilestone ? '16px' : `${Math.max(barWidth, 2)}%`,
+                              width: task.isMilestone ? '16px' : (barsMounted ? `${Math.max(barWidth, 2)}%` : '0%'),
                               backgroundColor: task.isMilestone ? '#8B5CF6' : undefined,
+                              transition: barsMounted ? `width 0.7s cubic-bezier(0.34,1.56,0.64,1) ${Math.min(500, 60 * (ganttTasks.indexOf(task) % 10))}ms` : 'none',
                             }}
                             onClick={() => setSelectedTask(isSelected ? null : task.id)}
+                            onMouseEnter={() => setHoveredBar(task.id)}
+                            onMouseLeave={() => setHoveredBar(null)}
                           >
+                            {/* Floating tooltip */}
+                            {hoveredBar === task.id && !task.isMilestone && (
+                              <div
+                                className="absolute bottom-full mb-2 left-1/2 z-50 pointer-events-none"
+                                style={{
+                                  transform: 'translateX(-50%) scale(1)',
+                                  animation: 'tooltipSpring 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <div className="px-3 py-2 rounded-lg text-xs font-medium shadow-xl"
+                                  style={{ background: '#1a1008', border: '1px solid #3d2412', color: '#f0e4c8' }}>
+                                  <div className="font-semibold">{task.name}</div>
+                                  <div className="text-[#8a7055] mt-0.5">{task.progress}% · {task.status}</div>
+                                </div>
+                                <div className="w-2 h-2 rotate-45 mx-auto -mt-1"
+                                  style={{ background: '#1a1008', border: '0 solid #3d2412', borderRight: '1px solid #3d2412', borderBottom: '1px solid #3d2412' }} />
+                              </div>
+                            )}
                             {!task.isMilestone && (
                               <>
                                 {/* Background */}

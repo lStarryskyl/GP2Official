@@ -591,6 +591,89 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
   .splash-aurora { animation: none !important; opacity: 0.5 !important; }
 }
 
+/* ── Phase workspace animations ── */
+@keyframes iconDropIn {
+  0% { opacity: 0; transform: translateY(-18px) scale(0.7); }
+  60% { transform: translateY(4px) scale(1.1); }
+  80% { transform: translateY(-2px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-icon-drop { animation: iconDropIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+@keyframes tooltipSpring {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.75) translateY(6px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes todayPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; box-shadow: 0 0 8px rgba(26,111,212,0.5); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+@keyframes ganttBarGrow {
+  from { width: 0 !important; }
+  to   { width: var(--bar-target-width, 0%); }
+}
+@keyframes drawCheckmark {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes pipelinePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,111,212,0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(26,111,212,0); }
+}
+@keyframes skeletonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-slide-in-up { animation: slideInUp 0.5s var(--ease-out-expo) forwards; opacity: 0; }
+.animate-shake { animation: shake 0.4s ease forwards; }
+.animate-draw-checkmark { stroke-dasharray: 40; stroke-dashoffset: 40; animation: drawCheckmark 0.4s ease forwards; }
+.animate-today-pulse { animation: todayPulse 2s ease-in-out infinite; }
+.animate-pipeline-pulse { animation: pipelinePulse 1.5s ease-in-out infinite; }
+
+/* Stagger card reveals */
+.stagger-container > * {
+  opacity: 0;
+  animation: slideInUp 0.45s var(--ease-out-expo) forwards;
+}
+.stagger-container > *:nth-child(1)  { animation-delay: 0ms; }
+.stagger-container > *:nth-child(2)  { animation-delay: 60ms; }
+.stagger-container > *:nth-child(3)  { animation-delay: 120ms; }
+.stagger-container > *:nth-child(4)  { animation-delay: 180ms; }
+.stagger-container > *:nth-child(5)  { animation-delay: 240ms; }
+.stagger-container > *:nth-child(6)  { animation-delay: 300ms; }
+.stagger-container > *:nth-child(7)  { animation-delay: 360ms; }
+.stagger-container > *:nth-child(n+8){ animation-delay: 420ms; }
+
+/* Skeleton shimmer for generation loading */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--brand-800) 25%, var(--brand-700) 50%, var(--brand-800) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Hover lift for phase content cards */
+.phase-card-hover {
+  transition: transform 0.2s var(--ease-out-expo), box-shadow 0.2s var(--ease-out-expo);
+}
+.phase-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
 /* ── Wave-reveal section animation ── */
 @keyframes waveCardIn {
   from { opacity: 0; transform: translateY(24px); }

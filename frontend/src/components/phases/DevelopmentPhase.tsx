@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -67,6 +68,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   const [activeTab, setActiveTab] = useState<'stack' | 'flow' | 'structure'>('stack');
   const [stackFilter, setStackFilter] = useState('');
   const [showRecommendedOnly, setShowRecommendedOnly] = useState(false);
+  const [stackRevealRef, stackVisible] = useReveal<HTMLDivElement>(0.05);
 
   const initialTechStack: TechStackMap = {
     frontend: [
@@ -764,11 +766,11 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div ref={stackRevealRef} className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 stagger-container" style={{ opacity: stackVisible ? undefined : 0 }}>
                     {visibleItems.map((item, idx) => (
                       <div
                         key={item.name}
-                        className="p-3 rounded-xl transition-all"
+                        className="p-3 rounded-xl phase-card-hover"
                         style={{
                           border: item.recommended
                             ? '2px solid rgba(59,130,246,0.5)'

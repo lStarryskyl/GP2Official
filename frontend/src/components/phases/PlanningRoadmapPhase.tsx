@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -58,6 +59,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
   const [milestones, setMilestones] = useState<RoadmapMilestone[]>([]);
+  const [milestonesRevealRef, milestonesVisible] = useReveal<HTMLDivElement>(0.05);
   const [loadingRoadmap, setLoadingRoadmap] = useState(true);
   const [savingRoadmap, setSavingRoadmap] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -434,9 +436,9 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
             <p className="text-gray-500">Add milestones above to see your planning brief</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div ref={milestonesRevealRef} className="space-y-3 stagger-container" style={{ opacity: milestonesVisible ? undefined : 0 }}>
             {planBullets.map((bullet, idx) => (
-              <div key={bullet.id} className="flex items-start gap-4 p-4 rounded-xl transition-shadow" style={{ backgroundColor: 'var(--brand-900)', border: '1px solid var(--brand-700)' }}>
+              <div key={bullet.id} className="flex items-start gap-4 p-4 rounded-xl transition-shadow phase-card-hover" style={{ backgroundColor: 'var(--brand-900)', border: '1px solid var(--brand-700)' }}>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
                   bullet.status === 'completed' ? 'bg-blue-900/20 text-blue-400' :
                   bullet.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :

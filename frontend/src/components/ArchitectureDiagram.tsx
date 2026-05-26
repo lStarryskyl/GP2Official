@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ComponentNode {
   id: string;
@@ -43,6 +43,25 @@ export function parseArchitectureJson(markdown: string): ArchitectureData | null
 
 export const ArchitectureDiagram: React.FC<{ data: ArchitectureData }> = ({ data }) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [visibleNodes, setVisibleNodes] = useState<Set<string>>(new Set());
+  const [visibleEdges, setVisibleEdges] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    setVisibleNodes(new Set());
+    setVisibleEdges(new Set());
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    data.components.forEach((c, i) => {
+      timers.push(setTimeout(() => {
+        setVisibleNodes(prev => new Set([...prev, c.id]));
+      }, i * 80));
+    });
+    (data.connections || []).forEach((_, i) => {
+      timers.push(setTimeout(() => {
+        setVisibleEdges(prev => new Set([...prev, i]));
+      }, data.components.length * 80 + i * 60));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [data]);
 
   const NODE_W = 150;
   const NODE_H = 72;
@@ -134,17 +153,26 @@ export const ArchitectureDiagram: React.FC<{ data: ArchitectureData }> = ({ data
             const isHighlighted = hoveredNode === conn.from || hoveredNode === conn.to;
             const midX = ((from.x + NODE_W) + to.x) / 2;
             const midY = (from.cy + to.cy) / 2;
+            const edgePath = getEdgePath(from, to);
+            const pathLen = 300;
+            const isVis = visibleEdges.has(i);
             return (
-              <g key={i}>
+              <g key={i} style={{ opacity: isVis ? 1 : 0, transition: 'opacity 0.3s ease' }}>
                 <path
-                  d={getEdgePath(from, to)}
+                  d={edgePath}
                   fill="none"
                   stroke={isHighlighted ? '#D4A017' : '#3d2412'}
                   strokeWidth={isHighlighted ? 2 : 1.5}
                   strokeOpacity={isHighlighted ? 0.9 : 0.5}
                   markerEnd="url(#arrowAmber)"
-                  strokeDasharray={isHighlighted ? 'none' : '4 3'}
-                  style={{ transition: 'all 0.3s ease', filter: isHighlighted ? 'url(#glowAmber)' : 'none' }}
+                  strokeDasharray={isVis ? (isHighlighted ? `${pathLen}` : '4 3') : `${pathLen}`}
+                  strokeDashoffset={isVis ? 0 : pathLen}
+                  style={{
+                    transition: isVis
+                      ? 'stroke-dashoffset 0.6s ease, stroke 0.3s ease, stroke-width 0.3s ease, stroke-opacity 0.3s ease'
+                      : 'none',
+                    filter: isHighlighted ? 'url(#glowAmber)' : 'none',
+                  }}
                 />
                 {conn.label && isHighlighted && (
                   <text x={midX} y={midY - 6} textAnchor="middle" fill="#D4A017" fontSize="10" fontWeight="600"
@@ -159,12 +187,23 @@ export const ArchitectureDiagram: React.FC<{ data: ArchitectureData }> = ({ data
           {nodes.map(node => {
             const colors = TYPE_COLORS[node.type] || TYPE_COLORS.backend;
             const isHovered = hoveredNode === node.id;
+            const isVis = visibleNodes.has(node.id);
+            const cx = node.x + NODE_W / 2;
+            const cy = node.y + NODE_H / 2;
             return (
               <g key={node.id}
-                transform={`translate(${node.x}, ${node.y})`}
                 onMouseEnter={() => setHoveredNode(node.id)}
                 onMouseLeave={() => setHoveredNode(null)}
-                style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                style={{
+                  cursor: 'pointer',
+                  opacity: isVis ? 1 : 0,
+                  transform: isVis
+                    ? `translate(${node.x}px, ${node.y}px) scale(1)`
+                    : `translate(${cx}px, ${cy}px) scale(0.5) translate(-${NODE_W / 2}px, -${NODE_H / 2}px)`,
+                  transition: isVis ? 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+                  transformBox: 'fill-box',
+                  transformOrigin: 'center center',
+                }}>
                 <rect
                   width={NODE_W} height={NODE_H} rx="10"
                   fill={isHovered ? '#221508' : '#1a1008'}

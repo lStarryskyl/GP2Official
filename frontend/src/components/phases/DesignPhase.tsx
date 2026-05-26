@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -45,6 +46,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
   onOpenCanvas,
 }) => {
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramType>('use_case');
+  const [diagramTabsRevealRef, diagramTabsVisible] = useReveal<HTMLDivElement>(0.05);
   const [diagramUrl, setDiagramUrl] = useState<string>('');
   const [isRendering, setIsRendering] = useState(false);
   const [imgLoading, setImgLoading] = useState(false);
@@ -249,7 +251,7 @@ export const DesignPhase: React.FC<DesignPhaseProps> = ({
       </Card>
 
       {/* DIAGRAM TYPE SELECTOR */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div ref={diagramTabsRevealRef} className="flex gap-2 overflow-x-auto pb-2 stagger-container" style={{ opacity: diagramTabsVisible ? undefined : 0 }}>
         {diagramTypes.map((type) => (
           <button
             key={type}

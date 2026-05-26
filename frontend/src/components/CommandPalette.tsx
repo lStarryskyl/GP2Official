@@ -5,7 +5,7 @@ import { phaseConfigs } from '@/constants/phases';
 import type { Project } from '@/types';
 import {
   Search, FolderKanban, Layers, ArrowRight, BarChart3, User as UserIcon,
-  BookOpen, Plus, Sparkles, Settings, FileText, Bell, CreditCard, Command,
+  BookOpen, Plus, Sparkles, Settings, FileText, CreditCard, Command,
   CornerDownLeft, Archive, Zap,
 } from 'lucide-react';
 
@@ -32,7 +32,6 @@ const getStaticRoutes = (activeProjectId?: string | null): Array<Omit<CmdItem, '
   { id: 'r-docs', label: 'Documentation', group: 'Navigate', icon: BookOpen, path: '/docs', keywords: 'help guide' },
   { id: 'r-profile', label: 'Profile', group: 'Navigate', icon: UserIcon, path: '/profile', keywords: 'account user me' },
   { id: 'r-billing', label: 'Billing & Plan', group: 'Navigate', icon: CreditCard, path: '/billing', keywords: 'subscription pricing' },
-  { id: 'r-notify', label: 'Notifications', group: 'Navigate', icon: Bell, path: '/notifications', keywords: 'alerts inbox' },
   { id: 'r-trash', label: 'Archived Projects', group: 'Navigate', icon: Archive, path: '/projects?view=archived', keywords: 'trash deleted' },
 ];
 

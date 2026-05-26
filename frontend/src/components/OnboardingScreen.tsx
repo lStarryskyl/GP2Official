@@ -385,14 +385,18 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
     if (advancingRef.current) return;
     advancingRef.current = true;
 
+    // Phase 1: fade slide out quickly
     setSlideVisible(false);
-    setWarpActive(true);
-    setTimeout(() => { setSlideIdx(toIdx); }, 300);
+    // Phase 2: trigger warp burst once slide is mostly gone
+    setTimeout(() => setWarpActive(true), 120);
+    // Phase 3: swap content while invisible
+    setTimeout(() => setSlideIdx(toIdx), 200);
+    // Phase 4: kill warp, fade new slide in
     setTimeout(() => {
       setWarpActive(false);
       setSlideVisible(true);
       advancingRef.current = false;
-    }, 680);
+    }, 560);
   };
 
   const advanceSlide = () => {
@@ -495,8 +499,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
         <div
           style={{
             opacity: slideVisible ? 1 : 0,
-            transform: slideVisible ? 'translateY(0) scale(1)' : 'translateY(18px) scale(0.97)',
-            transition: 'opacity 0.44s cubic-bezier(0.22,1,0.36,1), transform 0.44s cubic-bezier(0.22,1,0.36,1)',
+            transform: slideVisible ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.98)',
+            transition: slideVisible
+              ? 'opacity 0.38s cubic-bezier(0.22,1,0.36,1) 0.04s, transform 0.38s cubic-bezier(0.22,1,0.36,1) 0.04s'
+              : 'opacity 0.12s ease, transform 0.12s ease',
             marginBottom: '28px',
           }}
         >

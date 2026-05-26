@@ -51,14 +51,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const switcherRef = useRef<HTMLDivElement>(null);
 
-  // App-launch splash — shows on every page load/refresh, fades out after ~1.6s
-  const [splashActive, setSplashActive] = useState(true);
-  const [splashVisible, setSplashVisible] = useState(true);
-  useEffect(() => {
-    const fadeOut = setTimeout(() => setSplashVisible(false), 1200);
-    const remove  = setTimeout(() => setSplashActive(false), 1900);
-    return () => { clearTimeout(fadeOut); clearTimeout(remove); };
-  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
@@ -681,39 +673,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         activeProjectId={activeProjectId}
       />
 
-      {/* ── App-launch splash overlay ── */}
-      {splashActive && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'radial-gradient(ellipse at 50% 40%, #14315e 0%, #0a1a30 50%, #05080f 100%)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: '20px',
-            opacity: splashVisible ? 1 : 0,
-            transition: 'opacity 0.7s ease',
-            pointerEvents: splashVisible ? 'all' : 'none',
-          }}
-        >
-          {/* Glow rings */}
-          <div style={{
-            position: 'absolute', width: '360px', height: '360px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(26,111,212,0.35) 0%, transparent 70%)',
-            animation: 'splashLogoSpin 8s linear infinite',
-          }} />
-          <div style={{
-            position: 'absolute', width: '220px', height: '220px', borderRadius: '50%',
-            border: '1.5px solid rgba(249,115,22,0.35)',
-            animation: 'splashLogoSpin 5s linear infinite reverse',
-          }} />
-          <AcornLogo height={72} white style={{ position: 'relative', zIndex: 1 }} />
-          <style>{`
-            @keyframes splashLogoSpin {
-              from { transform: rotate(0deg); }
-              to   { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      )}
     </div>
   );
 };

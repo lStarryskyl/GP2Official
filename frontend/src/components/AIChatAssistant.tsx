@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AIChatAssistant — floating per-phase chat panel
  *
  * Usage:
@@ -33,19 +33,6 @@ interface Props {
 
 // Per-phase accent colors
 const PHASE_COLORS: Record<string, string> = {
-<<<<<<< HEAD
-  planning:               '#D4A017',
-  feasibility_study:      '#7BA05B',
-  requirements_gathering: 'var(--blue-500)',
-  validation:             '#5F7A8A',
-  design:                 '#6B4C8A',
-  development:            '#8B5E3C',
-  tasks:                  '#D4A017',
-  cost_benefit:           '#2A9D8F',
-  risks:                  '#C1440E',
-  testing:                '#0EA5E9',
-  summary:                'var(--blue-400)',
-=======
   planning: '#D4A017',
   feasibility_study: '#7BA05B',
   requirements_gathering: 'var(--blue-500)',
@@ -57,7 +44,6 @@ const PHASE_COLORS: Record<string, string> = {
   risks: '#C1440E',
   testing: '#0EA5E9',
   summary: 'var(--blue-400)',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 };
 
 const QUICK_PROMPTS = [

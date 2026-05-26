@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { Layout } from '@/components/Layout';
@@ -18,20 +18,14 @@ import type {
   TraceabilityMatrixData,
   NegotiationThread as NegotiationThreadData,
   NegotiationComment,
-<<<<<<< HEAD
-=======
   PhaseCompletionMeta,
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 } from '@/types';
 import { phaseConfigs, getPhaseConfig, getNextPhase, phaseColors } from '@/constants/phases';
 import { workspacePresets } from '@/constants/workspacePresets';
 import { useAuthStore } from '@/store/authStore';
 import ReactMarkdown from 'react-markdown';
 import { PhaseNavigation } from '@/components/PhaseNavigation';
-<<<<<<< HEAD
-=======
 import { PhaseStickyHeader } from '@/components/PhaseStickyHeader';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import { VersionHistory } from '@/components/VersionHistory';
 import { TraceabilityMatrix } from '@/components/TraceabilityMatrix';
 import { NegotiationThread } from '@/components/NegotiationThread';
@@ -557,24 +551,6 @@ export const PhaseDetailPage: React.FC = () => {
         roots.push(current);
       }
     });
-<<<<<<< HEAD
-
-    return roots;
-  }, [discussionComments]);
-
-  // Copy-to-clipboard helper
-  const [copied, setCopied] = useState(false);
-  const handleCopyContent = useCallback(() => {
-    const text = phaseMarkdown || phaseRawMarkdown;
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      toastSuccess('Content copied to clipboard');
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, [phaseMarkdown, phaseRawMarkdown, toastSuccess]);
-=======
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
     return roots;
   }, [discussionComments]);
@@ -687,11 +663,7 @@ export const PhaseDetailPage: React.FC = () => {
     );
   };
 
-<<<<<<< HEAD
-  const StreamingOverlay: React.FC = () => {
-=======
   const renderStreamingOverlay = () => {
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     if (!isStreaming && !streamingText) return null;
     if (!isStreaming && phaseMarkdown) return null;
     return (
@@ -905,10 +877,6 @@ export const PhaseDetailPage: React.FC = () => {
       es.addEventListener('error', (event) => {
         es.close();
         setIsStreaming(false);
-<<<<<<< HEAD
-        setError('Streaming generation failed. Falling back to standard generation.');
-=======
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         resolve();
       });
 
@@ -1764,8 +1732,6 @@ export const PhaseDetailPage: React.FC = () => {
   const renderPhaseWrapper = (phaseChildren: React.ReactNode) => {
     return (
       <Layout>
-<<<<<<< HEAD
-=======
         <style>{`
           @media print {
             .no-print {
@@ -1787,7 +1753,6 @@ export const PhaseDetailPage: React.FC = () => {
             }
           }
         `}</style>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div className="min-h-[calc(100vh-4rem)] bg-[var(--brand-900)]">
           {/* Horizontal Navigation */}
           <div className="no-print">
@@ -1797,11 +1762,7 @@ export const PhaseDetailPage: React.FC = () => {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 print-content">
             <div className="space-y-5">
               {/* Phase Header */}
-<<<<<<< HEAD
-              <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
-=======
               <div className="rounded-2xl overflow-hidden shadow-lg no-print" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 <div className="h-1" style={{ background: `linear-gradient(to right, ${phaseAccentColor}, ${phaseAccentColor}88)` }} />
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1836,10 +1797,7 @@ export const PhaseDetailPage: React.FC = () => {
                           onClick={handleDownload}
                           className="text-[var(--text-muted)] bg-transparent"
                           style={{ borderColor: 'rgba(26,46,69,0.6)' }}
-<<<<<<< HEAD
-=======
                           title="Download phase content as Markdown"
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Export
@@ -1876,13 +1834,8 @@ export const PhaseDetailPage: React.FC = () => {
                           status === 'completed'
                             ? { background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.3)' }
                             : status === 'locked'
-<<<<<<< HEAD
-                            ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
-                            : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
-=======
                               ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
                               : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         }>
                         {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● Active'}
                       </span>
@@ -1890,8 +1843,6 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                   {phaseConfig.description && (
                     <p className="mt-2 text-sm text-[var(--text-muted)] max-w-2xl ml-16">{phaseConfig.description}</p>
-<<<<<<< HEAD
-=======
                   )}
                   {phaseId && phaseCompletionMeta[phaseId]?.completed_at && (
                     <div className="mt-3 ml-16 rounded-lg p-3"
@@ -1943,7 +1894,6 @@ export const PhaseDetailPage: React.FC = () => {
                         )}
                       </div>
                     </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   )}
                 </div>
               </div>
@@ -1993,53 +1943,6 @@ export const PhaseDetailPage: React.FC = () => {
                 </div>
               )}
 
-<<<<<<< HEAD
-              {/* Compact AI Regenerate Bar - only show if content exists or generating */}
-              {phaseId !== 'validation' && (
-                <div className="bg-[var(--brand-900)] rounded-xl border border-[var(--brand-700)] overflow-hidden">
-                  <div className="p-3 sm:p-4">
-                    {isGenerating ? (
-                      <div className="flex items-center justify-center gap-3 py-2">
-                        <Loader2 className="h-5 w-5 animate-spin text-[var(--blue-400)]" />
-                        <span className="text-sm font-medium text-gray-300">Generating content with AI...</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-[var(--blue-400)]" />
-                          <span className="text-sm text-gray-400">Content auto-generated</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleCopyContent}
-                            disabled={!phaseMarkdown && !phaseRawMarkdown}
-                            title="Copy content to clipboard"
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '6px',
-                              padding: '6px 10px', borderRadius: '8px',
-                              background: copied ? 'rgba(26,111,212,0.15)' : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${copied ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.6)'}`,
-                              color: copied ? '#3d8fe0' : '#4a6070',
-                              fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                            }}
-                          >
-                            {copied ? <Check size={13} /> : <Copy size={13} />}
-                            {copied ? 'Copied' : 'Copy'}
-                          </button>
-                          <input
-                            ref={regenerateInputRef}
-                            type="text"
-                            className="w-48 sm:w-64 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[var(--brand-700)] bg-[#152238] focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 transition-all"
-                            placeholder="Custom prompt (optional)"
-                          />
-                          <Button
-                            disabled={isGenerating}
-                            onClick={() => {
-                              const prompt = regenerateInputRef.current?.value || `Regenerate ${phaseId?.replace('_', ' ')} content`;
-                              handleGenerate(prompt);
-                            }}
-                            className="bg-[#152238] hover:bg-[var(--brand-700)] text-[var(--blue-400)] border border-[var(--blue-400)]/30 hover:border-[var(--blue-400)] text-sm px-3 py-1.5 font-medium"
-=======
               {/* Compact AI Regenerate Bar / Empty State */}
               {phaseId !== 'validation' && <div className="no-print">{(() => {
                 const phaseEmptyDescriptions: Record<string, string> = {
@@ -2072,7 +1975,6 @@ export const PhaseDetailPage: React.FC = () => {
                             onClick={() => handleGenerate(`Generate comprehensive ${phaseId?.replace(/_/g, ' ')} content for this project`)}
                             className="font-semibold px-6"
                             style={{ background: 'linear-gradient(135deg, var(--blue-600), var(--blue-400))', color: 'var(--brand-900)', border: 'none' }}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                           >
                             <Sparkles className="h-4 w-4 mr-2" />
                             Generate with AI
@@ -2259,11 +2161,7 @@ export const PhaseDetailPage: React.FC = () => {
             {/* Cost vs Benefit Comparison card removed here; lives in cost_benefit phase instead */}
             <div className="bg-[var(--brand-900)] border border-[var(--brand-700)]/50 rounded-xl p-4">
               <div className="flex items-center gap-3">
-<<<<<<< HEAD
-                <div className="p-2 bg-blue-900/200/20 rounded-lg border border-blue-500/30">
-=======
                 <div className="p-2 bg-blue-900/20 rounded-lg border border-blue-500/30">
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   <Shield className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
@@ -4795,18 +4693,10 @@ export const PhaseDetailPage: React.FC = () => {
               <button
                 key={tab}
                 onClick={() => setPhaseBottomTab(tab)}
-<<<<<<< HEAD
-                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${
-                  isActive
-                    ? 'text-[var(--blue-400)] border-b-2 border-[var(--blue-400)] bg-[var(--brand-800)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] hover:bg-[var(--brand-800)]/50'
-                }`}
-=======
                 className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${isActive
                     ? 'text-[var(--blue-400)] border-b-2 border-[var(--blue-400)] bg-[var(--brand-800)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] hover:bg-[var(--brand-800)]/50'
                   }`}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               >
                 {labels[tab]}
               </button>
@@ -4847,8 +4737,6 @@ export const PhaseDetailPage: React.FC = () => {
           )}
         </div>
       </div>
-<<<<<<< HEAD
-=======
       {editNoteDialogOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -5029,7 +4917,6 @@ export const PhaseDetailPage: React.FC = () => {
           </div>
         </div>
       )}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     </Layout>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -214,11 +214,7 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
             </div>
           </CardContent>
         </Card>
-<<<<<<< HEAD
-        <Card className="bg-gradient-to-br from-blue-900/20 to-white border-blue-700/30">
-=======
         <Card className="bg-[var(--brand-850)] border-blue-700/40">
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-900/30 rounded-lg">
@@ -294,20 +290,12 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
                       className={`flex items-start gap-2 p-2 rounded-lg border text-xs sm:text-sm ${
                         done
                           ? 'bg-blue-900/20 border-blue-700/40 text-blue-200'
-<<<<<<< HEAD
-                          : 'bg-white border-gray-200 hover:border-blue-600/50'
-=======
                           : 'bg-[var(--brand-850)] border-[var(--brand-700)] hover:border-blue-600/50'
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                       }`}
                     >
                       <input
                         type="checkbox"
-<<<<<<< HEAD
-                        className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-blue-400 focus:ring-blue-500"
-=======
                         className="mt-0.5 h-3.5 w-3.5 rounded border-[var(--brand-600)] text-blue-400 focus:ring-blue-500"
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         checked={done}
                         onChange={() => handleToggleTaskDone(task)}
                       />

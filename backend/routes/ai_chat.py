@@ -1,4 +1,4 @@
-"""AI Chat Assistant routes — per-phase conversational AI."""
+﻿"""AI Chat Assistant routes — per-phase conversational AI."""
 
 import logging
 from typing import Any, Dict, List, Optional
@@ -11,10 +11,7 @@ from routes.auth import get_current_user
 from models.user import User
 from services.gemini_orchestrator import gemini_orchestrator
 from services.openai_client import call_openai
-<<<<<<< HEAD
-=======
 from services.plan_limits import enforce_ai_run_quota, enforce_and_record_ai_run
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 from repositories.artifact_repository import ArtifactRepository
 from repositories.ai_run_repository import AiRunRepository
 

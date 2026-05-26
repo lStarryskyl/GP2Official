@@ -118,11 +118,8 @@ app.include_router(ai_chat.router, prefix="/api/ai-chat", tags=["AI Chat"])
 app.include_router(testing.router, prefix="/api", tags=["Testing"])
 app.include_router(ai_debate.router, prefix="/api", tags=["AI Debate"])
 app.include_router(ai_suggestions.router, prefix="/api", tags=["AI Suggestions"])
-<<<<<<< HEAD
-=======
 app.include_router(validation.router, prefix="/api", tags=["Validation"])
 app.include_router(scaffolding.router, prefix="/api", tags=["Scaffolding"])
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

@@ -1,4 +1,4 @@
-"""
+﻿"""
 AI Pipeline Service
 ===================
 Thin orchestration layer that delegates all AI generation to the

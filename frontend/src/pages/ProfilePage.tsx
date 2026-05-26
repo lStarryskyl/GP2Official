@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
@@ -213,19 +213,11 @@ const ProfilePage: React.FC = () => {
           <Button
             onClick={handleSave}
             disabled={saving}
-<<<<<<< HEAD
-            className={`font-bold shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 ${
-              saved 
-                ? 'bg-blue-900/200 hover:bg-blue-500' 
-                : 'bg-gradient-to-r from-acorn-orange-500 to-acorn-orange-600 hover:from-acorn-orange-600 hover:to-acorn-orange-700'
-            } text-white`}
-=======
             className={`transition-all duration-300 ${
               saved
                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
                 : ''
             }`}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           >
             {saving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AIAgentsPanel — Panel to run specialized AI agents on a project
  *
  * Shows buttons for:
@@ -272,17 +272,6 @@ export const AIAgentsPanel: React.FC<Props> = ({
 
   return (
     <>
-<<<<<<< HEAD
-      {/* Toggle button */}
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="fixed bottom-24 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-xl transition-all hover:scale-105"
-        style={{ background: 'linear-gradient(135deg, var(--brand-600), var(--blue-400))', color: 'var(--brand-900)', boxShadow: '0 8px 24px rgba(26,111,212,0.25)' }}
-      >
-        <Sparkles className="w-4 h-4" />
-        AI Agents
-      </button>
-=======
       {/* Toggle button — only visible when panel is closed */}
       {!isOpen && (
         <button
@@ -310,26 +299,10 @@ export const AIAgentsPanel: React.FC<Props> = ({
           aria-hidden="true"
         />
       )}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
       {/* Slide-in Panel */}
       {isOpen && (
         <div
-<<<<<<< HEAD
-          className="fixed right-0 top-0 bottom-0 z-40 overflow-y-auto shadow-2xl"
-          style={{ width: '360px', background: 'var(--brand-850)', borderLeft: '1px solid rgba(26,46,69,0.5)' }}
-        >
-          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4"
-            style={{ background: 'var(--brand-850)', borderBottom: '1px solid rgba(26,46,69,0.4)' }}>
-            <div>
-              <h2 className="font-bold text-[var(--text-primary)]">AI Agents</h2>
-              <p className="text-xs text-[var(--text-muted)]">Specialized analysis tools</p>
-            </div>
-            <button onClick={() => setIsOpen(false)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--brand-700)] transition-all">
-              <X className="w-4 h-4" />
-            </button>
-=======
           ref={panelRef}
           className="fixed right-0 top-0 bottom-0 z-[70] overflow-y-auto shadow-2xl"
           style={{
@@ -349,7 +322,6 @@ export const AIAgentsPanel: React.FC<Props> = ({
               <h2 className="font-bold text-[var(--text-primary)] text-sm">AI Agents</h2>
               <p className="text-[11px] text-[var(--text-muted)]">Specialized analysis tools</p>
             </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           </div>
 
           <div className="p-4 space-y-3">

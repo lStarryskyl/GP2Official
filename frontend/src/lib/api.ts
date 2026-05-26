@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+﻿import axios, { AxiosInstance, AxiosError } from 'axios';
 import type {
   User,
   RegisterRequest,
@@ -29,8 +29,6 @@ import type {
   SandboxRunResult,
 } from '@/types';
 
-<<<<<<< HEAD
-=======
 // New types for Phase B
 export interface AgentPersona {
   id: string;
@@ -112,7 +110,6 @@ export interface ScaffoldResult {
   tokens_used: number;
 }
 
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 const normalizeId = <T extends Record<string, any>>(item: T): T => {
   if (!item) return item;
   if (item.id || !item._id) return item;
@@ -130,11 +127,6 @@ const normalizeVersionEntry = (entry: any): VersionHistoryEntry =>
 
 const normalizeTraceabilityLink = (link: any): TraceabilityLink =>
   normalizeId(link) as TraceabilityLink;
-<<<<<<< HEAD
-
-const API_URL = import.meta.env.VITE_API_URL || '';
-=======
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 type ArtifactUpdatePayload = {
   title?: string;
@@ -875,8 +867,6 @@ class ApiClient {
     return response.data;
   }
 
-<<<<<<< HEAD
-=======
   async triggerValidation(projectId: string, phasesToReview?: string[]): Promise<any> {
     const payload = phasesToReview ? { phases_to_review: phasesToReview } : {};
     const response = await this.client.post(`/projects/${projectId}/validate`, payload, {
@@ -885,7 +875,6 @@ class ApiClient {
     return response.data;
   }
 
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   // Testing
   async generateTestData(projectId: string, options?: any): Promise<any> {
     const response = await this.client.post(`/projects/${projectId}/testing/generate-test-data`, options || {});
@@ -901,8 +890,6 @@ class ApiClient {
     const response = await this.client.get(`/projects/${projectId}/testing/results`);
     return response.data;
   }
-<<<<<<< HEAD
-=======
 
   async getValidations(projectId: string): Promise<any> {
     const response = await this.client.get(`/projects/${projectId}/validations`);
@@ -958,7 +945,6 @@ class ApiClient {
     const response = await this.client.get(`/projects/${projectId}/scaffolds`);
     return response.data;
   }
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 }
 
 export const api = new ApiClient();

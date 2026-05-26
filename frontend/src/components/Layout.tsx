@@ -1,24 +1,7 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+﻿import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import {
-<<<<<<< HEAD
-  LogOut, MessageCircle, FolderKanban, Settings, Bell, Search,
-  Menu, X, ChevronRight, ChevronLeft, Plus, Sparkles, User,
-  HelpCircle, BarChart3, Kanban, FileText, Users, CreditCard,
-  Zap, BookOpen,
-} from 'lucide-react';
-import { ConversationalDock } from '@/components/ConversationalDock';
-import { AIDebatePanel } from '@/components/AIDebatePanel';
-
-interface LayoutProps { children: React.ReactNode; }
-
-const navItems = [
-  { id: 'projects',  icon: FolderKanban, label: 'Projects',  path: '/projects' },
-  { id: 'analytics', icon: BarChart3,    label: 'Analytics', path: '/analytics' },
-  { id: 'docs',      icon: BookOpen,     label: 'Docs',      path: '/docs' },
-  { id: 'profile',   icon: User,         label: 'Profile',   path: '/profile' },
-=======
   LogOut, FolderKanban, Search,
   Menu, X, ChevronRight, ChevronLeft, Plus, User as UserIcon,
   BarChart3, BookOpen,
@@ -38,7 +21,6 @@ const getNavItems = (activeProjectId: string | null) => [
   { id: 'analytics', icon: BarChart3, label: 'Analytics', path: activeProjectId ? `/projects/${activeProjectId}/analytics` : '/analytics' },
   { id: 'docs', icon: BookOpen, label: 'Docs', path: '/docs' },
   { id: 'profile', icon: UserIcon, label: 'Profile', path: '/profile' },
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 ];
 
 const RECENTS_KEY = 'acorn_recent_projects';
@@ -60,14 +42,6 @@ const getRecents = (): string[] => {
 };
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-<<<<<<< HEAD
-  const { user, logout }          = useAuthStore();
-  const navigate                  = useNavigate();
-  const location                  = useLocation();
-  const [assistantOpen, setAssistantOpen]       = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen]     = useState(false);
-=======
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,7 +51,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const switcherRef = useRef<HTMLDivElement>(null);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
@@ -90,30 +63,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogout = async () => { await logout(); navigate('/login'); };
 
-<<<<<<< HEAD
-  const projectMatch    = useMemo(() => location.pathname.match(/\/projects\/([^/]+)/), [location.pathname]);
-  const activeProjectId = projectMatch && projectMatch[1]?.length > 6 ? projectMatch[1] : null;
-  // AIChatAssistant (Athena) handles chat on phase pages — don't show ConversationalDock there
-  const onPhasePage = location.pathname.includes('/phases/');
-=======
   const projectMatch = useMemo(() => location.pathname.match(/\/projects\/([^/]+)/), [location.pathname]);
   const activeProjectId = projectMatch && projectMatch[1]?.length > 6 ? projectMatch[1] : null;
   const phaseMatch = useMemo(() => location.pathname.match(/\/phases\/([^/]+)/), [location.pathname]);
   const activePhaseId = phaseMatch ? phaseMatch[1] : null;
 
   useEffect(() => { if (activeProjectId) trackRecent(activeProjectId); }, [activeProjectId]);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   useEffect(() => { if (!activeProjectId) setAssistantOpen(false); }, [activeProjectId]);
 
   // Ctrl+K opens AI chat on any project page
   useEffect(() => {
-<<<<<<< HEAD
-    const handleKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && activeProjectId && !onPhasePage) {
-        e.preventDefault();
-        setAssistantOpen(prev => !prev);
-=======
     if (!user) return;
     api.getProjects().then(setProjects).catch(() => { });
   }, [user, activeProjectId]);
@@ -136,14 +96,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen(p => !p);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-<<<<<<< HEAD
-  }, [activeProjectId, onPhasePage]);
-=======
   }, []);
 
   useEffect(() => {
@@ -188,21 +144,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     mql.addEventListener('change', handler);
     return () => mql.removeEventListener('change', handler);
   }, []);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const isActive = (path: string) => {
     if (path === '/projects') return location.pathname === path || location.pathname.startsWith('/projects/');
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-<<<<<<< HEAD
-  const sidebarW = sidebarCollapsed ? '72px' : '240px';
-
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--brand-900)', display: 'flex', fontFamily: "'DM Sans', sans-serif" }}>
-
-      {/* Background grid */}
-=======
   const sidebarW = sidebarCollapsed ? '72px' : '264px';
 
   const phaseIcon = (status?: string) => {
@@ -216,16 +163,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--brand-900)', display: 'flex', fontFamily: "'DM Sans', sans-serif" }}>
 
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
       <div className="bg-grid" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', opacity: 0.6 }} />
       <div className="glow-orb glow-orb-forest" style={{ width: '500px', height: '500px', top: '10%', left: '5%', opacity: 0.4 }} />
 
       {/* ── Sidebar Desktop ── */}
       <aside style={{
-<<<<<<< HEAD
-        display: 'none',
-=======
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         position: 'fixed', left: 0, top: 0, height: '100vh', width: sidebarW,
         background: 'var(--brand-850)',
         borderRight: '1px solid rgba(26,111,212,0.18)',
@@ -233,35 +175,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         zIndex: 40,
         transition: 'width 0.3s var(--ease-out-expo)',
       }}
-<<<<<<< HEAD
-        className="lg:flex flex-col"
-      >
-        {/* Logo */}
-        <div style={{
-          height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 16px', borderBottom: '1px solid rgba(26,111,212,0.18)',
-          flexShrink: 0,
-        }}>
-          <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-                borderRadius: '10px', filter: 'blur(6px)', opacity: 0.5,
-              }} />
-              <div style={{
-                position: 'relative', width: '38px', height: '38px',
-                background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-                borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Zap size={18} color="#fff" />
-              </div>
-            </div>
-            {!sidebarCollapsed && (
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '18px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                Acorn
-              </span>
-=======
         className="hidden lg:flex flex-col"
       >
         {/* Logo */}
@@ -274,31 +187,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <AcornLogo height={36} white />
             ) : (
               <AcornLogo variant="mark" height={28} width={28} white />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             )}
           </Link>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px', borderRadius: '8px' }}
-<<<<<<< HEAD
-          >
-            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-        </div>
-
-        {/* New Project button */}
-        <div style={{ padding: '12px' }}>
-          <button
-            onClick={() => navigate('/projects/new')}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-              padding: sidebarCollapsed ? '10px' : '10px 16px',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              background: 'linear-gradient(135deg, #F97316, #cc4900)',
-              border: 'none', borderRadius: '10px', cursor: 'pointer',
-              color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '14px',
-              boxShadow: '0 4px 16px rgba(249,115,22,0.35)',
-=======
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
@@ -437,32 +330,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               border: 'none', borderRadius: '10px', cursor: 'pointer',
               color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '13px',
               boxShadow: '0 4px 16px rgba(249,115,22,0.3)',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               transition: 'all 0.2s',
             }}
             onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
           >
-<<<<<<< HEAD
-            <Plus size={16} />
-=======
             <Plus size={15} />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             {!sidebarCollapsed && <span>New Project</span>}
           </button>
         </div>
 
-<<<<<<< HEAD
-        {/* Nav items */}
-        <nav style={{ flex: 1, padding: '4px 8px', overflowY: 'auto' }}>
-          {!sidebarCollapsed && (
-            <p style={{ fontSize: '10px', color: 'var(--text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '8px 8px 4px' }}>
-              Navigation
-            </p>
-          )}
-          {navItems.map(item => {
-            const Icon   = item.icon;
-=======
         {/* Phase shortcuts (when inside a project) */}
         {activeProjectId && !sidebarCollapsed && (
           <div style={{ padding: '4px 8px 8px', borderBottom: '1px solid rgba(26,111,212,0.12)' }}>
@@ -550,7 +427,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
           {getNavItems(activeProjectId).map(item => {
             const Icon = item.icon;
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             const active = isActive(item.path);
             return (
               <button
@@ -559,56 +435,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 title={sidebarCollapsed ? item.label : undefined}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center',
-<<<<<<< HEAD
-                  gap: '12px', padding: '10px 12px',
-=======
                   gap: '12px', padding: '9px 12px',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                   borderRadius: '10px', border: 'none', cursor: 'pointer',
                   background: active ? 'rgba(26,111,212,0.15)' : 'transparent',
                   borderLeft: active ? '3px solid #1A6FD4' : '3px solid transparent',
                   color: active ? 'var(--blue-300)' : 'var(--text-muted)',
                   fontFamily: active ? "'Syne', sans-serif" : "'DM Sans', sans-serif",
-<<<<<<< HEAD
-                  fontWeight: active ? 600 : 400, fontSize: '14px',
-=======
                   fontWeight: active ? 600 : 400, fontSize: '13.5px',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   marginBottom: '2px',
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(26,111,212,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; } }}
               >
-<<<<<<< HEAD
-                <Icon size={17} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-                {active && !sidebarCollapsed && (
-                  <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', background: '#1A6FD4' }} />
-                )}
-=======
                 <Icon size={16} />
                 {!sidebarCollapsed && <span>{item.label}</span>}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               </button>
             );
           })}
         </nav>
 
         {/* User section */}
-<<<<<<< HEAD
-        <div style={{ borderTop: '1px solid rgba(26,111,212,0.15)', padding: '12px', flexShrink: 0 }}>
-          {user && !sidebarCollapsed && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '10px 12px', borderRadius: '10px',
-              background: 'rgba(26,111,212,0.08)',
-              marginBottom: '8px',
-            }}>
-              <div style={{
-                width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-=======
         <div style={{ borderTop: '1px solid rgba(26,111,212,0.15)', padding: '10px', flexShrink: 0 }}>
           {user && !sidebarCollapsed && (
             <div style={{
@@ -618,7 +466,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             }}>
               <div style={{
                 width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 background: 'linear-gradient(135deg, rgba(26,111,212,0.3), rgba(13,43,82,0.5))',
                 border: '1px solid rgba(26,111,212,0.4)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -627,19 +474,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-<<<<<<< HEAD
-                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-                  {user.full_name || user.email?.split('@')[0]}
-                </p>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user.organization || user.role_label || 'Member'}
-=======
                 <p style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
                   {user.full_name || user.email?.split('@')[0]}
                 </p>
                 <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {user.organization || (user as any).role_label || 'Member'}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 </p>
               </div>
             </div>
@@ -649,29 +488,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             title={sidebarCollapsed ? 'Logout' : undefined}
             style={{
               width: '100%', display: 'flex', alignItems: 'center',
-<<<<<<< HEAD
-              gap: '10px', padding: '10px 12px',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              borderRadius: '10px', border: 'none', cursor: 'pointer',
-              background: 'transparent', color: 'var(--text-muted)',
-              fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-=======
               gap: '10px', padding: '9px 12px',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               borderRadius: '10px', border: 'none', cursor: 'pointer',
               background: 'transparent', color: 'var(--text-muted)',
               fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               transition: 'all 0.15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = '#f87171'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
           >
-<<<<<<< HEAD
-            <LogOut size={16} />
-=======
             <LogOut size={15} />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             {!sidebarCollapsed && <span>Logout</span>}
           </button>
         </div>
@@ -686,47 +513,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         padding: '0 16px', zIndex: 50,
       }} className="lg:hidden">
         <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-<<<<<<< HEAD
-          <div style={{
-            width: '34px', height: '34px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Zap size={16} color="#fff" />
-          </div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>Acorn</span>
-        </Link>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px' }}
-        >
-          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-      </header>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 40, paddingTop: '60px',
-          background: 'rgba(13,27,42,0.97)', backdropFilter: 'blur(16px)',
-        }} className="lg:hidden animate-reveal-down">
-          <nav style={{ padding: '16px' }}>
-            {navItems.map(item => {
-              const Icon   = item.icon;
-              const active = isActive(item.path);
-              return (
-                <button key={item.id}
-                  onClick={() => { navigate(item.path); setMobileMenuOpen(false); }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '16px',
-                    padding: '16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                    background: active ? 'rgba(26,111,212,0.15)' : 'transparent',
-                    color: active ? 'var(--blue-300)' : 'var(--text-muted)',
-                    fontSize: '16px', fontFamily: "'DM Sans', sans-serif", marginBottom: '4px',
-                  }}
-                >
-                  <Icon size={20} />
-=======
           <AcornLogo height={34} white />
         </Link>
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -803,20 +589,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }}
                 >
                   <NavIcon size={20} />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   <span>{item.label}</span>
                 </button>
               );
             })}
-<<<<<<< HEAD
-            <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(26,111,212,0.15)', marginTop: '8px' }}>
-              <button
-                onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '16px',
-                  padding: '16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                  background: 'transparent', color: '#f87171', fontSize: '16px',
-=======
 
             {/* Phase shortcuts when inside a project */}
             {activeProjectId && (
@@ -867,7 +643,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   padding: '14px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
                   background: 'transparent', color: '#f87171', fontSize: '15px',
                   textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 }}
               >
                 <LogOut size={20} />
@@ -881,79 +656,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* ── Main content ── */}
       <main style={{
         flex: 1,
-<<<<<<< HEAD
-        marginLeft: 0,
-        paddingTop: '60px',
-        position: 'relative', zIndex: 10,
-      }}
-        className="lg:pt-0"
-        // inline style override for desktop via CSS var
-      >
-        <style>{`@media (min-width:1024px) { main { margin-left: ${sidebarW}; padding-top: 0; } }`}</style>
-=======
         position: 'relative', zIndex: 10,
       }}
       >
         <style>{`main { margin-left: 0; padding-top: 60px; } @media (min-width:1024px) { main { margin-left: ${sidebarW}; padding-top: 0; } }`}</style>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div style={{ padding: '24px 32px' }}>
           {children}
         </div>
       </main>
 
-<<<<<<< HEAD
-      {/* ── AI Debate Panel (visible on any project page) ── */}
-      {activeProjectId && (
-        <AIDebatePanel projectId={activeProjectId} />
-      )}
-
-      {/* ── AI Chat FAB (hidden on phase pages where Athena is already shown) ── */}
-      {activeProjectId && !onPhasePage && (
-        <>
-          {!assistantOpen && (
-            <button
-              onClick={() => setAssistantOpen(true)}
-              style={{
-                position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
-                width: '52px', height: '52px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(26,111,212,0.45)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(26,111,212,0.6)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)';   e.currentTarget.style.boxShadow = '0 8px 24px rgba(26,111,212,0.45)'; }}
-            >
-              <MessageCircle size={22} color="#fff" />
-              <div style={{
-                position: 'absolute', top: '-2px', right: '-2px',
-                width: '12px', height: '12px', borderRadius: '50%',
-                background: '#1A6FD4', border: '2px solid var(--brand-900)',
-                animation: 'pulse-ring 2s infinite',
-              }} />
-            </button>
-          )}
-          {assistantOpen && (
-            <div style={{
-              position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
-              width: '380px', maxHeight: '580px',
-              borderRadius: '20px', overflow: 'hidden',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-            }} className="animate-reveal-up">
-              <ConversationalDock
-                projectId={activeProjectId}
-                open={assistantOpen}
-                onClose={() => setAssistantOpen(false)}
-              />
-            </div>
-          )}
-        </>
-=======
       {/* ── AI Debate Panel ── */}
       {activeProjectId && (
         <AIDebatePanel projectId={activeProjectId} />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
       )}
 
       {/* ── Command palette (global ⌘K) ── */}

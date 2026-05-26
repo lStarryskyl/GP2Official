@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap, ArrowRight, ChevronDown, ChevronUp,
@@ -8,10 +8,7 @@ import {
   Clock, Target, CheckSquare, Lightbulb, Database,
   BarChart3, Lock, Globe, Cpu, ArrowLeft,FlaskConical,
 } from 'lucide-react';
-<<<<<<< HEAD
-=======
 import { AcornLogo } from '../components/AcornLogo';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 // ─── Phase definitions ────────────────────────────────────────────────────────
 const PHASES = [
@@ -373,15 +370,11 @@ const PHASES = [
 const SDLCGuidePage: React.FC = () => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<string | null>('planning');
-<<<<<<< HEAD
-  const [activeSection, setActiveSection] = useState<'overview' | 'acorn' | 'practices' | 'mistakes'>('overview');
-=======
   type SectionKey = 'overview' | 'acorn' | 'practices' | 'mistakes';
   const [activeSections, setActiveSections] = useState<Record<string, SectionKey>>({});
   const getActiveSection = (phaseId: string): SectionKey => activeSections[phaseId] ?? 'overview';
   const setActiveSection = (phaseId: string, section: SectionKey) =>
     setActiveSections(prev => ({ ...prev, [phaseId]: section }));
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const card: React.CSSProperties = {
     background: 'rgba(26,46,69,0.5)',
@@ -392,35 +385,6 @@ const SDLCGuidePage: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0D1B2A', color: '#E8EDF5', fontFamily: "'DM Sans', sans-serif" }}>
-<<<<<<< HEAD
-
-      {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 32px', height: '60px',
-        background: 'rgba(13,27,42,0.92)', backdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(26,111,212,0.18)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8899AA', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-            <ArrowLeft size={14} /> Back
-          </button>
-          <div style={{ width: '1px', height: '16px', background: 'rgba(26,111,212,0.3)' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Zap size={13} color="#fff" />
-            </div>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '16px' }}>Acorn</span>
-            <span style={{ color: '#4a6070', fontSize: '13px' }}>/ SDLC Guide</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => navigate('/login')} style={{ padding: '7px 16px', background: 'none', border: '1px solid rgba(26,111,212,0.35)', borderRadius: '8px', color: '#8899AA', fontSize: '13px', cursor: 'pointer' }}>
-            Sign In
-          </button>
-          <button onClick={() => navigate('/register')} style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #F97316, #cc4900)', border: 'none', borderRadius: '8px', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-=======
       <style>{`
         @media (max-width: 768px) {
           .sg-nav { padding: 0 16px !important; }
@@ -472,18 +436,13 @@ const SDLCGuidePage: React.FC = () => {
             Sign In
           </button>
           <button className="sg-nav-cta" onClick={() => navigate('/register')} style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #F97316, #cc4900)', border: 'none', borderRadius: '8px', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             Get Started Free
           </button>
         </div>
       </nav>
 
       {/* Hero */}
-<<<<<<< HEAD
-      <section style={{ padding: '72px 32px 48px', maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-=======
       <section className="sg-hero" style={{ padding: '72px 32px 48px', maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 14px', background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.3)', borderRadius: '999px', marginBottom: '20px' }}>
           <BookOpen size={13} color="#1A6FD4" />
           <span style={{ fontSize: '12px', color: '#3d8fe0', fontWeight: 600, letterSpacing: '0.06em' }}>COMPLETE SDLC REFERENCE</span>
@@ -497,21 +456,13 @@ const SDLCGuidePage: React.FC = () => {
         <p style={{ color: '#8899AA', fontSize: '17px', lineHeight: 1.7, maxWidth: '640px', margin: '0 auto 32px' }}>
           Everything you need to know about the 11 phases of modern software development — what each phase produces, why it matters, and the best practices that separate successful projects from failed ones.
         </p>
-<<<<<<< HEAD
-        <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
-=======
         <div className="sg-hero-stats" style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           {[
             { icon: Layers, value: '10 Phases', label: 'Fully documented' },
             { icon: CheckSquare, value: '60+', label: 'Best practices' },
             { icon: Target, value: '30+', label: 'Common mistakes' },
           ].map(({ icon: Icon, value, label }) => (
-<<<<<<< HEAD
-            <div key={value} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 20px', ...card }}>
-=======
             <div key={value} className="sg-hero-stat" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 20px', ...card }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               <Icon size={18} color="#1A6FD4" />
               <div>
                 <div style={{ fontWeight: 700, fontSize: '15px' }}>{value}</div>
@@ -523,13 +474,8 @@ const SDLCGuidePage: React.FC = () => {
       </section>
 
       {/* Quick navigation */}
-<<<<<<< HEAD
-      <section style={{ padding: '0 32px 48px', maxWidth: '900px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
-=======
       <section className="sg-quicknav" style={{ padding: '0 32px 48px', maxWidth: '900px', margin: '0 auto' }}>
         <div className="sg-quicknav-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           {PHASES.map(phase => {
             const Icon = phase.icon;
             return (
@@ -558,11 +504,7 @@ const SDLCGuidePage: React.FC = () => {
       </section>
 
       {/* Phase detail sections */}
-<<<<<<< HEAD
-      <section style={{ padding: '0 32px 80px', maxWidth: '900px', margin: '0 auto' }}>
-=======
       <section className="sg-phases" style={{ padding: '0 32px 80px', maxWidth: '900px', margin: '0 auto' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {PHASES.map(phase => {
             const Icon = phase.icon;
@@ -577,39 +519,23 @@ const SDLCGuidePage: React.FC = () => {
                 {/* Accordion header */}
                 <button
                   onClick={() => setExpanded(isOpen ? null : phase.id)}
-<<<<<<< HEAD
-=======
                   className="sg-phase-header"
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   style={{
                     width: '100%', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px',
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
-<<<<<<< HEAD
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: `${phase.color}20`, border: `1px solid ${phase.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={20} color={phase.color} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px' }}>
-=======
                   <div className="sg-phase-icon" style={{ width: '44px', height: '44px', borderRadius: '12px', background: `${phase.color}20`, border: `1px solid ${phase.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Icon size={20} color={phase.color} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="sg-phase-meta" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                       <span style={{ fontSize: '11px', color: phase.color, fontWeight: 700, letterSpacing: '0.06em' }}>PHASE {phase.step}</span>
                       <span style={{ fontSize: '11px', color: '#4a6070', padding: '2px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px' }}>{phase.duration}</span>
                       <span style={{ fontSize: '11px', color: '#4a6070', padding: '2px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px' }}>{phase.complexity} complexity</span>
                     </div>
-<<<<<<< HEAD
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '18px', color: '#E8EDF5' }}>{phase.title}</div>
-                    <div style={{ fontSize: '13px', color: '#8899AA', marginTop: '2px' }}>{phase.tagline}</div>
-=======
                     <div className="sg-phase-title" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '18px', color: '#E8EDF5' }}>{phase.title}</div>
                     <div className="sg-phase-tagline" style={{ fontSize: '13px', color: '#8899AA', marginTop: '2px' }}>{phase.tagline}</div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   </div>
                   <div style={{ color: '#4a6070', flexShrink: 0 }}>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -617,24 +543,15 @@ const SDLCGuidePage: React.FC = () => {
                 </button>
 
                 {/* Expanded content */}
-<<<<<<< HEAD
-                {isOpen && (
-                  <div style={{ padding: '0 24px 24px', borderTop: `1px solid ${phase.color}20` }}>
-=======
                 {isOpen && (() => {
                   const activeSection = getActiveSection(phase.id);
                   return (
                   <div className="sg-phase-body" style={{ padding: '0 24px 24px', borderTop: `1px solid ${phase.color}20` }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     {/* Section tabs */}
                     <div style={{ display: 'flex', gap: '4px', padding: '12px 0', overflowX: 'auto' }}>
                       {(['overview', 'acorn', 'practices', 'mistakes'] as const).map(s => (
                         <button key={s}
-<<<<<<< HEAD
-                          onClick={() => setActiveSection(s)}
-=======
                           onClick={() => setActiveSection(phase.id, s)}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                           style={{
                             padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                             fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap',
@@ -707,12 +624,8 @@ const SDLCGuidePage: React.FC = () => {
                       </div>
                     )}
                   </div>
-<<<<<<< HEAD
-                )}
-=======
                   );
                 })()}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               </div>
             );
           })}
@@ -720,11 +633,7 @@ const SDLCGuidePage: React.FC = () => {
       </section>
 
       {/* CTA */}
-<<<<<<< HEAD
-      <section style={{ padding: '64px 32px', textAlign: 'center', background: 'rgba(26,111,212,0.05)', borderTop: '1px solid rgba(26,111,212,0.15)' }}>
-=======
       <section className="sg-cta" style={{ padding: '64px 32px', textAlign: 'center', background: 'rgba(26,111,212,0.05)', borderTop: '1px solid rgba(26,111,212,0.15)' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(24px, 4vw, 40px)', marginBottom: '14px' }}>
           Stop planning manually. Let Acorn do it.
         </h2>
@@ -737,11 +646,7 @@ const SDLCGuidePage: React.FC = () => {
         </button>
       </section>
 
-<<<<<<< HEAD
-      <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(26,111,212,0.12)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-=======
       <footer className="sg-footer" style={{ padding: '24px 32px', borderTop: '1px solid rgba(26,111,212,0.12)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ width: '24px', height: '24px', borderRadius: '5px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Zap size={11} color="#fff" />

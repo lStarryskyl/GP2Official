@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { api } from '@/lib/api';
-<<<<<<< HEAD
-=======
 import { phaseConfigs } from '@/constants/phases';
 import { PhaseActivityTimeline, type PhaseActivityEntry } from '@/components/PhaseActivityTimeline';
 import type { PhaseCompletionMeta, Project } from '@/types';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import {
   BarChart3,
   TrendingUp,
@@ -24,8 +21,6 @@ import {
   Shield,
   DollarSign,
   Circle,
-<<<<<<< HEAD
-=======
   ArrowLeft,
   FolderKanban,
   ChevronUp,
@@ -34,7 +29,6 @@ import {
   ChevronsUpDown,
   Filter,
   X,
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -105,18 +99,6 @@ const PHASE_COLORS: Record<string, string> = {
 };
 
 const PHASE_META: { key: string; name: string; color: string }[] = [
-<<<<<<< HEAD
-  { key: 'planning',               name: 'Planning',         color: '#D4A017' },
-  { key: 'feasibility_study',      name: 'Feasibility',      color: '#7BA05B' },
-  { key: 'requirements_gathering', name: 'Requirements',     color: 'var(--blue-500)' },
-  { key: 'validation',             name: 'Validation',       color: '#5F7A8A' },
-  { key: 'design',                 name: 'Design',           color: '#6B4C8A' },
-  { key: 'development',            name: 'Development',      color: '#8B5E3C' },
-  { key: 'tasks',                  name: 'Tasks',            color: '#D4A017' },
-  { key: 'cost_benefit',           name: 'Costs & Benefits', color: '#2A9D8F' },
-  { key: 'risks',                  name: 'Risks',            color: '#C1440E' },
-  { key: 'summary',                name: 'Summary',          color: 'var(--blue-400)' },
-=======
   { key: 'planning', name: 'Planning', color: '#D4A017' },
   { key: 'feasibility_study', name: 'Feasibility', color: '#7BA05B' },
   { key: 'requirements_gathering', name: 'Requirements', color: 'var(--blue-500)' },
@@ -127,7 +109,6 @@ const PHASE_META: { key: string; name: string; color: string }[] = [
   { key: 'cost_benefit', name: 'Costs & Benefits', color: '#2A9D8F' },
   { key: 'risks', name: 'Risks', color: '#C1440E' },
   { key: 'summary', name: 'Summary', color: 'var(--blue-400)' },
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 ];
 
 export const AnalyticsDashboardPage: React.FC = () => {
@@ -150,70 +131,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
   const [dateTo, setDateTo] = useState<string>(() => searchParams.get('to') || '');
 
   useEffect(() => {
-<<<<<<< HEAD
-    const fetchAnalytics = async () => {
-      try {
-        const projects = await api.getProjects();
-        const totalProjects = projects.length;
-
-        // Aggregate phase statuses across all projects (or use id-specific project)
-        let targetProject = projects[0];
-        if (id) {
-          const found = projects.find((p: any) => (p.id || p.project_id) === id);
-          if (found) targetProject = found;
-        }
-
-        const phaseStatus: Record<string, string> = targetProject?.phase_status || {};
-        let completedPhases = 0;
-        const phaseBreakdown = PHASE_META.map((pm) => {
-          const st = (phaseStatus[pm.key] || 'locked').toLowerCase();
-          const progress = st === 'completed' ? 100 : st === 'in_progress' ? 50 : st === 'ready' ? 10 : 0;
-          if (st === 'completed') completedPhases++;
-          return { name: pm.name, progress, status: st === 'completed' ? 'completed' : st === 'in_progress' ? 'in_progress' : 'pending', color: pm.color };
-        });
-
-        const progressPct = Math.round((completedPhases / 10) * 100);
-
-        // Fetch requirements for the target project
-        let totalReqs = 0;
-        let completedReqs = 0;
-        try {
-          const projectId = targetProject?.id || targetProject?.project_id;
-          if (projectId) {
-            const reqs = await api.getRequirements(projectId);
-            totalReqs = reqs.length;
-            completedReqs = reqs.filter((r: any) => r.status === 'approved' || r.status === 'implemented').length;
-          }
-        } catch { /* ignore */ }
-
-        // AI runs (real usage)
-        let aiGens = 0;
-        let weeklyActivity: { day: string; count: number }[] = [];
-        try {
-          const projectId = targetProject?.id || targetProject?.project_id;
-          if (projectId) {
-            const aiRuns = await api.getAiRuns(projectId, 200);
-            aiGens = aiRuns.filter((run: any) => (run.status || '').toLowerCase() === 'completed').length || aiRuns.length;
-
-            // Prefer recorded activity logs; fall back to AI runs if the project has none.
-            const start = new Date();
-            start.setHours(0, 0, 0, 0);
-            start.setDate(start.getDate() - 6);
-            let activityItems: any[] = [];
-            try {
-              activityItems = await api.getActivity(projectId, 200);
-            } catch {
-              activityItems = [];
-            }
-
-            const sourceItems = activityItems.length > 0 ? activityItems : aiRuns;
-            weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
-              const dayStart = new Date(start);
-              dayStart.setDate(start.getDate() + i);
-              const dayEnd = new Date(dayStart);
-              dayEnd.setDate(dayStart.getDate() + 1);
-              const count = sourceItems.filter((item: any) => {
-=======
     const params: Record<string, string> = {};
     if (statusFilter !== 'all') params.status = statusFilter;
     if (dateFrom) params.from = dateFrom;
@@ -336,32 +253,11 @@ export const AnalyticsDashboardPage: React.FC = () => {
               const dayEnd = new Date(dayStart);
               dayEnd.setDate(dayStart.getDate() + 1);
               return projActivityItems.filter((item: any) => {
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 const raw = item.completed_at || item.created_at;
                 if (!raw) return false;
                 const when = new Date(raw);
                 return when >= dayStart && when < dayEnd;
               }).length;
-<<<<<<< HEAD
-              return {
-                day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
-                count,
-              };
-            });
-          }
-        } catch {
-          weeklyActivity = [];
-        }
-
-        if (weeklyActivity.length === 0) {
-          // Fallback empty week with zeros (keeps UI stable)
-          const fallbackStart = new Date();
-          fallbackStart.setHours(0, 0, 0, 0);
-          fallbackStart.setDate(fallbackStart.getDate() - 6);
-          weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
-            const day = new Date(fallbackStart);
-            day.setDate(fallbackStart.getDate() + i);
-=======
             });
 
             const derivedStatus: BreakdownStatus =
@@ -458,17 +354,10 @@ export const AnalyticsDashboardPage: React.FC = () => {
           weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
             const day = new Date(weekStart);
             day.setDate(weekStart.getDate() + i);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             return { day: day.toLocaleDateString('en-US', { weekday: 'short' }), count: 0 };
           });
         }
 
-<<<<<<< HEAD
-        const riskLevel: 'low' | 'medium' | 'high' = completedPhases >= 7 ? 'low' : completedPhases >= 4 ? 'medium' : 'high';
-
-        const now = new Date();
-        const estDate = new Date(now.getTime() + (10 - completedPhases) * 14 * 86400000);
-=======
         const progressPct = totalPhasesCount > 0 ? Math.round((completedPhases / totalPhasesCount) * 100) : 0;
         const riskLevel: 'low' | 'medium' | 'high' = completedPhases >= 7 ? 'low' : completedPhases >= 4 ? 'medium' : 'high';
         const now = new Date();
@@ -476,7 +365,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
           ? Math.max(0, totalPhasesCount - completedPhases)
           : Math.max(0, 10 - completedPhases);
         const estDate = new Date(now.getTime() + remainingPhases * 14 * 86400000);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         const estimatedCompletion = estDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
         setAnalytics({
@@ -484,20 +372,13 @@ export const AnalyticsDashboardPage: React.FC = () => {
           totalRequirements: totalReqs,
           completedRequirements: completedReqs,
           aiGenerations: aiGens,
-<<<<<<< HEAD
-          totalPhases: 10,
-=======
           totalPhases: totalPhasesCount,
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           completedPhases,
           estimatedCompletion,
           riskLevel,
           weeklyActivity,
           phaseBreakdown,
-<<<<<<< HEAD
-=======
           totalProjects: isGlobal ? totalProjects : undefined,
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         });
       } catch (err) {
         console.error('Failed to fetch analytics', err);
@@ -511,14 +392,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
   }, [id]);
 
   const getRiskConfig = (risk: string) => ({
-<<<<<<< HEAD
-    low:    { color: 'var(--blue-400)', bg: 'rgba(26,111,212,0.12)',  label: 'Low Risk' },
-    medium: { color: '#D4A017', bg: 'rgba(212,160,23,0.12)',  label: 'Medium Risk' },
-    high:   { color: '#C1440E', bg: 'rgba(193,68,14,0.12)',   label: 'High Risk' },
-  }[risk] || { color: 'var(--text-muted)', bg: 'rgba(107,158,122,0.12)', label: 'Unknown' });
-
-  const maxActivity = Math.max(1, ...(analytics?.weeklyActivity.map(d => d.count) || []));
-=======
     low: { color: 'var(--blue-400)', bg: 'rgba(26,111,212,0.12)', label: 'Low Risk' },
     medium: { color: '#D4A017', bg: 'rgba(212,160,23,0.12)', label: 'Medium Risk' },
     high: { color: '#C1440E', bg: 'rgba(193,68,14,0.12)', label: 'High Risk' },
@@ -537,7 +410,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
         return activityEntries.some((e) => e.projectId === pid);
       })
     : [];
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   const risk = getRiskConfig(analytics?.riskLevel || 'low');
 
   const cardStyle = {
@@ -583,10 +455,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
               <BarChart3 className="w-7 h-7 text-[var(--brand-900)]" />
             </div>
             <div>
-<<<<<<< HEAD
-              <h1 className="text-3xl font-bold text-[var(--text-primary)]">Analytics Dashboard</h1>
-              <p className="text-[var(--text-muted)]">Project insights and performance metrics</p>
-=======
               <h1 className="text-3xl font-bold text-[var(--text-primary)]">
                 {isGlobal ? 'Workspace Analytics' : 'Analytics Dashboard'}
               </h1>
@@ -595,26 +463,11 @@ export const AnalyticsDashboardPage: React.FC = () => {
                   ? `Insights across all ${analytics?.totalProjects ?? ''} projects`
                   : 'Project insights and performance metrics'}
               </p>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             </div>
           </div>
 
           {/* Key Metrics */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-<<<<<<< HEAD
-            {/* Progress */}
-            <div className="p-6" style={cardStyle}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.12)' }}>
-                  <TrendingUp className="w-5 h-5 text-[var(--blue-400)]" />
-                </div>
-                <span className="text-[var(--text-muted)] text-sm">Progress</span>
-              </div>
-              <p className="text-3xl font-bold text-[var(--text-primary)]">{analytics?.projectProgress}%</p>
-              <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(26,46,69,0.5)' }}>
-                <div className="h-full rounded-full transition-all"
-                  style={{ width: `${analytics?.projectProgress}%`, background: 'linear-gradient(to right, var(--blue-600), var(--blue-400))' }} />
-=======
             {/* Progress / Total Projects */}
             {isGlobal ? (
               <div className="p-6" style={cardStyle}>
@@ -640,7 +493,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
                   <div className="h-full rounded-full transition-all"
                     style={{ width: `${analytics?.projectProgress}%`, background: 'linear-gradient(to right, var(--blue-600), var(--blue-400))' }} />
                 </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               </div>
             )}
 
@@ -690,11 +542,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
               </div>
               <div className="flex items-end justify-between h-40 gap-2">
                 {analytics?.weeklyActivity.map((day, i) => {
-<<<<<<< HEAD
-                  const colors = ['var(--blue-400)','#D4A017','#2A9D8F','#6B4C8A','var(--blue-400)','#7BA05B','#8B5E3C'];
-=======
                   const colors = ['var(--blue-400)', '#D4A017', '#2A9D8F', '#6B4C8A', 'var(--blue-400)', '#7BA05B', '#8B5E3C'];
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   const c = colors[i % colors.length];
                   return (
                     <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
@@ -735,13 +583,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
                           background: phase.status === 'completed'
                             ? phase.color
                             : phase.status === 'in_progress'
-<<<<<<< HEAD
-                            ? `linear-gradient(to right, ${phase.color}88, ${phase.color})`
-                            : 'rgba(26,46,69,0.2)',
-=======
                               ? `linear-gradient(to right, ${phase.color}88, ${phase.color})`
                               : 'rgba(26,46,69,0.2)',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         }}
                       />
                     </div>
@@ -773,11 +616,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
                     style={{
                       background: phase.status === 'completed' ? phase.color
                         : phase.status === 'in_progress' ? `${phase.color}55`
-<<<<<<< HEAD
-                        : 'rgba(26,46,69,0.4)',
-=======
                           : 'rgba(26,46,69,0.4)',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     }}
                   />
                 ))}
@@ -842,13 +681,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
                     {status === 'completed'
                       ? <CheckCircle2 size={14} color={color} />
                       : status === 'in_progress'
-<<<<<<< HEAD
-                      ? <Activity size={14} color={color} />
-                      : <Circle size={14} color="rgba(26,46,69,0.5)" />}
-=======
                         ? <Activity size={14} color={color} />
                         : <Circle size={14} color="rgba(26,46,69,0.5)" />}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   </div>
                   <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">{name}</p>
                   <p className="text-xs capitalize" style={{ color: status === 'completed' ? color : status === 'in_progress' ? '#F97316' : 'var(--text-faint)' }}>

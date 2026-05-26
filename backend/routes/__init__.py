@@ -25,3 +25,10 @@ from . import traceability
 from . import templates
 from . import explainability
 from . import utils
+from . import validation
+from . import debate
+from . import scaffolding
+from . import testing
+from . import ai_chat
+from . import ai_debate
+from . import ai_suggestions

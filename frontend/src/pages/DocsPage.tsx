@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
-import { BookOpen, ArrowLeft, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
-=======
 import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { AcornLogo } from '../components/AcornLogo';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 interface EndpointProps {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'WS';
@@ -115,26 +111,16 @@ const DocsPage: React.FC = () => {
         zIndex: 10,
       }}>
         <button
-<<<<<<< HEAD
-          onClick={() => navigate('/')}
-=======
           onClick={() => navigate(-1)}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8899AA', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'DM Sans, sans-serif' }}
         >
           <ArrowLeft size={14} />
           Back
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-<<<<<<< HEAD
-          <BookOpen size={18} color="#1A6FD4" />
-          <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '16px', color: '#E8EDF5' }}>
-            Acorn API Documentation
-=======
           <AcornLogo height={36} />
           <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '14px', color: '#4a6070' }}>
             / API Documentation
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           </span>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>

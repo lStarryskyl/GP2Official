@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -180,17 +180,10 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
               return (
                 <div
                   key={item.id}
-<<<<<<< HEAD
-                  className={`border rounded-lg transition-all ${liveItem.status === 'approved' ? 'border-blue-700/40 bg-blue-900/20/50' :
-                      liveItem.status === 'pending' ? 'border-amber-200 bg-amber-50/50' :
-                        liveItem.status === 'rejected' ? 'border-red-200 bg-red-50/50' :
-                          'border-gray-200 bg-white'
-=======
                   className={`border rounded-lg transition-all ${liveItem.status === 'approved' ? 'border-blue-700/40 bg-blue-900/20' :
                       liveItem.status === 'pending' ? 'border-amber-700/40 bg-amber-900/10' :
                         liveItem.status === 'rejected' ? 'border-red-700/40 bg-red-900/10' :
                           'border-[var(--brand-700)] bg-[var(--brand-850)]'
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     }`}
                 >
                   <div

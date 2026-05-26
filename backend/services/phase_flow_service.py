@@ -1,4 +1,4 @@
-"""Phase flow generation service."""
+﻿"""Phase flow generation service."""
 
 from typing import Dict, Tuple, Optional
 import logging
@@ -380,15 +380,9 @@ class PhaseFlowService:
         user_id: Optional[str] = None,
         prior_context: str = "",
     ) -> str:
-<<<<<<< HEAD
-        # Use placeholder content if no OpenAI API key is configured
-        if not settings.openai_api_key:
-            logger.info(f"No OpenAI API key configured, using placeholder content for phase {phase}")
-=======
         # Use placeholder content only if neither AI provider is configured
         if not settings.openai_api_key and not settings.gemini_api_key:
             logger.info(f"No AI API key configured, using placeholder content for phase {phase}")
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             return await self._generate_placeholder_content(phase, user_prompt)
             
         system_message = (
@@ -507,16 +501,6 @@ class PhaseFlowService:
             metadata={"phase_title": PHASE_TITLES.get(phase)},
         )
 
-<<<<<<< HEAD
-        # Call OpenAI API
-        started_at = time.perf_counter()
-        try:
-            logger.info(f"Calling OpenAI API with model: {settings.openai_model} for phase: {phase}")
-            full_prompt = f"{prompt}\n\nProduce a structured Markdown response with clear headings, bullet lists, and actionable items."
-            response = await call_openai(full_prompt, system=system_message, max_tokens=4000)
-            duration = int((time.perf_counter() - started_at) * 1000)
-            logger.info(f"OpenAI response received: {len(response)} characters in {duration}ms")
-=======
         # Call AI API — prefer Gemini when no OpenAI key is set
         started_at = time.perf_counter()
         try:
@@ -539,7 +523,6 @@ class PhaseFlowService:
                 response = result.text or ""
             duration = int((time.perf_counter() - started_at) * 1000)
             logger.info(f"AI response received: {len(response)} characters in {duration}ms")
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             await self.ai_run_repo.complete_run(
                 run_entry.id,
                 status="completed",

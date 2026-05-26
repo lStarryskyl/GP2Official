@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -94,18 +94,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     ],
   };
 
-<<<<<<< HEAD
-  const flowSteps = [
-    { id: 1, name: 'Client Request', description: 'User initiates action in browser', icon: Globe, color: 'blue' },
-    { id: 2, name: 'API Gateway', description: 'Request routing & authentication', icon: Shield, color: 'amber' },
-    { id: 3, name: 'Load Balancer', description: 'Distribute traffic across instances', icon: Zap, color: 'purple' },
-    { id: 4, name: 'Application Server', description: 'Business logic processing', icon: Server, color: 'blue' },
-    { id: 5, name: 'Database', description: 'Data persistence layer', icon: Database, color: 'red' },
-    { id: 6, name: 'Cache Layer', description: 'Fast data retrieval', icon: Zap, color: 'orange' },
-    { id: 7, name: 'Response', description: 'JSON response to client', icon: ArrowRight, color: 'cyan' },
-  ];
-=======
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const componentBreakdown = [
     {
@@ -136,19 +124,11 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
   const colorMap: Record<string, { bg: string; border: string; text: string }> = {
     blue: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300' },
-<<<<<<< HEAD
-    purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700' },
-    amber: { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-700' },
-    red: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700' },
-    orange: { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-700' },
-    cyan: { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-700' },
-=======
     purple: { bg: 'bg-purple-900/30', border: 'border-purple-600/50', text: 'text-purple-300' },
     amber: { bg: 'bg-amber-900/30', border: 'border-amber-600/50', text: 'text-amber-300' },
     red: { bg: 'bg-red-900/30', border: 'border-red-600/50', text: 'text-red-300' },
     orange: { bg: 'bg-orange-900/30', border: 'border-orange-600/50', text: 'text-orange-300' },
     cyan: { bg: 'bg-cyan-900/30', border: 'border-cyan-600/50', text: 'text-cyan-300' },
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   };
 
   const [techStackData, setTechStackData] = useState<TechStackMap>(initialTechStack);
@@ -608,24 +588,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   };
 
   const resolvedFlowSteps = React.useMemo(() => {
-<<<<<<< HEAD
-    if (flowStepsAi && flowStepsAi.length) {
-      return flowStepsAi.map((raw, index) => {
-        const [namePart, descPart] = raw.split(':');
-        const name = (namePart || `Step ${index + 1}`).trim();
-        const description = (descPart || name).trim();
-        return {
-          id: index + 1,
-          name,
-          description,
-          icon: GitBranch,
-          color: 'blue' as const,
-        };
-      });
-    }
-    return flowSteps;
-  }, [flowStepsAi]);
-=======
     const source = flowStepsAi && flowStepsAi.length ? flowStepsAi : parsedFromContent.flowSteps;
     if (!source || source.length === 0) return [];
     return source.map((raw, index) => {
@@ -641,7 +603,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       };
     });
   }, [flowStepsAi, parsedFromContent.flowSteps]);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const resolvedFolderStructure = folderStructureAi || parsedFromContent.folderStructure || '';
   const resolvedRequestPath = requestPath.length > 0 ? requestPath : parsedFromContent.requestPath;
@@ -677,11 +638,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       {activeTab === 'stack' && (
         <div className="space-y-4">
           {suggestedTechs.length > 0 && (
-<<<<<<< HEAD
-            <Card className="border-blue-700/40 bg-blue-900/20/60">
-=======
             <Card className="border-blue-700/40 bg-blue-900/20">
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-200 text-base">
                   <Sparkles className="h-4 w-4" />
@@ -695,11 +652,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 {suggestedTechs.map((s) => (
                   <div
                     key={s.label}
-<<<<<<< HEAD
-                    className="px-3 py-2 rounded-lg bg-white shadow-sm border border-blue-700/40 max-w-xs"
-=======
                     className="px-3 py-2 rounded-lg bg-[var(--brand-800)] border border-blue-700/40 max-w-xs"
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   >
                     <div className="text-xs font-semibold text-blue-200 mb-1">{s.label}</div>
                     <div className="text-[11px] text-blue-300 leading-snug">{s.details}</div>
@@ -754,13 +707,8 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
               </CardHeader>
               <CardContent className="pt-0 space-y-2 text-xs text-gray-300">
                 {suggestedTechs.slice(0, 3).map((s) => (
-<<<<<<< HEAD
-                  <div key={s.label} className="p-2 rounded-lg border border-[var(--brand-700)] bg-white">
-                    <div className="font-semibold mb-0.5">{s.label}</div>
-=======
                   <div key={s.label} className="p-2 rounded-lg border border-[var(--brand-700)] bg-[var(--brand-800)]">
                     <div className="font-semibold mb-0.5 text-gray-200">{s.label}</div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     <div className="text-[11px] leading-snug">{s.details}</div>
                   </div>
                 ))}
@@ -820,20 +768,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                     {visibleItems.map((item, idx) => (
                       <div
                         key={item.name}
-<<<<<<< HEAD
-                        className="p-3 rounded-xl border border-[var(--brand-700)] bg-white hover:border-blue-600/50 hover:bg-blue-900/20 transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-gray-900 text-sm">{item.name}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-blue-400 px-1 h-6"
-                            onClick={() => handleToggleRecommended(category, idx)}
-                          >
-                            {item.recommended ? 'Recommended' : 'Mark' }
-                          </Button>
-=======
                         className="p-3 rounded-xl transition-all"
                         style={{
                           border: item.recommended
@@ -858,7 +792,6 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                               </span>
                             )}
                           </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         </div>
                         <p className="text-[11px] text-gray-400 mb-2">{item.description}</p>
                         <div className="flex items-center justify-between">
@@ -1116,11 +1049,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
         <CardContent className="p-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-<<<<<<< HEAD
-              <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-=======
               <h4 className="font-medium text-gray-200 mb-3 flex items-center gap-2">
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 <CheckCircle2 className="h-4 w-4 text-blue-400" />
                 Best Practices
               </h4>

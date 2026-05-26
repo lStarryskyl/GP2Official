@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
@@ -133,11 +133,6 @@ export const ExportCenterPage: React.FC = () => {
         alert(`${exportOptions.find(o => o.id === optionId)?.name} exported as ${format}!`);
       }
       setExported(prev => new Set(prev).add(optionId));
-<<<<<<< HEAD
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('Export failed. Please try again.');
-=======
     } catch (err: unknown) {
       console.error('Export failed:', err);
       const { status, detail } = await extractAxiosError(err);
@@ -146,7 +141,6 @@ export const ExportCenterPage: React.FC = () => {
       } else {
         alert(detail || 'Export failed. Please try again.');
       }
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     } finally {
       setExporting(null);
     }

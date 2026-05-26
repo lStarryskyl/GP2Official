@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
@@ -799,26 +799,6 @@ export const ProjectGovernancePage: React.FC = () => {
                       );
                     })}
                   </div>
-<<<<<<< HEAD
-                  <div className="grid md:grid-cols-2 gap-3 text-sm">
-                    {Object.entries(branchDiff.summary).map(([key, value]) => (
-                      <div key={key} className="rounded-lg border border-gray-100 p-3 flex items-center justify-between">
-                        <span className="capitalize text-gray-600">{key.replace('_', ' ')}</span>
-                        <span className={`font-semibold ${value > 0 ? 'text-blue-400' : value < 0 ? 'text-rose-600' : 'text-gray-900'}`}>
-                          {value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  {branchDiff.phase_deltas.length > 0 && (
-                    <div className="space-y-2 text-xs text-gray-600">
-                      <p className="font-medium text-gray-900">Phase deltas</p>
-                      {branchDiff.phase_deltas.map((delta) => (
-                        <div key={delta.phase} className="flex items-center justify-between">
-                          <span className="capitalize">{delta.phase.replace('_', ' ')}</span>
-                          <span>
-                            {delta.baseline} → <span className="text-indigo-600">{delta.branch}</span>
-=======
 
                   {Object.entries(branchDiff.summary).length > 0 && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -836,7 +816,6 @@ export const ProjectGovernancePage: React.FC = () => {
                             color: value > 0 ? '#3d8fe0' : value < 0 ? '#f87171' : 'var(--text-muted)',
                           }}>
                             {value > 0 ? '+' : ''}{value}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                           </span>
                         </div>
                       ))}

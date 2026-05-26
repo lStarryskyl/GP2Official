@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { phaseConfigs } from '@/constants/phases';
 import { ChevronLeft, ChevronRight, Home, Check } from 'lucide-react';
@@ -42,9 +42,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
     const overallPct = Math.round((completedCount / phaseConfigs.length) * 100);
 
     return (
-<<<<<<< HEAD
-      <div className="w-full bg-[var(--brand-900)]/95 backdrop-blur-xl border-b border-[var(--brand-700)] sticky top-0 z-40">
-=======
       <div
         className="w-full"
         style={{
@@ -53,16 +50,11 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
           padding: '14px 0 12px',
         }}
       >
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between mb-2.5">
             <button
               onClick={() => navigate(`/projects/${effectiveProjectId}`)}
-<<<<<<< HEAD
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-[var(--blue-400)] hover:bg-[#152238] transition-all whitespace-nowrap"
-=======
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--blue-300)] transition-colors"
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             >
               <Home className="h-3.5 w-3.5" /> Project Overview
             </button>
@@ -71,9 +63,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
             </div>
           </div>
 
-<<<<<<< HEAD
-            <ChevronRight className="h-4 w-4 text-[var(--brand-700)] flex-shrink-0" />
-=======
           <div className="relative">
             {/* Progress baseline */}
             <div
@@ -92,7 +81,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                 transition: 'width 0.6s var(--ease-out-expo, ease)',
               }}
             />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
             <div className="relative flex items-start justify-between gap-1 overflow-x-auto pb-1" style={{ zIndex: 2 }}>
               {phaseConfigs.map((phase) => {
@@ -113,32 +101,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                   <button
                     key={phase.id}
                     onClick={() => handlePhaseClick(phase)}
-<<<<<<< HEAD
-                    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[var(--blue-400)] to-[#b8962e] text-[var(--brand-900)] shadow-lg shadow-[var(--blue-400)]/30'
-                        : 'bg-[#152238] text-gray-400 hover:bg-[var(--brand-700)] hover:text-white'
-                    }`}
-                  >
-                    {/* Step number or check */}
-                    <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                      isActive
-                        ? 'bg-[var(--brand-900)]/20 text-[var(--brand-900)]'
-                        : isCompleted
-                          ? 'bg-blue-900/200/20 text-blue-400'
-                          : 'bg-[var(--brand-700)] text-gray-500'
-                    }`}>
-                      {isCompleted && !isActive ? <Check className="h-3 w-3" /> : phase.stepNumber}
-                    </span>
-                    <span>{phase.shortTitle}</span>
-                  </button>
-                  {idx < phaseConfigs.length - 1 && (
-                    <ChevronRight className="h-4 w-4 text-[var(--brand-700)] flex-shrink-0" />
-                  )}
-                </React.Fragment>
-              );
-            })}
-=======
                     disabled={isLocked && !isActive}
                     title={`${phase.title}${isLocked ? ' (locked)' : ''}`}
                     style={{
@@ -185,7 +147,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                 );
               })}
             </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           </div>
         </div>
       </div>
@@ -330,22 +291,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                 </div>
               )}
 
-<<<<<<< HEAD
-              {/* Status Indicator */}
-              {!collapsed && (
-                <div className="flex-shrink-0">
-                  {isCompleted ? (
-                    <div className="w-5 h-5 rounded-full bg-blue-900/200 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  ) : isActive ? (
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--brand-900)' }} />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--brand-700)' }} />
-                  )}
-                </div>
-              )}
-=======
               {/* Status Dot Indicator */}
               <div className="flex-shrink-0">
                 <div
@@ -358,7 +303,6 @@ export const PhaseNavigation: React.FC<PhaseNavigationProps> = ({
                   }}
                 />
               </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             </button>
           );
         })}

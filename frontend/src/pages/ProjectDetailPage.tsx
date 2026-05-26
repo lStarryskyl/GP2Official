@@ -1,21 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
 import { ScaffoldPanel } from '@/components/ScaffoldPanel';
 import { ExportButtons } from '@/components/ExportButtons';
 import { api } from '@/lib/api';
-<<<<<<< HEAD
-import type { Artifact, Project, Requirement, Task } from '@/types';
-import { phaseConfigs, phaseHexColors } from '@/constants/phases';
-import { AlertCircle, ArrowLeft, Loader2, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
-=======
 import type { Artifact, PhaseCompletionMeta, Project, Requirement, Task } from '@/types';
 import type { ScaffoldResult } from '@/lib/api';
 import { phaseConfigs, phaseHexColors } from '@/constants/phases';
 import { AlertCircle, ArrowLeft, Loader2, CheckCircle2, Circle, ChevronRight, Terminal } from 'lucide-react';
 import { PhaseActivityTimeline, type PhaseActivityEntry } from '@/components/PhaseActivityTimeline';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import Joyride, { STATUS as JoyrideStatus, Step } from 'react-joyride';
 import { formatDate } from '@/lib/utils';
 import { AIAgentsPanel } from '@/components/AIAgentsPanel';
@@ -410,11 +404,7 @@ export const ProjectDetailPage: React.FC = () => {
   };
 
   const statusPillStyles: Record<string, string> = {
-<<<<<<< HEAD
-    completed:   'bg-blue-900/200/20 text-blue-400 border border-blue-500/30',
-=======
     completed:   'bg-blue-900/20 text-blue-400 border border-blue-500/30',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     ready:       'bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30',
     in_progress: 'bg-[var(--orange-400)]/20 text-[var(--orange-400)] border border-[var(--orange-400)]/30',
     locked:      'bg-[var(--brand-700)]/30 text-[var(--text-muted)] border border-[var(--brand-700)]',
@@ -441,10 +431,6 @@ export const ProjectDetailPage: React.FC = () => {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--blue-400)] to-[var(--blue-500)] flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-900)]" />
               </div>
-<<<<<<< HEAD
-              <div className="absolute inset-0 w-16 h-16 mx-auto rounded-2xl bg-[var(--blue-400)]/20 blur-xl animate-pulse" />
-=======
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             </div>
             <p className="text-[var(--text-muted)]">Loading project...</p>
           </div>
@@ -472,15 +458,7 @@ export const ProjectDetailPage: React.FC = () => {
         continuous
         showSkipButton
         callback={handleTourCallback}
-<<<<<<< HEAD
-        styles={{
-          options: {
-            primaryColor: 'var(--blue-400)',
-          },
-        }}
-=======
         styles={{ options: { primaryColor: 'var(--blue-400)' } }}
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
       />
       <div className="max-w-7xl mx-auto space-y-5">
         {error && (
@@ -490,17 +468,10 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
         )}
 
-<<<<<<< HEAD
-        {/* Project Header Card */}
-        <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden">
-          {/* Header gradient bar - forest green */}
-          <div className="h-1.5 bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)]" />
-=======
         {/* ── Header Card ── */}
         <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)]" />
           <div className="p-4 sm:p-6 space-y-4">
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
             {/* Top row: back + actions */}
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -511,14 +482,6 @@ export const ProjectDetailPage: React.FC = () => {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Projects
               </button>
-<<<<<<< HEAD
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Button variant="outline" onClick={() => goToDraft('overview')} className="text-xs sm:text-sm px-2 sm:px-4 border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
-                  <span className="hidden sm:inline">Open </span>Draft
-                </Button>
-                <Button
-                  className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] hover:from-[var(--blue-300)] hover:to-[var(--blue-400)] text-[var(--brand-900)] font-semibold shadow-lg shadow-[var(--blue-400)]/20 text-xs sm:text-sm px-2 sm:px-4"
-=======
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => goToDraft('overview')}
                   className="text-xs px-3 border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
@@ -536,7 +499,6 @@ export const ProjectDetailPage: React.FC = () => {
                 </Button>
                 <Button
                   className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] text-[var(--brand-900)] font-semibold text-xs px-4 shadow-lg shadow-[var(--blue-400)]/20"
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phaseConfigs[0]?.id}`)}
                 >
                   Continue Planning
@@ -544,233 +506,6 @@ export const ProjectDetailPage: React.FC = () => {
               </div>
             </div>
 
-<<<<<<< HEAD
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{project.name}</h1>
-                {project.description && (
-                  <p className="text-[var(--text-muted)] max-w-2xl">{project.description}</p>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2 items-center">
-                {/* Health Score Badge */}
-                {(() => {
-                  const phaseKeys = ['planning','feasibility_study','requirements_gathering','validation','design','development','tasks','cost_benefit','risks','summary'];
-                  const done = phaseKeys.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
-                  const score = Math.round((done / phaseKeys.length) * 100);
-                  const scoreColor = score >= 70 ? '#1A6FD4' : score >= 40 ? '#F97316' : '#4a6070';
-                  const scoreBg = score >= 70 ? 'rgba(26,111,212,0.15)' : score >= 40 ? 'rgba(249,115,22,0.12)' : 'rgba(74,96,112,0.15)';
-                  return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '999px', background: scoreBg, border: `1px solid ${scoreColor}44` }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${scoreColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '9px', fontWeight: 800, color: scoreColor, fontFamily: 'Syne, sans-serif' }}>{score}%</span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '11px', fontWeight: 700, color: scoreColor, fontFamily: 'Syne, sans-serif', lineHeight: 1 }}>Health Score</div>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif' }}>{done}/10 phases</div>
-                      </div>
-                    </div>
-                  );
-                })()}
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30 text-xs font-semibold uppercase tracking-wide">
-                  {project.status}
-                </span>
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[var(--brand-700)]/50 text-[var(--text-muted)] border border-[var(--brand-700)] text-xs font-medium">
-                  {project.template_type.replace('_', ' ')}
-                </span>
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[var(--blue-300)]/10 text-[var(--blue-300)] border border-[var(--blue-300)]/30 text-xs font-medium">
-                  {project.owner_name || 'Unassigned'}
-                </span>
-              </div>
-            </div>
-
-            {/* Workspace Preset Switcher */}
-            <div className="pt-4 border-t border-[var(--brand-700)]/50">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">Workspace Mode</p>
-              <div className="flex flex-wrap items-center gap-2">
-                {workspacePresets.map((preset) => {
-                  const isActive = preset.id === activePreset;
-                  return (
-                    <button
-                      key={preset.id}
-                      onClick={() => handlePresetChange(preset.id)}
-                      disabled={updatingPreset}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                        isActive
-                          ? 'bg-[var(--blue-400)] text-[var(--brand-900)] shadow-lg shadow-[var(--blue-400)]/20'
-                          : 'bg-[var(--brand-750)] text-[var(--text-muted)] hover:bg-[var(--brand-700)] hover:text-[var(--text-primary)] border border-[var(--brand-700)]'
-                      } ${updatingPreset ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-[var(--text-muted)] mt-2">{presetConfig.description}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className={`grid gap-4 sm:gap-6 ${showSummaryPanel ? 'lg:grid-cols-[280px_minmax(0,1fr)]' : ''}`}>
-          {showSummaryPanel && (
-            <aside className="space-y-6 side-summary">
-              <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-4 sm:p-6 shadow-lg space-y-4 sm:space-y-6">
-                <div>
-                  <h2 className="text-lg font-bold text-[var(--text-primary)]">Project Summary</h2>
-                  <dl className="mt-4 space-y-3 text-sm text-[var(--text-muted)]">
-                    <div className="flex justify-between">
-                      <span>Status</span>
-                      <span className="font-medium text-[var(--blue-400)]">{project.status}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Type</span>
-                      <span className="font-medium text-[var(--text-primary)]">{project.template_type.replace('_', ' ')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Owner</span>
-                      <span className="font-medium text-[var(--text-primary)]">{project.owner_name || 'Unassigned'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Created</span>
-                      <span className="font-medium text-[var(--text-primary)]">{formatDate(project.created_at)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Updated</span>
-                      <span className="font-medium text-[var(--text-primary)]">{formatDate(project.updated_at)}</span>
-                    </div>
-                  </dl>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-[var(--text-muted)] mb-3">Key Metrics</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'Requirements', value: requirements.length, phase: 'requirements_gathering' },
-                      { label: 'Tasks',         value: tasks.length,        phase: 'tasks' },
-                      { label: 'Artifacts',     value: artifacts.length,    phase: 'summary' },
-                      { label: 'Total Hours',   value: totalHours.toFixed(0), phase: 'tasks' },
-                    ].map((metric) => (
-                      <button
-                        key={metric.label}
-                        onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${metric.phase}`)}
-                        className="rounded-xl border border-[var(--brand-700)] px-3 py-4 bg-[var(--brand-800)] text-center hover:border-[var(--blue-400)]/50 hover:bg-[var(--brand-750)] transition-all cursor-pointer group"
-                      >
-                        <div className="text-2xl font-semibold text-[var(--text-primary)] group-hover:text-[var(--blue-400)] transition-colors">{metric.value}</div>
-                        <div className="text-xs text-[var(--text-muted)] group-hover:text-[var(--blue-400)]/80 transition-colors">{metric.label}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="text-sm text-[var(--text-muted)]">
-                  <p className="mb-2">Need to unlock future workstream?</p>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={handleUnlockPhases}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleUnlockPhases();
-                      }
-                    }}
-                    className="text-[var(--blue-400)] font-medium hover:text-[var(--blue-300)] cursor-pointer"
-                  >
-                    Unlock all phases
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-6 shadow-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-[var(--text-primary)]">Project Brief</h2>
-                  <Button variant="outline" size="sm" onClick={() => goToDraft('overview')} className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
-                    Open Draft
-                  </Button>
-                </div>
-                <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">
-                  {project.brief_text || 'No brief provided.'}
-                </p>
-              </div>
-
-              <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-6 shadow-lg space-y-4">
-                <h2 className="text-base font-semibold text-[var(--text-primary)]">Governance &amp; Updates</h2>
-                <p className="text-sm text-[var(--text-muted)]">Manage membership, branching, and development logs.</p>
-                <div className="flex flex-col gap-2">
-                  <Button variant="outline" onClick={() => navigate(`/projects/${project.project_id || project.id}/governance`)} className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
-                    Governance hub
-                  </Button>
-                  <Button onClick={() => navigate(`/projects/${project.project_id || project.id}/updates`)} className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] text-[var(--brand-900)] font-semibold">
-                    Development updates
-                  </Button>
-                </div>
-              </div>
-            </aside>
-          )}
-
-          <div className="space-y-4 sm:space-y-6">
-            {/* Phases Section — Kanban Board */}
-            <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-4 sm:p-6 shadow-lg phase-board">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-[var(--text-primary)]">Project Phases</h2>
-                  <p className="text-xs sm:text-sm text-[var(--text-muted)]">
-                    Select a phase to continue — complete them in order for best results.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length} className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
-                  Export All
-                </Button>
-              </div>
-
-              <PhaseKanban
-                phases={phaseConfigs}
-                phaseStatus={phaseStatus}
-                phaseOutputs={phaseOutputs}
-                onPhaseClick={handlePhaseClick}
-              />
-
-              {/* Legend */}
-              <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-[var(--brand-700)]/30">
-                {[
-                  { color: '#1A6FD4', label: 'Completed' },
-                  { color: '#F97316', label: 'In Progress' },
-                  { color: '#3d8fe0', label: 'Ready' },
-                  { color: '#4a6070', label: 'Locked' },
-                  { color: '#F97316', label: '● output ready', dot: true },
-                ].map(({ color, label, dot }) => (
-                  <div key={label} className="flex items-center gap-1.5">
-                    {dot
-                      ? <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color }} />
-                      : <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: color, opacity: 0.7 }} />
-                    }
-                    <span className="text-xs text-[var(--text-muted)]">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-4">
-              <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-6 shadow-lg">
-                <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">Project Details</h2>
-                <dl className="space-y-3 text-sm text-[var(--text-muted)]">
-                  <div className="flex justify-between">
-                    <span>Type</span>
-                    <span className="font-medium text-[var(--text-primary)]">{project.template_type.replace('_', ' ')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Owner</span>
-                    <span className="font-medium text-[var(--text-primary)]">{project.owner_name || 'Unassigned'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Created</span>
-                    <span className="font-medium text-[var(--text-primary)]">{formatDate(project.created_at)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Last Updated</span>
-                    <span className="font-medium text-[var(--text-primary)]">{formatDate(project.updated_at)}</span>
-                  </div>
-                </dl>
-=======
             {/* Project name + description */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -834,7 +569,6 @@ export const ProjectDetailPage: React.FC = () => {
                   <div className="text-xs text-[var(--text-muted)]">Updated</div>
                   <div className="text-sm font-medium text-[var(--text-primary)]">{formatDate(project.updated_at)}</div>
                 </div>
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               </div>
             </div>
 

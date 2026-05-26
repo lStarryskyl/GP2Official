@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -246,21 +246,13 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
   };
 
   const getScoreColor = (score: number) => {
-<<<<<<< HEAD
-    if (score >= 80) return 'text-blue-400 bg-blue-900/200/20 border border-blue-500/30';
-=======
     if (score >= 80) return 'text-blue-400 bg-blue-900/20 border border-blue-500/30';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     if (score >= 60) return 'text-[var(--blue-400)] bg-[var(--blue-400)]/20 border border-[var(--blue-400)]/30';
     return 'text-red-400 bg-red-500/20 border border-red-500/30';
   };
 
   const getScoreGradient = (score: number) => {
-<<<<<<< HEAD
-    if (score >= 80) return 'from-blue-900 to-blue-900/100';
-=======
     if (score >= 80) return 'from-blue-900 to-blue-800';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     if (score >= 60) return 'from-amber-500 to-orange-500';
     return 'from-red-500 to-rose-500';
   };

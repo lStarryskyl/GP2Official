@@ -1,15 +1,8 @@
-[phases.setup]
-<<<<<<< HEAD
-nixPkgs = ["nodejs_20"]
-
-[phases.install]
-cmds = ["npm ci --no-audit"]
-=======
+﻿[phases.setup]
 nixPkgs = ["nodejs_22"]
 
 [phases.install]
 cmds = ["npm install --legacy-peer-deps --no-audit"]
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 [phases.build]
 cmds = ["npm run build"]

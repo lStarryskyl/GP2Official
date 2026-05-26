@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { Requirement } from '@/types';
 import { api } from '@/lib/api';
-<<<<<<< HEAD
-=======
 import { useToast } from '@/contexts/ToastContext';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import {
   FlaskConical,
   ShieldCheck,
@@ -154,10 +151,7 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
   const [expandedScenarios, setExpandedScenarios] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
-=======
   const { error: toastError } = useToast();
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const funcReqs = (requirements || []).filter(
     r => r.type === 'functional' || (r.type || '').toLowerCase().includes('functional')
@@ -192,19 +186,11 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
       }
     } catch (err: any) {
       console.error('Test generation failed', err);
-<<<<<<< HEAD
-      setError(err?.response?.data?.detail || 'Test generation failed. Make sure you have generated requirements first.');
-    } finally {
-      setLoadingTests(false);
-    }
-  }, [projectId]);
-=======
       toastError(err?.response?.data?.detail || 'Test generation failed. Make sure you have generated requirements first.');
     } finally {
       setLoadingTests(false);
     }
   }, [projectId, toastError]);
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   /* ---------- Run coverage audit ---------- */
   const handleCoverageAudit = useCallback(async () => {

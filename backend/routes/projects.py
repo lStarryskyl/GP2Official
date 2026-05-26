@@ -1,4 +1,4 @@
-"""Project routes."""
+﻿"""Project routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional, Dict, Any
@@ -33,10 +33,7 @@ from repositories.ai_run_repository import AiRunRepository
 from services.generation_service import GenerationService
 from services.context_assistant import ContextAssistantService
 from services.version_service import VersionService
-<<<<<<< HEAD
-=======
 from services.plan_limits import enforce_ai_run_quota
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 router = APIRouter()
 project_service = ProjectService()

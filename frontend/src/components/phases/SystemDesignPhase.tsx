@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -150,28 +150,16 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
 
   const methodColors: Record<string, string> = {
     GET: 'bg-blue-900/30 text-blue-300 border-blue-600/50',
-<<<<<<< HEAD
-    POST: 'bg-blue-100 text-blue-700 border-blue-300',
-    PUT: 'bg-amber-100 text-amber-700 border-amber-300',
-    DELETE: 'bg-red-100 text-red-700 border-red-300',
-    PATCH: 'bg-purple-100 text-purple-700 border-purple-300',
-=======
     POST: 'bg-blue-800/40 text-blue-200 border-blue-600/50',
     PUT: 'bg-orange-900/30 text-orange-300 border-orange-600/50',
     DELETE: 'bg-red-900/30 text-red-300 border-red-600/50',
     PATCH: 'bg-purple-900/30 text-purple-300 border-purple-600/50',
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   };
 
   const statusColors: Record<string, { bg: string; text: string }> = {
     complete: { bg: 'bg-blue-900/30', text: 'text-blue-300' },
-<<<<<<< HEAD
-    partial: { bg: 'bg-amber-100', text: 'text-amber-700' },
-    empty: { bg: 'bg-gray-100', text: 'text-gray-500' },
-=======
     partial: { bg: 'bg-orange-900/30', text: 'text-orange-300' },
     empty: { bg: 'bg-[var(--brand-700)]', text: 'text-gray-400' },
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   };
 
   const handleZoom = (delta: number) => {
@@ -195,13 +183,8 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
               onClick={() => setSelectedDiagram(diagram.id)}
               className={`p-4 rounded-xl border-2 transition-all text-left ${
                 isSelected
-<<<<<<< HEAD
-                  ? 'border-red-400 bg-red-50 shadow-lg scale-105'
-                  : 'border-[var(--brand-700)] hover:border-gray-300 hover:bg-gray-50'
-=======
                   ? 'border-blue-500/60 bg-blue-900/20 shadow-lg scale-105'
                   : 'border-[var(--brand-700)] hover:border-blue-700/60 hover:bg-[var(--brand-800)]'
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               }`}
             >
               <div className={`p-2 rounded-lg ${colors.bg} w-fit mb-2`}>
@@ -469,11 +452,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
                       </thead>
                       <tbody>
                         {group.endpoints.map((endpoint, idx) => (
-<<<<<<< HEAD
-                          <tr key={idx} className="border-t border-[var(--brand-700)] hover:bg-white">
-=======
                           <tr key={idx} className="border-t border-[var(--brand-700)] hover:bg-[var(--brand-800)]">
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                             <td className="px-4 py-2">
                               <span className={`px-2 py-1 rounded text-xs font-medium border ${methodColors[endpoint.method]}`}>
                                 {endpoint.method}

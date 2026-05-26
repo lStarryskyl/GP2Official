@@ -1,4 +1,4 @@
-"""Export routes for PDF, DOCX, and Markdown."""
+﻿"""Export routes for PDF, DOCX, and Markdown."""
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse, PlainTextResponse
@@ -6,10 +6,7 @@ from io import BytesIO
 
 from services.export_service import ExportService
 from services.project_service import ProjectService
-<<<<<<< HEAD
-=======
 from services.plan_limits import enforce_export_format
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 from repositories.artifact_repository import ArtifactRepository
 from repositories.requirement_repository import RequirementRepository
 from routes.auth import get_current_user

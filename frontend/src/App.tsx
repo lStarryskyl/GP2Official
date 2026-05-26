@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -25,12 +25,9 @@ import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { BillingPageRoute } from './pages/BillingPageRoute';
 import DocsPage from './pages/DocsPage';
 import SDLCGuidePage from './pages/SDLCGuidePage';
-<<<<<<< HEAD
-=======
 import { PlanValidationPage } from './pages/PlanValidationPage';
 import { AgentDebatePage } from './pages/AgentDebatePage';
 import { UxFlowPage } from './pages/UxFlowPage';
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -210,8 +207,6 @@ function App() {
         />
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/sdlc-guide" element={<SDLCGuidePage />} />
-<<<<<<< HEAD
-=======
         <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
         <Route
           path="/projects/:id/validate"
@@ -237,7 +232,6 @@ function App() {
             </PrivateRoute>
           }
         />
->>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

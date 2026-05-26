@@ -70,12 +70,15 @@ export const AnalyticsDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [activityEntries, setActivityEntries] = useState<PhaseActivityEntry[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const projects: Project[] = await api.getProjects();
+        setProjects(projects);
         const collectedEntries: PhaseActivityEntry[] = [];
         for (const proj of projects) {
           const projectId: string | undefined = proj.project_id || proj.id;
@@ -281,6 +284,17 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
   const isGlobal = !id;
   const maxActivity = Math.max(1, ...(analytics?.weeklyActivity.map(d => d.count) || []));
+
+  const filteredActivityEntries = isGlobal && selectedProjectId !== 'all'
+    ? activityEntries.filter((e) => e.projectId === selectedProjectId)
+    : activityEntries;
+
+  const projectsWithActivity = isGlobal
+    ? projects.filter((p) => {
+        const pid = p.project_id || p.id;
+        return activityEntries.some((e) => e.projectId === pid);
+      })
+    : [];
   const risk = getRiskConfig(analytics?.riskLevel || 'low');
 
   const cardStyle = {
@@ -566,13 +580,45 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
           {/* Cross-project Activity Timeline */}
           <div className="mt-6">
+            {isGlobal && projectsWithActivity.length > 0 && (
+              <div className="flex items-center gap-3 mb-3">
+                <FolderKanban className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  className="text-sm bg-[var(--brand-850)] border border-[var(--brand-700)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--blue-400)] transition-colors"
+                >
+                  <option value="all">All Projects</option>
+                  {projectsWithActivity.map((p) => {
+                    const pid = p.project_id || p.id || '';
+                    return (
+                      <option key={pid} value={pid}>
+                        {p.name || 'Untitled project'}
+                      </option>
+                    );
+                  })}
+                </select>
+                {selectedProjectId !== 'all' && (
+                  <button
+                    onClick={() => setSelectedProjectId('all')}
+                    className="text-xs text-[var(--blue-400)] hover:text-[var(--blue-300)] transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
             <PhaseActivityTimeline
               title="Recent Project Activity"
-              description="Confirmed phase completions across all of your projects."
+              description={
+                isGlobal && selectedProjectId !== 'all'
+                  ? `Confirmed phase completions for ${projectsWithActivity.find((p) => (p.project_id || p.id) === selectedProjectId)?.name ?? 'selected project'}.`
+                  : 'Confirmed phase completions across all of your projects.'
+              }
               emptyTitle="No phase completions yet"
               emptyDescription="As your team confirms phases across projects, they'll show up here."
-              entries={activityEntries}
-              showProject
+              entries={filteredActivityEntries}
+              showProject={selectedProjectId === 'all'}
               previewNotes
               onEntryClick={(entry) => {
                 if (entry.projectId) {

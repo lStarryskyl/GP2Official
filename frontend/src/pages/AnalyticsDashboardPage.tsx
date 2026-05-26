@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { api } from '@/lib/api';
 import { phaseConfigs } from '@/constants/phases';
@@ -27,6 +27,8 @@ import {
   ChevronDown,
   ExternalLink,
   ChevronsUpDown,
+  Filter,
+  X,
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -43,6 +45,8 @@ interface AnalyticsData {
   totalProjects?: number;
 }
 
+type BreakdownStatus = 'active' | 'completed' | 'stalled';
+
 interface ProjectBreakdownRow {
   id: string;
   name: string;
@@ -51,6 +55,8 @@ interface ProjectBreakdownRow {
   requirementsCount: number;
   aiRunCount: number;
   weeklyActivity: number[];
+  status: BreakdownStatus;
+  createdAt: string;
 }
 
 const ProjectSparkline: React.FC<{ data: number[] }> = ({ data }) => {
@@ -108,6 +114,7 @@ const PHASE_META: { key: string; name: string; color: string }[] = [
 export const AnalyticsDashboardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [activityEntries, setActivityEntries] = useState<PhaseActivityEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -116,6 +123,20 @@ export const AnalyticsDashboardPage: React.FC = () => {
   const [projectsBreakdown, setProjectsBreakdown] = useState<ProjectBreakdownRow[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'completion' | 'phases' | 'requirements' | 'ai'>('completion');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const [statusFilter, setStatusFilter] = useState<'all' | BreakdownStatus>(
+    () => (searchParams.get('status') as BreakdownStatus | 'all') || 'all'
+  );
+  const [dateFrom, setDateFrom] = useState<string>(() => searchParams.get('from') || '');
+  const [dateTo, setDateTo] = useState<string>(() => searchParams.get('to') || '');
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (statusFilter !== 'all') params.status = statusFilter;
+    if (dateFrom) params.from = dateFrom;
+    if (dateTo) params.to = dateTo;
+    setSearchParams(params, { replace: true });
+  }, [statusFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -239,6 +260,13 @@ export const AnalyticsDashboardPage: React.FC = () => {
               }).length;
             });
 
+            const derivedStatus: BreakdownStatus =
+              projPhasesCompleted === 10
+                ? 'completed'
+                : projPhasesCompleted > 0
+                  ? 'active'
+                  : 'stalled';
+
             breakdownRows.push({
               id: pid,
               name: proj.name || 'Untitled project',
@@ -247,6 +275,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
               requirementsCount: projReqCount,
               aiRunCount: projAiCount,
               weeklyActivity: projWeeklyActivity,
+              status: derivedStatus,
+              createdAt: proj.created_at || '',
             });
           }
 
@@ -704,12 +734,108 @@ export const AnalyticsDashboardPage: React.FC = () => {
               background: 'rgba(26,46,69,0.35)',
             };
 
+            const filtered = sorted.filter((row) => {
+              if (statusFilter !== 'all' && row.status !== statusFilter) return false;
+              if (dateFrom && row.createdAt) {
+                if (new Date(row.createdAt) < new Date(dateFrom)) return false;
+              }
+              if (dateTo && row.createdAt) {
+                const toEnd = new Date(dateTo);
+                toEnd.setDate(toEnd.getDate() + 1);
+                if (new Date(row.createdAt) >= toEnd) return false;
+              }
+              return true;
+            });
+
+            const hasActiveFilters = statusFilter !== 'all' || dateFrom !== '' || dateTo !== '';
+
+            const statusBadge: Record<BreakdownStatus, { label: string; color: string; bg: string }> = {
+              active: { label: 'Active', color: '#D4A017', bg: 'rgba(212,160,23,0.15)' },
+              completed: { label: 'Completed', color: '#5a9e6a', bg: 'rgba(90,158,106,0.15)' },
+              stalled: { label: 'Stalled', color: '#8a7055', bg: 'rgba(138,112,85,0.15)' },
+            };
+
             return (
               <div className="mt-6 p-6" style={cardStyle}>
                 <div className="flex items-center gap-3 mb-5">
                   <FolderKanban className="w-5 h-5" style={{ color: '#D4A017' }} />
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">Projects Breakdown</h3>
-                  <span className="ml-auto text-xs text-[var(--text-muted)]">{projectsBreakdown.length} project{projectsBreakdown.length !== 1 ? 's' : ''}</span>
+                  <span className="ml-auto text-xs text-[var(--text-muted)]">
+                    {filtered.length !== projectsBreakdown.length
+                      ? `${filtered.length} of ${projectsBreakdown.length} project${projectsBreakdown.length !== 1 ? 's' : ''}`
+                      : `${projectsBreakdown.length} project${projectsBreakdown.length !== 1 ? 's' : ''}`}
+                  </span>
+                </div>
+
+                {/* Filter bar */}
+                <div className="flex flex-wrap items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid rgba(61,36,18,0.4)' }}>
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" style={{ color: hasActiveFilters ? '#D4A017' : 'var(--text-muted)' }} />
+                    <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Filter:</span>
+                  </div>
+
+                  {/* Status dropdown */}
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as 'all' | BreakdownStatus)}
+                    className="text-sm rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
+                    style={{
+                      background: statusFilter !== 'all' ? 'rgba(212,160,23,0.12)' : 'rgba(26,16,8,0.6)',
+                      border: `1px solid ${statusFilter !== 'all' ? 'rgba(212,160,23,0.4)' : 'rgba(61,36,18,0.5)'}`,
+                      color: statusFilter !== 'all' ? '#D4A017' : 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="stalled">Stalled</option>
+                  </select>
+
+                  {/* Date from */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>From</span>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="text-sm rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
+                      style={{
+                        background: dateFrom ? 'rgba(212,160,23,0.12)' : 'rgba(26,16,8,0.6)',
+                        border: `1px solid ${dateFrom ? 'rgba(212,160,23,0.4)' : 'rgba(61,36,18,0.5)'}`,
+                        color: dateFrom ? '#D4A017' : 'var(--text-muted)',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                  </div>
+
+                  {/* Date to */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>To</span>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="text-sm rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
+                      style={{
+                        background: dateTo ? 'rgba(212,160,23,0.12)' : 'rgba(26,16,8,0.6)',
+                        border: `1px solid ${dateTo ? 'rgba(212,160,23,0.4)' : 'rgba(61,36,18,0.5)'}`,
+                        color: dateTo ? '#D4A017' : 'var(--text-muted)',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                  </div>
+
+                  {/* Clear filters button */}
+                  {hasActiveFilters && (
+                    <button
+                      onClick={() => { setStatusFilter('all'); setDateFrom(''); setDateTo(''); }}
+                      className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all hover:scale-105"
+                      style={{ background: 'rgba(193,68,14,0.1)', border: '1px solid rgba(193,68,14,0.3)', color: '#C1440E' }}
+                    >
+                      <X className="w-3 h-3" />
+                      Clear
+                    </button>
+                  )}
                 </div>
 
                 <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(61,36,18,0.5)' }}>
@@ -719,6 +845,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
                         <th style={{ ...thBase, textAlign: 'left' }} onClick={() => handleSort('name')}>
                           <span className="flex items-center gap-1.5">Project <SortIcon col="name" /></span>
                         </th>
+                        <th style={{ ...thBase, textAlign: 'center', cursor: 'default' }}>Status</th>
                         <th style={{ ...thBase, textAlign: 'center' }} onClick={() => handleSort('completion')}>
                           <span className="flex items-center justify-center gap-1.5">Completion <SortIcon col="completion" /></span>
                         </th>
@@ -736,10 +863,17 @@ export const AnalyticsDashboardPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {sorted.map((row, i) => {
+                      {filtered.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                            No projects match the current filters.
+                          </td>
+                        </tr>
+                      ) : filtered.map((row, i) => {
                         const barColor = row.completionPct >= 70 ? '#D4A017' : row.completionPct >= 40 ? '#c8870f' : '#5c3820';
                         const isEven = i % 2 === 0;
                         const rowBg = isEven ? 'transparent' : 'rgba(26,16,8,0.3)';
+                        const badge = statusBadge[row.status];
                         return (
                           <tr
                             key={row.id}
@@ -748,7 +882,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
                               background: rowBg,
                               cursor: 'pointer',
                               transition: 'background 0.15s',
-                              borderBottom: i < sorted.length - 1 ? '1px solid rgba(61,36,18,0.25)' : 'none',
+                              borderBottom: i < filtered.length - 1 ? '1px solid rgba(61,36,18,0.25)' : 'none',
                             }}
                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,160,23,0.07)')}
                             onMouseLeave={e => (e.currentTarget.style.background = rowBg)}
@@ -761,6 +895,16 @@ export const AnalyticsDashboardPage: React.FC = () => {
                                 title={row.name}
                               >
                                 {row.name}
+                              </span>
+                            </td>
+
+                            {/* Status badge */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <span
+                                className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
+                                style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.color}44` }}
+                              >
+                                {badge.label}
                               </span>
                             </td>
 

@@ -33,6 +33,10 @@ from repositories.ai_run_repository import AiRunRepository
 from services.generation_service import GenerationService
 from services.context_assistant import ContextAssistantService
 from services.version_service import VersionService
+<<<<<<< HEAD
+=======
+from services.plan_limits import enforce_ai_run_quota
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 router = APIRouter()
 project_service = ProjectService()
@@ -133,10 +137,47 @@ async def create_project(
     return await project_service.create_project(project_data, current_user)
 
 
+@router.get("/usage/")
+@router.get("/usage", include_in_schema=False)
+async def get_project_usage(
+    current_user: User = Depends(get_current_user),
+):
+    """Return the current project usage and plan limit for the user."""
+    return await project_service.get_usage(current_user)
+
+
 @router.get("/", response_model=List[ProjectResponse])
-async def list_projects(current_user: User = Depends(get_current_user)):
-    """List all projects for user's organization."""
-    return await project_service.list_projects(current_user)
+async def list_projects(
+    current_user: User = Depends(get_current_user),
+    include_archived: bool = False,
+    only_archived: bool = False,
+):
+    """List projects for user's organization. By default excludes archived."""
+    return await project_service.list_projects(
+        current_user,
+        include_archived=include_archived,
+        only_archived=only_archived,
+    )
+
+
+@router.post("/{project_id}/archive", response_model=ProjectResponse)
+@router.post("/{project_id}/archive/", response_model=ProjectResponse, include_in_schema=False)
+async def archive_project(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Soft-delete: archive a project (recoverable from trash)."""
+    return await project_service.archive_project(project_id, current_user)
+
+
+@router.post("/{project_id}/restore", response_model=ProjectResponse)
+@router.post("/{project_id}/restore/", response_model=ProjectResponse, include_in_schema=False)
+async def restore_project(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Restore an archived project."""
+    return await project_service.restore_project(project_id, current_user)
 
 
 @router.post("/templates/resolve/", response_model=GuidedWorkspaceResponse)
@@ -213,6 +254,7 @@ async def trigger_project_generation(
     current_user: User = Depends(get_current_user)
 ):
     """Start AI generation for a project."""
+    await enforce_ai_run_quota(current_user, ai_run_repo)
     payload = config.dict(exclude_unset=True)
     payload["project_id"] = project_id
     request = GenerationRequest(**payload)

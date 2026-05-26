@@ -18,12 +18,20 @@ import type {
   TraceabilityMatrixData,
   NegotiationThread as NegotiationThreadData,
   NegotiationComment,
+<<<<<<< HEAD
+=======
+  PhaseCompletionMeta,
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 } from '@/types';
 import { phaseConfigs, getPhaseConfig, getNextPhase, phaseColors } from '@/constants/phases';
 import { workspacePresets } from '@/constants/workspacePresets';
 import { useAuthStore } from '@/store/authStore';
 import ReactMarkdown from 'react-markdown';
 import { PhaseNavigation } from '@/components/PhaseNavigation';
+<<<<<<< HEAD
+=======
+import { PhaseStickyHeader } from '@/components/PhaseStickyHeader';
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import { VersionHistory } from '@/components/VersionHistory';
 import { TraceabilityMatrix } from '@/components/TraceabilityMatrix';
 import { NegotiationThread } from '@/components/NegotiationThread';
@@ -130,6 +138,9 @@ export const PhaseDetailPage: React.FC = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [phaseStatus, setPhaseStatus] = useState<Record<string, string>>({});
+  const [phaseCompletionMeta, setPhaseCompletionMeta] = useState<Record<string, PhaseCompletionMeta>>({});
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completionNotes, setCompletionNotes] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [localTaskStatus, setLocalTaskStatus] = useState<Record<string, string>>({});
   const [newTask, setNewTask] = useState({
@@ -408,48 +419,9 @@ export const PhaseDetailPage: React.FC = () => {
         setProject(proj);
         setArtifacts(arts);
         setPhaseStatus(status.phases);
+        setPhaseCompletionMeta(proj.phase_completion_meta ?? {});
         setTasks(taskData);
         setRequirements(reqData);
-
-        // Calculate cost data from tasks
-        const baseRate = proj.hourly_rate || 100;
-        const roleRates = { junior: 50, mid: 80, senior: 120, architect: 150, pm: 100 };
-        const totalRoleCount =
-          roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
-        const blendedRate = totalRoleCount
-          ? (
-            roleMix.junior * roleRates.junior +
-            roleMix.mid * roleRates.mid +
-            roleMix.senior * roleRates.senior +
-            roleMix.architect * roleRates.architect +
-            roleMix.pm * roleRates.pm
-          ) / totalRoleCount
-          : baseRate;
-        const hourlyRate = blendedRate * teamSizeMultiplier;
-
-        const phaseGroups: Record<string, { hours: number; tasks: number }> = {};
-        taskData.forEach((task: Task) => {
-          const phase = task.phase || 'unassigned';
-          if (!phaseGroups[phase]) {
-            phaseGroups[phase] = { hours: 0, tasks: 0 };
-          }
-          phaseGroups[phase].hours += task.estimate_hours || 0;
-          phaseGroups[phase].tasks += 1;
-        });
-
-        const phases = Object.entries(phaseGroups).map(([name, data]) => ({
-          name: name.replace('_', ' '),
-          cost: data.hours * hourlyRate,
-          hours: data.hours,
-        }));
-
-        const totalHours = taskData.reduce((sum: number, t: Task) => sum + (t.estimate_hours || 0), 0);
-        setCostData({
-          phases,
-          totalCost: totalHours * hourlyRate,
-          totalHours,
-          hourlyRate,
-        });
       } catch (err) {
         setError('Failed to load phase info');
       } finally {
@@ -458,7 +430,66 @@ export const PhaseDetailPage: React.FC = () => {
     };
 
     loadProjectData();
-  }, [id, teamSizeMultiplier, roleMix]);
+  }, [id]);
+
+  // Recalculate cost data locally whenever tasks, roleMix, or teamSizeMultiplier change
+  // (no API calls needed — this is a pure client-side derivation)
+  useEffect(() => {
+    if (!project || tasks.length === 0) return;
+
+    const baseRate = project.hourly_rate || 100;
+    const roleRates = { junior: 50, mid: 80, senior: 120, architect: 150, pm: 100 };
+    const totalRoleCount =
+      roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
+    const blendedRate = totalRoleCount
+      ? (
+        roleMix.junior * roleRates.junior +
+        roleMix.mid * roleRates.mid +
+        roleMix.senior * roleRates.senior +
+        roleMix.architect * roleRates.architect +
+        roleMix.pm * roleRates.pm
+      ) / totalRoleCount
+      : baseRate;
+    const hourlyRate = blendedRate * teamSizeMultiplier;
+
+    const phaseGroups: Record<string, { hours: number; tasks: number }> = {};
+    tasks.forEach((task: Task) => {
+      const phase = task.phase || 'unassigned';
+      if (!phaseGroups[phase]) {
+        phaseGroups[phase] = { hours: 0, tasks: 0 };
+      }
+      phaseGroups[phase].hours += task.estimate_hours || 0;
+      phaseGroups[phase].tasks += 1;
+    });
+
+    const phases = Object.entries(phaseGroups).map(([name, data]) => ({
+      name: name.replace('_', ' '),
+      cost: data.hours * hourlyRate,
+      hours: data.hours,
+    }));
+
+    const totalHours = tasks.reduce((sum: number, t: Task) => sum + (t.estimate_hours || 0), 0);
+    setCostData({
+      phases,
+      totalCost: totalHours * hourlyRate,
+      totalHours,
+      hourlyRate,
+    });
+  }, [project, tasks, teamSizeMultiplier, roleMix]);
+
+  useEffect(() => {
+    if (phaseBottomTab === 'history') {
+      loadVersionHistory();
+      return;
+    }
+    if (phaseBottomTab === 'traceability') {
+      loadTraceability();
+      return;
+    }
+    if (phaseBottomTab === 'discussion') {
+      loadDiscussion();
+    }
+  }, [phaseBottomTab, loadVersionHistory, loadTraceability, loadDiscussion]);
 
   useEffect(() => {
     if (phaseBottomTab === 'history') {
@@ -478,20 +509,20 @@ export const PhaseDetailPage: React.FC = () => {
   const autoGenerateTriggeredRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!id || !phaseId || isLoading || isGenerating || !canTriggerAi) return;
-    
+
     // Skip phases that don't support auto-generation
     const autoGenPhases = ['planning', 'feasibility_study', 'requirements_gathering', 'validation', 'design', 'development'];
     if (!autoGenPhases.includes(phaseId)) return;
-    
+
     // Check if we already have content for this phase
     const hasContent = artifacts.some(
       (art) => art.type === `PHASE_${phaseId.toUpperCase()}` && art.content_json?.markdown
     );
-    
+
     // Check if we already triggered auto-generation for this phase in this session
     const cacheKey = `${id}-${phaseId}`;
     if (hasContent || autoGenerateTriggeredRef.current.has(cacheKey)) return;
-    
+
     // Mark as triggered and auto-generate
     autoGenerateTriggeredRef.current.add(cacheKey);
     handleGenerate(`Auto-generate comprehensive ${phaseId.replace('_', ' ')} content for this project`);
@@ -526,6 +557,7 @@ export const PhaseDetailPage: React.FC = () => {
         roots.push(current);
       }
     });
+<<<<<<< HEAD
 
     return roots;
   }, [discussionComments]);
@@ -541,8 +573,105 @@ export const PhaseDetailPage: React.FC = () => {
       setTimeout(() => setCopied(false), 2000);
     });
   }, [phaseMarkdown, phaseRawMarkdown, toastSuccess]);
+=======
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
-  const RawMarkdownDisclosure: React.FC = () => {
+    return roots;
+  }, [discussionComments]);
+
+  // Copy-to-clipboard helper
+  const [copied, setCopied] = useState(false);
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [editNoteDialogOpen, setEditNoteDialogOpen] = useState(false);
+  const [editNoteValue, setEditNoteValue] = useState('');
+  const [isSavingEditedNote, setIsSavingEditedNote] = useState(false);
+  const [undoDialogOpen, setUndoDialogOpen] = useState(false);
+  const [isUndoingComplete, setIsUndoingComplete] = useState(false);
+
+  const currentCompletionMeta = phaseId ? phaseCompletionMeta[phaseId] : undefined;
+  const canManageCompletion = useMemo(() => {
+    if (!currentCompletionMeta) return false;
+    if (userAuthority >= 4) return true;
+    return !!user && currentCompletionMeta.completed_by === user.id;
+  }, [currentCompletionMeta, user, userAuthority]);
+
+  const handleOpenEditNoteDialog = useCallback(() => {
+    setEditNoteValue((currentCompletionMeta?.notes as string) || '');
+    setEditNoteDialogOpen(true);
+  }, [currentCompletionMeta]);
+
+  const handleConfirmEditNote = useCallback(async () => {
+    if (!id || !phaseId) return;
+    setIsSavingEditedNote(true);
+    try {
+      const result = await api.editPhaseCompletionNote(id, phaseId, editNoteValue.trim());
+      setPhaseStatus(result.phases);
+      setPhaseCompletionMeta(result.completion_meta);
+      toastSuccess('Completion note updated');
+      setEditNoteDialogOpen(false);
+    } catch (err: any) {
+      console.error('Failed to edit completion note', err);
+      toastError(err?.response?.data?.detail || 'Failed to edit completion note');
+    } finally {
+      setIsSavingEditedNote(false);
+    }
+  }, [id, phaseId, editNoteValue, toastSuccess, toastError]);
+
+  const handleConfirmUndoComplete = useCallback(async () => {
+    if (!id || !phaseId) return;
+    setIsUndoingComplete(true);
+    try {
+      const result = await api.undoPhaseCompletion(id, phaseId);
+      setPhaseStatus(result.phases);
+      setPhaseCompletionMeta(result.completion_meta);
+      toastSuccess(`${phaseConfig?.title || 'Phase'} completion undone`);
+      setUndoDialogOpen(false);
+    } catch (err: any) {
+      console.error('Failed to undo completion', err);
+      toastError(err?.response?.data?.detail || 'Failed to undo completion');
+    } finally {
+      setIsUndoingComplete(false);
+    }
+  }, [id, phaseId, phaseConfig, toastSuccess, toastError]);
+
+  const handleOpenCompleteDialog = useCallback(() => {
+    setCompletionNotes('');
+    setCompletionDialogOpen(true);
+  }, []);
+
+  const handleConfirmMarkComplete = useCallback(async () => {
+    if (!id || !phaseId) return;
+    setIsMarkingComplete(true);
+    try {
+      const result = await api.markPhaseComplete(id, phaseId, completionNotes.trim());
+      setPhaseStatus(result.phases);
+      setPhaseCompletionMeta(result.completion_meta);
+      toastSuccess(`${phaseConfig?.title || 'Phase'} marked as complete`);
+      setCompletionDialogOpen(false);
+      setCompletionNotes('');
+    } catch (err) {
+      console.error('Failed to mark phase complete', err);
+      toastError('Failed to mark phase as complete');
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  }, [id, phaseId, phaseConfig, completionNotes, toastSuccess, toastError]);
+
+  const handlePrintPhase = useCallback(() => {
+    window.print();
+  }, []);
+
+  const handleCopyContent = useCallback(() => {
+    const text = phaseMarkdown || phaseRawMarkdown;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      toastSuccess('Content copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [phaseMarkdown, phaseRawMarkdown, toastSuccess]);
+
+  const renderRawMarkdownDisclosure = () => {
     if (!phaseRawMarkdown || phaseRawMarkdown === phaseMarkdown) {
       return null;
     }
@@ -558,7 +687,11 @@ export const PhaseDetailPage: React.FC = () => {
     );
   };
 
+<<<<<<< HEAD
   const StreamingOverlay: React.FC = () => {
+=======
+  const renderStreamingOverlay = () => {
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     if (!isStreaming && !streamingText) return null;
     if (!isStreaming && phaseMarkdown) return null;
     return (
@@ -772,7 +905,10 @@ export const PhaseDetailPage: React.FC = () => {
       es.addEventListener('error', (event) => {
         es.close();
         setIsStreaming(false);
+<<<<<<< HEAD
         setError('Streaming generation failed. Falling back to standard generation.');
+=======
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         resolve();
       });
 
@@ -1625,17 +1761,47 @@ export const PhaseDetailPage: React.FC = () => {
     return colors[phaseId || ''] || 'var(--blue-400)';
   })();
 
-  const PhaseWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const renderPhaseWrapper = (phaseChildren: React.ReactNode) => {
     return (
       <Layout>
+<<<<<<< HEAD
+=======
+        <style>{`
+          @media print {
+            .no-print {
+              display: none !important;
+            }
+            nav, aside, header, footer,
+            [data-testid="phase-nav"],
+            [role="navigation"],
+            [role="complementary"] {
+              display: none !important;
+            }
+            html, body { background: white !important; }
+            .print-content { padding: 0 !important; }
+            .print-content * {
+              color: black !important;
+              background: transparent !important;
+              border-color: #ccc !important;
+              box-shadow: none !important;
+            }
+          }
+        `}</style>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <div className="min-h-[calc(100vh-4rem)] bg-[var(--brand-900)]">
           {/* Horizontal Navigation */}
-          <PhaseNavigation projectId={id} variant="horizontal" phaseStatus={phaseStatus} />
+          <div className="no-print">
+            <PhaseNavigation projectId={id} variant="horizontal" phaseStatus={phaseStatus} />
+          </div>
 
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 print-content">
             <div className="space-y-5">
               {/* Phase Header */}
+<<<<<<< HEAD
               <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
+=======
+              <div className="rounded-2xl overflow-hidden shadow-lg no-print" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 <div className="h-1" style={{ background: `linear-gradient(to right, ${phaseAccentColor}, ${phaseAccentColor}88)` }} />
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1654,7 +1820,7 @@ export const PhaseDetailPage: React.FC = () => {
                         </h1>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         variant="outline"
                         onClick={() => navigate(`/projects/${id}`)}
@@ -1670,9 +1836,39 @@ export const PhaseDetailPage: React.FC = () => {
                           onClick={handleDownload}
                           className="text-[var(--text-muted)] bg-transparent"
                           style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+<<<<<<< HEAD
+=======
+                          title="Download phase content as Markdown"
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Export
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={handlePrintPhase}
+                        className="text-[var(--text-muted)] bg-transparent"
+                        style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+                        title="Export this phase as PDF"
+                      >
+                        <Printer className="mr-2 h-4 w-4" />
+                        Export PDF
+                      </Button>
+                      {status !== 'completed' && !!phaseMarkdown && (
+                        <Button
+                          onClick={handleOpenCompleteDialog}
+                          disabled={isMarkingComplete}
+                          className="font-semibold text-sm"
+                          style={{ background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.4)' }}
+                          title="Mark this phase as complete"
+                        >
+                          {isMarkingComplete ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                          )}
+                          Mark Complete
                         </Button>
                       )}
                       <span className="px-3 py-1.5 rounded-full text-xs font-semibold"
@@ -1680,8 +1876,13 @@ export const PhaseDetailPage: React.FC = () => {
                           status === 'completed'
                             ? { background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.3)' }
                             : status === 'locked'
+<<<<<<< HEAD
                             ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
                             : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
+=======
+                              ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
+                              : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         }>
                         {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● Active'}
                       </span>
@@ -1689,6 +1890,60 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                   {phaseConfig.description && (
                     <p className="mt-2 text-sm text-[var(--text-muted)] max-w-2xl ml-16">{phaseConfig.description}</p>
+<<<<<<< HEAD
+=======
+                  )}
+                  {phaseId && phaseCompletionMeta[phaseId]?.completed_at && (
+                    <div className="mt-3 ml-16 rounded-lg p-3"
+                      style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#22c55e] flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Confirmed by {phaseCompletionMeta[phaseId]?.completed_by_name || 'a team member'}
+                            {phaseCompletionMeta[phaseId]?.completed_at
+                              ? ` on ${new Date(phaseCompletionMeta[phaseId]!.completed_at as string).toLocaleString()}`
+                              : ''}
+                          </p>
+                          {phaseCompletionMeta[phaseId]?.notes && (
+                            <p className="mt-1.5 text-xs text-[var(--text-muted)] whitespace-pre-wrap">
+                              <span className="font-semibold text-[var(--text-primary)]">Notes:</span>{' '}
+                              {phaseCompletionMeta[phaseId]?.notes}
+                            </p>
+                          )}
+                          {phaseCompletionMeta[phaseId]?.edited_at && (
+                            <p className="mt-1.5 text-[10px] text-[var(--text-faint)] italic">
+                              Edited by {phaseCompletionMeta[phaseId]?.edited_by_name || 'a team member'}
+                              {' on '}
+                              {new Date(phaseCompletionMeta[phaseId]!.edited_at as string).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        {canManageCompletion && (
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              onClick={handleOpenEditNoteDialog}
+                              className="text-[var(--text-muted)] bg-transparent text-xs h-7 px-2"
+                              style={{ borderColor: 'rgba(34,197,94,0.35)' }}
+                              title="Edit completion note"
+                            >
+                              <Edit3 className="h-3 w-3 mr-1" /> Edit note
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setUndoDialogOpen(true)}
+                              className="text-[var(--text-muted)] bg-transparent text-xs h-7 px-2"
+                              style={{ borderColor: 'rgba(212,160,23,0.35)' }}
+                              title="Unmark this phase as complete"
+                            >
+                              <Undo2 className="h-3 w-3 mr-1" /> Unmark
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   )}
                 </div>
               </div>
@@ -1738,6 +1993,7 @@ export const PhaseDetailPage: React.FC = () => {
                 </div>
               )}
 
+<<<<<<< HEAD
               {/* Compact AI Regenerate Bar - only show if content exists or generating */}
               {phaseId !== 'validation' && (
                 <div className="bg-[var(--brand-900)] rounded-xl border border-[var(--brand-700)] overflow-hidden">
@@ -1783,14 +2039,134 @@ export const PhaseDetailPage: React.FC = () => {
                               handleGenerate(prompt);
                             }}
                             className="bg-[#152238] hover:bg-[var(--brand-700)] text-[var(--blue-400)] border border-[var(--blue-400)]/30 hover:border-[var(--blue-400)] text-sm px-3 py-1.5 font-medium"
+=======
+              {/* Compact AI Regenerate Bar / Empty State */}
+              {phaseId !== 'validation' && <div className="no-print">{(() => {
+                const phaseEmptyDescriptions: Record<string, string> = {
+                  planning: 'No planning roadmap yet — generate a high-level plan, objectives, and scope alignment with AI.',
+                  feasibility_study: 'No feasibility study yet — generate a market, technical, and economic analysis with AI.',
+                  requirements_gathering: 'No requirements document yet — generate functional and non-functional requirements with AI.',
+                  design: 'No system design yet — generate architecture diagrams and API specifications with AI.',
+                  development: 'No development plan yet — generate a tech stack, system flow, and folder structure with AI.',
+                  cost_benefit: 'No cost analysis yet — generate a cost breakdown, benefit estimates, and ROI analysis with AI.',
+                  risks: 'No risk register yet — generate a risk register with impact, likelihood, and mitigations with AI.',
+                  testing: 'No testing plan yet — generate test scenarios, edge cases, and coverage checklist with AI.',
+                  summary: 'No project summary yet — generate a final summary, lessons learned, and recommendations with AI.',
+                };
+                const emptyDescription = phaseId ? phaseEmptyDescriptions[phaseId] : null;
+                const showEmptyState = !phaseMarkdown && !isGenerating && !isStreaming && emptyDescription && canTriggerAi;
+
+                if (showEmptyState) {
+                  return (
+                    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--brand-850)', border: '1px dashed rgba(26,111,212,0.4)' }}>
+                      <div className="p-6 flex flex-col items-center text-center gap-4">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.25)' }}>
+                          <Sparkles className="h-7 w-7 text-[var(--blue-400)]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white mb-1">No content yet</p>
+                          <p className="text-sm text-gray-400 max-w-md">{emptyDescription}</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                          <Button
+                            onClick={() => handleGenerate(`Generate comprehensive ${phaseId?.replace(/_/g, ' ')} content for this project`)}
+                            className="font-semibold px-6"
+                            style={{ background: 'linear-gradient(135deg, var(--blue-600), var(--blue-400))', color: 'var(--brand-900)', border: 'none' }}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                           >
-                            <Undo2 className="h-3.5 w-3.5 mr-1.5" />
-                            Regenerate
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate with AI
                           </Button>
+                          <div className="flex items-center gap-2">
+                            <input
+                              ref={regenerateInputRef}
+                              type="text"
+                              className="w-56 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[var(--brand-700)] bg-[#152238] focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 transition-all"
+                              placeholder="Or enter a custom prompt..."
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                const prompt = regenerateInputRef.current?.value || `Generate ${phaseId?.replace(/_/g, ' ')} content`;
+                                handleGenerate(prompt);
+                              }}
+                              className="text-[var(--blue-400)] border-[var(--blue-400)]/30 text-sm"
+                            >
+                              Go
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="bg-[var(--brand-900)] rounded-xl border border-[var(--brand-700)] overflow-hidden">
+                    <div className="p-3 sm:p-4">
+                      {isGenerating ? (
+                        <div className="flex items-center justify-center gap-3 py-2">
+                          <Loader2 className="h-5 w-5 animate-spin text-[var(--blue-400)]" />
+                          <span className="text-sm font-medium text-gray-300">Generating content with AI...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-[var(--blue-400)]" />
+                            <span className="text-sm text-gray-400">Content auto-generated</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleCopyContent}
+                              disabled={!phaseMarkdown && !phaseRawMarkdown}
+                              title="Copy content to clipboard"
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 10px', borderRadius: '8px',
+                                background: copied ? 'rgba(26,111,212,0.15)' : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${copied ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.6)'}`,
+                                color: copied ? '#3d8fe0' : '#4a6070',
+                                fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                              }}
+                            >
+                              {copied ? <Check size={13} /> : <Copy size={13} />}
+                              {copied ? 'Copied' : 'Copy'}
+                            </button>
+                            <input
+                              ref={regenerateInputRef}
+                              type="text"
+                              className="w-48 sm:w-64 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 border border-[var(--brand-700)] bg-[#152238] focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 transition-all"
+                              placeholder="Custom prompt (optional)"
+                            />
+                            <Button
+                              disabled={isGenerating}
+                              onClick={() => {
+                                const prompt = regenerateInputRef.current?.value || `Regenerate ${phaseId?.replace('_', ' ')} content`;
+                                handleGenerate(prompt);
+                              }}
+                              className="bg-[#152238] hover:bg-[var(--brand-700)] text-[var(--blue-400)] border border-[var(--blue-400)]/30 hover:border-[var(--blue-400)] text-sm px-3 py-1.5 font-medium"
+                            >
+                              <Undo2 className="h-3.5 w-3.5 mr-1.5" />
+                              Regenerate
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                );
+              })()}</div>}
+
+              {/* AI Suggestions Panel */}
+              {phaseId && project && (
+                <div className="no-print">
+                  <AISuggestionsPanel
+                    projectId={id || ''}
+                    phase={phaseId}
+                    phaseContent={phaseMarkdown}
+                    projectName={project.name}
+                    projectDescription={project.description || ''}
+                  />
                 </div>
               )}
 
@@ -1806,30 +2182,33 @@ export const PhaseDetailPage: React.FC = () => {
               )}
 
               {/* Phase Content */}
-              {children}
+              {phaseChildren}
             </div>
           </div>
         </div>
 
         {/* Athena AI Chat Assistant — floating per-phase */}
         {project && phaseId && (
-          <AIChatAssistant
-            projectId={id || ''}
-            projectName={project.name}
-            phase={phaseId}
-            phaseName={phaseConfig?.title || phaseId}
-          />
+          <div className="no-print">
+            <AIChatAssistant
+              projectId={id || ''}
+              projectName={project.name}
+              phase={phaseId}
+              phaseName={phaseConfig?.title || phaseId}
+            />
+          </div>
         )}
       </Layout>
     );
   };
+
 
   // ============================================
   // FEASIBILITY STUDY PHASE
   // ============================================
   if (phaseId === 'feasibility_study') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <FeasibilityStudyPhase
           projectId={id || ''}
           projectName={project?.name || ''}
@@ -1837,7 +2216,7 @@ export const PhaseDetailPage: React.FC = () => {
           isGenerating={isGenerating}
           content={phaseMarkdown}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -1846,13 +2225,13 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'planning') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <PlanningRoadmapPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -1861,7 +2240,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'requirements_gathering') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1880,7 +2259,11 @@ export const PhaseDetailPage: React.FC = () => {
             {/* Cost vs Benefit Comparison card removed here; lives in cost_benefit phase instead */}
             <div className="bg-[var(--brand-900)] border border-[var(--brand-700)]/50 rounded-xl p-4">
               <div className="flex items-center gap-3">
+<<<<<<< HEAD
                 <div className="p-2 bg-blue-900/200/20 rounded-lg border border-blue-500/30">
+=======
+                <div className="p-2 bg-blue-900/20 rounded-lg border border-blue-500/30">
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   <Shield className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
@@ -2090,13 +2473,9 @@ export const PhaseDetailPage: React.FC = () => {
                                           priority: editingRequirementDraft.priority,
                                           status: editingRequirementDraft.status,
                                         } as any;
-                                        const updated = await api.updateRequirement(req.requirement_id, patch);
-                                        setRequirements((prev) =>
-                                          prev.map((r) =>
-                                            r.requirement_id === req.requirement_id ? updated : r
-                                          )
-                                        );
+                                        await api.updateRequirement(req.requirement_id, patch);
                                         setEditingRequirementId(null);
+                                        await handleSyncRequirements();
                                       } catch (err) {
                                         console.error('Update requirement failed', err);
                                       }
@@ -2187,7 +2566,7 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2196,7 +2575,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'validation') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <ValidationPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
@@ -2204,7 +2583,7 @@ export const PhaseDetailPage: React.FC = () => {
           content={phaseMarkdown}
           requirements={requirements}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2214,7 +2593,7 @@ export const PhaseDetailPage: React.FC = () => {
   if (phaseId === 'design') {
     const status = phaseStatus['design'] || 'locked';
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <div className="space-y-6">
           {/* AI Generate Card */}
           <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, var(--brand-850), var(--brand-800))', border: '1px solid rgba(107,76,138,0.4)' }}>
@@ -2240,7 +2619,7 @@ export const PhaseDetailPage: React.FC = () => {
               <div className="rounded-xl p-5 mt-2" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(107,76,138,0.2)' }}>
                 <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-muted)' }}>
                   <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                  <RawMarkdownDisclosure />
+                  {renderRawMarkdownDisclosure()}
                 </div>
               </div>
             )}
@@ -2258,7 +2637,7 @@ export const PhaseDetailPage: React.FC = () => {
             <DesignPhase projectId={id || ''} onOpenCanvas={handleOpenCanvas} />
           </div>
         </div>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2267,14 +2646,14 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'design_architecture') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <SystemDesignPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
           onOpenCanvas={handleOpenCanvas}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2283,7 +2662,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'development') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <DevelopmentPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
@@ -2291,7 +2670,7 @@ export const PhaseDetailPage: React.FC = () => {
           requirements={requirements}
           content={phaseMarkdown}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2300,7 +2679,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'risks') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <div className="space-y-6">
           {/* Header */}
           <div className="relative">
@@ -2831,7 +3210,24 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </PhaseWrapper>
+      </>)
+    );
+  }
+
+  // ============================================
+  // TESTING PHASE
+  // ============================================
+  if (phaseId === 'testing') {
+    return (
+      renderPhaseWrapper(<>
+        <TestingPhase
+          projectId={id || ''}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+          content={phaseMarkdown}
+          requirements={requirements}
+        />
+      </>)
     );
   }
 
@@ -2857,7 +3253,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'summary') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <FinalSummaryPhase
           projectId={id || ''}
           projectName={project?.name || ''}
@@ -2869,7 +3265,7 @@ export const PhaseDetailPage: React.FC = () => {
             progress: Math.round((Object.values(phaseStatus).filter(s => s === 'completed').length / phaseConfigs.length) * 100),
           }}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2912,7 +3308,7 @@ export const PhaseDetailPage: React.FC = () => {
     };
 
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <>
           <div className="space-y-6">
 
@@ -3157,7 +3553,7 @@ export const PhaseDetailPage: React.FC = () => {
                   {phaseMarkdown ? (
                     <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                      <RawMarkdownDisclosure />
+                      {renderRawMarkdownDisclosure()}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-sm gap-1 py-6" style={{ color: 'var(--text-muted)' }}>
@@ -3198,7 +3594,7 @@ export const PhaseDetailPage: React.FC = () => {
             )}
           </div>
         </>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -3301,7 +3697,7 @@ export const PhaseDetailPage: React.FC = () => {
     };
 
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <>
           <div className="space-y-6">
 
@@ -3393,7 +3789,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div className="md:col-span-2">
                     <label className="block text-[11px] text-gray-500 mb-1">Description</label>
                     <input
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       placeholder="e.g. Senior backend hire, SaaS subscription"
                       value={newCostItem.description}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, description: e.target.value }))}
@@ -3403,7 +3799,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <label className="block text-[11px] text-gray-500 mb-1">Cost</label>
                     <input
                       type="number"
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       placeholder="e.g. 5000"
                       value={newCostItem.cost}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, cost: e.target.value }))}
@@ -3413,7 +3809,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <label className="block text-[11px] text-gray-500 mb-1">Benefit</label>
                     <input
                       type="number"
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       placeholder="e.g. 15000"
                       value={newCostItem.benefit}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, benefit: e.target.value }))}
@@ -3422,7 +3818,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div>
                     <label className="block text-[11px] text-gray-500 mb-1">Currency</label>
                     <select
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       value={newCostItem.currency}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, currency: e.target.value as 'USD' | 'JOD' }))}
                     >
@@ -3569,7 +3965,7 @@ export const PhaseDetailPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="prose prose-sm max-w-none text-gray-300">
                   <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                  <RawMarkdownDisclosure />
+                  {renderRawMarkdownDisclosure()}
                 </CardContent>
               </Card>
             )}
@@ -3652,7 +4048,7 @@ export const PhaseDetailPage: React.FC = () => {
                       {manualCostSlices.map((slice, idx) => (
                         <div key={slice.id} className="grid grid-cols-12 gap-2 items-center">
                           <input
-                            className="col-span-4 border rounded px-2 py-1"
+                            className="col-span-4 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                             value={slice.label}
                             onChange={(e) =>
                               setManualCostSlices((prev) =>
@@ -3664,7 +4060,7 @@ export const PhaseDetailPage: React.FC = () => {
                           />
                           <input
                             type="number"
-                            className="col-span-3 border rounded px-2 py-1"
+                            className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                             value={slice.cost}
                             onChange={(e) =>
                               setManualCostSlices((prev) =>
@@ -3676,7 +4072,7 @@ export const PhaseDetailPage: React.FC = () => {
                           />
                           <input
                             type="number"
-                            className="col-span-3 border rounded px-2 py-1"
+                            className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                             value={slice.hours}
                             onChange={(e) =>
                               setManualCostSlices((prev) =>
@@ -3699,21 +4095,21 @@ export const PhaseDetailPage: React.FC = () => {
                       ))}
                       <div className="grid grid-cols-12 gap-2 items-center">
                         <input
-                          className="col-span-4 border rounded px-2 py-1"
+                          className="col-span-4 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                           placeholder="Label"
                           value={manualSliceDraft.label}
                           onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, label: e.target.value }))}
                         />
                         <input
                           type="number"
-                          className="col-span-3 border rounded px-2 py-1"
+                          className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                           placeholder="Cost"
                           value={manualSliceDraft.cost}
                           onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, cost: e.target.value }))}
                         />
                         <input
                           type="number"
-                          className="col-span-3 border rounded px-2 py-1"
+                          className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                           placeholder="Hours"
                           value={manualSliceDraft.hours}
                           onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, hours: e.target.value }))}
@@ -3865,7 +4261,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div className="border border-blue-700/40 rounded-lg bg-[#152238] p-4 mt-4">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                      <RawMarkdownDisclosure />
+                      {renderRawMarkdownDisclosure()}
                     </div>
                   </div>
                 )}
@@ -3873,7 +4269,7 @@ export const PhaseDetailPage: React.FC = () => {
             </Card>
           </div>
         </>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -4237,7 +4633,7 @@ export const PhaseDetailPage: React.FC = () => {
                 <div className="border border-violet-200 rounded-lg bg-[#152238] p-4 mt-4">
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                    <RawMarkdownDisclosure />
+                    {renderRawMarkdownDisclosure()}
                   </div>
                 </div>
               )}
@@ -4253,24 +4649,15 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   return (
     <Layout>
+      {id && phaseId && (
+        <PhaseStickyHeader
+          projectId={id}
+          projectName={project?.name}
+          currentPhaseId={phaseId}
+          phaseStatus={project?.phase_status}
+        />
+      )}
       <div className="space-y-6">
-        {/* Enhanced Header */}
-        <div className="relative">
-          <div className="absolute -top-10 -left-10 w-32 h-32 bg-amber-200/30 rounded-full blur-3xl"></div>
-          <div className="relative flex items-center justify-between flex-wrap gap-3">
-            <Button variant="ghost" onClick={() => navigate(`/projects/${id}`)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Project
-            </Button>
-            <div className="text-right">
-              <p className="text-xs uppercase text-gray-500 tracking-wider">Phase</p>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                {phaseConfig.title}
-              </h1>
-              <p className="text-sm text-gray-500">{project.name}</p>
-            </div>
-          </div>
-        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
@@ -4322,7 +4709,7 @@ export const PhaseDetailPage: React.FC = () => {
                   {phaseMarkdown ? (
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                      <RawMarkdownDisclosure />
+                      {renderRawMarkdownDisclosure()}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -4408,11 +4795,18 @@ export const PhaseDetailPage: React.FC = () => {
               <button
                 key={tab}
                 onClick={() => setPhaseBottomTab(tab)}
+<<<<<<< HEAD
                 className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${
                   isActive
                     ? 'text-[var(--blue-400)] border-b-2 border-[var(--blue-400)] bg-[var(--brand-800)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] hover:bg-[var(--brand-800)]/50'
                 }`}
+=======
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${isActive
+                    ? 'text-[var(--blue-400)] border-b-2 border-[var(--blue-400)] bg-[var(--brand-800)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] hover:bg-[var(--brand-800)]/50'
+                  }`}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               >
                 {labels[tab]}
               </button>
@@ -4453,6 +4847,189 @@ export const PhaseDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+<<<<<<< HEAD
+=======
+      {editNoteDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isSavingEditedNote && setEditNoteDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+            style={{ background: 'var(--brand-850)', border: '1px solid rgba(34,197,94,0.3)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-[#22c55e]" />
+                Edit completion note
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Update the note recorded when this phase was confirmed complete.
+              </p>
+            </div>
+            <div className="p-5">
+              <textarea
+                value={editNoteValue}
+                onChange={(e) => setEditNoteValue(e.target.value)}
+                placeholder="Completion note..."
+                rows={5}
+                disabled={isSavingEditedNote}
+                maxLength={2000}
+                className="w-full rounded-lg p-3 text-sm bg-transparent text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
+                style={{ border: '1px solid rgba(26,46,69,0.6)', resize: 'vertical' }}
+              />
+              <p className="mt-1 text-[10px] text-[var(--text-faint)] text-right">
+                {editNoteValue.length}/2000
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditNoteDialogOpen(false)}
+                disabled={isSavingEditedNote}
+                className="text-[var(--text-muted)] bg-transparent"
+                style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmEditNote}
+                disabled={isSavingEditedNote}
+                className="font-semibold"
+                style={{ background: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}
+              >
+                {isSavingEditedNote ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save note
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {undoDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isUndoingComplete && setUndoDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+            style={{ background: 'var(--brand-850)', border: '1px solid rgba(212,160,23,0.35)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Undo2 className="h-5 w-5 text-[#D4A017]" />
+                Unmark {phaseConfig?.title || 'phase'} as complete?
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                This resets the phase status to ready and removes the saved completion note. You can mark it complete again later.
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex justify-end gap-2 mt-5">
+              <Button
+                variant="outline"
+                onClick={() => setUndoDialogOpen(false)}
+                disabled={isUndoingComplete}
+                className="text-[var(--text-muted)] bg-transparent"
+                style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmUndoComplete}
+                disabled={isUndoingComplete}
+                className="font-semibold"
+                style={{ background: 'rgba(212,160,23,0.18)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.45)' }}
+              >
+                {isUndoingComplete ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Undo2 className="mr-2 h-4 w-4" />
+                )}
+                Yes, unmark complete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {completionDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isMarkingComplete && setCompletionDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+            style={{ background: 'var(--brand-850)', border: '1px solid rgba(26,111,212,0.3)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b" style={{ borderColor: 'rgba(26,46,69,0.6)' }}>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-[#22c55e]" />
+                Mark {phaseConfig?.title || 'Phase'} as complete?
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Add an optional note to capture decisions, reviewers, or caveats. This will appear in the phase header.
+              </p>
+            </div>
+            <div className="p-5">
+              <label className="block text-xs font-semibold text-[var(--text-muted)] mb-2">
+                Completion notes (optional)
+              </label>
+              <textarea
+                value={completionNotes}
+                onChange={(e) => setCompletionNotes(e.target.value)}
+                placeholder="e.g., Reviewed with stakeholders, approved scope changes, etc."
+                rows={5}
+                disabled={isMarkingComplete}
+                maxLength={2000}
+                className="w-full rounded-lg p-3 text-sm bg-transparent text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-400)]"
+                style={{ border: '1px solid rgba(26,46,69,0.6)', resize: 'vertical' }}
+              />
+              <p className="mt-1 text-[10px] text-[var(--text-faint)] text-right">
+                {completionNotes.length}/2000
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCompletionDialogOpen(false)}
+                disabled={isMarkingComplete}
+                className="text-[var(--text-muted)] bg-transparent"
+                style={{ borderColor: 'rgba(26,46,69,0.6)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmMarkComplete}
+                disabled={isMarkingComplete}
+                className="font-semibold"
+                style={{ background: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}
+              >
+                {isMarkingComplete ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                )}
+                Confirm complete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     </Layout>
   );
 };

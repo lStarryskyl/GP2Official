@@ -44,6 +44,14 @@ class TaskType(str, Enum):
     PERSONA_GENERATION = "persona_generation"
     FEASIBILITY_ANALYSIS = "feasibility_analysis"
     SYSTEM_DESIGN = "system_design"
+    CODING = "coding"
+    CODE_REVIEW = "code_review"
+    COMPLEX_LOGIC = "complex_logic"
+    JSON_SCHEMA = "json_schema"
+    WORKFLOW = "workflow"
+    PLAN_VALIDATION = "plan_validation"
+    MULTI_AGENT_DEBATE = "multi_agent_debate"
+    CODE_SCAFFOLDING = "code_scaffolding"
 
 
 @dataclass

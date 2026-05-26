@@ -90,6 +90,131 @@ class PhaseFlowService:
         
         raise ValueError("Invalid phase")
 
+    async def mark_complete(
+        self,
+        project_id: str,
+        organization: str,
+        phase: str,
+        notes: Optional[str] = None,
+        completed_by: Optional[str] = None,
+        completed_by_name: Optional[str] = None,
+    ) -> Tuple[Dict[str, str], Dict[str, dict]]:
+        """Mark a phase as completed, record completion metadata, and unlock the next phase."""
+        from datetime import datetime, timezone
+
+        project = await self.project_repo.get_by_id(project_id, organization)
+        if not project:
+            raise ValueError("Project not found")
+
+        if phase not in PHASE_ORDER:
+            raise ValueError("Invalid phase")
+
+        normalized_status = default_phase_status()
+        normalized_status.update(project.phase_status or {})
+        status = dict(normalized_status)
+
+        status[phase] = "completed"
+        next_index = PHASE_ORDER.index(phase) + 1
+        if next_index < len(PHASE_ORDER):
+            next_phase = PHASE_ORDER[next_index]
+            if status.get(next_phase) in ("locked", "not_started"):
+                status[next_phase] = "ready"
+
+        completion_meta = dict(getattr(project, "phase_completion_meta", None) or {})
+        completion_meta[phase] = {
+            "completed_by": completed_by,
+            "completed_by_name": completed_by_name,
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "notes": (notes or "").strip(),
+        }
+
+        updated_project = await self.project_repo.update_phase_completion(
+            project_id, organization, status, completion_meta
+        )
+        return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
+
+    async def edit_completion_note(
+        self,
+        project_id: str,
+        organization: str,
+        phase: str,
+        notes: str,
+        actor_id: str,
+        actor_authority: int = 0,
+        actor_name: Optional[str] = None,
+    ) -> Tuple[Dict[str, str], Dict[str, dict]]:
+        """Update the completion note on a previously completed phase."""
+        from datetime import datetime, timezone
+
+        if phase not in PHASE_ORDER:
+            raise ValueError("Invalid phase")
+
+        project = await self.project_repo.get_by_id(project_id, organization)
+        if not project:
+            raise ValueError("Project not found")
+
+        normalized_status = default_phase_status()
+        normalized_status.update(project.phase_status or {})
+        if normalized_status.get(phase) != "completed":
+            raise ValueError("Phase is not currently marked complete")
+
+        completion_meta = dict(getattr(project, "phase_completion_meta", None) or {})
+        existing = dict(completion_meta.get(phase) or {})
+        if not existing:
+            raise ValueError("No completion record exists for this phase")
+
+        original_user = existing.get("completed_by")
+        if actor_id != original_user and actor_authority < 4:
+            raise PermissionError("Only the original confirmer or a Program Manager can edit this note")
+
+        existing["notes"] = (notes or "").strip()
+        existing["edited_by"] = actor_id
+        existing["edited_by_name"] = actor_name
+        existing["edited_at"] = datetime.now(timezone.utc).isoformat()
+        completion_meta[phase] = existing
+
+        updated_project = await self.project_repo.update_phase_completion(
+            project_id, organization, normalized_status, completion_meta
+        )
+        return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
+
+    async def unmark_complete(
+        self,
+        project_id: str,
+        organization: str,
+        phase: str,
+        actor_id: str,
+        actor_authority: int = 0,
+    ) -> Tuple[Dict[str, str], Dict[str, dict]]:
+        """Reset a completed phase back to ready and clear its completion record."""
+        if phase not in PHASE_ORDER:
+            raise ValueError("Invalid phase")
+
+        project = await self.project_repo.get_by_id(project_id, organization)
+        if not project:
+            raise ValueError("Project not found")
+
+        normalized_status = default_phase_status()
+        normalized_status.update(project.phase_status or {})
+        if normalized_status.get(phase) != "completed":
+            raise ValueError("Phase is not currently marked complete")
+
+        completion_meta = dict(getattr(project, "phase_completion_meta", None) or {})
+        existing = completion_meta.get(phase) or {}
+        original_user = existing.get("completed_by")
+        if actor_id != original_user and actor_authority < 4:
+            raise PermissionError("Only the original confirmer or a Program Manager can undo this completion")
+
+        status = dict(normalized_status)
+        status[phase] = "ready"
+        if phase in completion_meta:
+            del completion_meta[phase]
+
+        updated_project = await self.project_repo.update_phase_completion(
+            project_id, organization, status, completion_meta
+        )
+        return updated_project.phase_status, getattr(updated_project, "phase_completion_meta", None) or {}
+
     async def generate_phase(
         self,
         project_id: str,
@@ -255,9 +380,15 @@ class PhaseFlowService:
         user_id: Optional[str] = None,
         prior_context: str = "",
     ) -> str:
+<<<<<<< HEAD
         # Use placeholder content if no OpenAI API key is configured
         if not settings.openai_api_key:
             logger.info(f"No OpenAI API key configured, using placeholder content for phase {phase}")
+=======
+        # Use placeholder content only if neither AI provider is configured
+        if not settings.openai_api_key and not settings.gemini_api_key:
+            logger.info(f"No AI API key configured, using placeholder content for phase {phase}")
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             return await self._generate_placeholder_content(phase, user_prompt)
             
         system_message = (
@@ -296,10 +427,20 @@ class PhaseFlowService:
                 "- Provide 5–10 high-level steps showing the request/response flow end-to-end.\n"
                 "- Use a simple bulleted or numbered list with the format `Step name: short description`.\n"
                 "- Keep each step on a single line so it can be turned into a diagram node.\n"
+                "\n### Request Path\n"
+                "- Provide 3–5 ordered steps describing how an inbound request travels from the client through the chosen stack to the data layer.\n"
+                "- Reference the actual technologies chosen above (e.g. specific framework, gateway, queue).\n"
+                "\n### Response Path\n"
+                "- Provide 3–5 ordered steps describing how data is returned from the data layer back to the client.\n"
+                "- Reference the actual technologies chosen above.\n"
                 "\n## Folder Structure\n"
                 "```\n"
-                "<tree-style directory structure for the project, using indents and ├── / └── where helpful>\n"
+                "<tree-style directory structure tailored to the chosen stack, using indents and ├── / └── where helpful>\n"
                 "```\n"
+                "\n## Best Practices\n"
+                "- 4–6 bullets of concrete best practices specific to the chosen tech stack and this project's domain.\n"
+                "\n## Watch Out For\n"
+                "- 4–6 bullets of common pitfalls or risks specific to the chosen tech stack and this project's domain.\n"
                 "\n## Components (optional)\n"
                 "- If helpful, list key controllers, services, repositories, models, and frontend components.\n"
                 "- Use bullets with the format `ComponentName: short responsibility description`.\n"
@@ -366,6 +507,7 @@ class PhaseFlowService:
             metadata={"phase_title": PHASE_TITLES.get(phase)},
         )
 
+<<<<<<< HEAD
         # Call OpenAI API
         started_at = time.perf_counter()
         try:
@@ -374,6 +516,30 @@ class PhaseFlowService:
             response = await call_openai(full_prompt, system=system_message, max_tokens=4000)
             duration = int((time.perf_counter() - started_at) * 1000)
             logger.info(f"OpenAI response received: {len(response)} characters in {duration}ms")
+=======
+        # Call AI API — prefer Gemini when no OpenAI key is set
+        started_at = time.perf_counter()
+        try:
+            full_prompt = f"{system_message}\n\n{prompt}\n\nProduce a structured Markdown response with clear headings, bullet lists, and actionable items."
+            if settings.openai_api_key:
+                logger.info(f"Calling OpenAI API with model: {settings.openai_model} for phase: {phase}")
+                response = await call_openai(
+                    f"{prompt}\n\nProduce a structured Markdown response with clear headings, bullet lists, and actionable items.",
+                    system=system_message,
+                    max_tokens=4000
+                )
+            else:
+                logger.info(f"Calling Gemini API with model: {settings.gemini_pro_model} for phase: {phase}")
+                from google import genai as google_genai
+                client = google_genai.Client(api_key=settings.gemini_api_key)
+                result = client.models.generate_content(
+                    model=settings.gemini_pro_model,
+                    contents=full_prompt,
+                )
+                response = result.text or ""
+            duration = int((time.perf_counter() - started_at) * 1000)
+            logger.info(f"AI response received: {len(response)} characters in {duration}ms")
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             await self.ai_run_repo.complete_run(
                 run_entry.id,
                 status="completed",

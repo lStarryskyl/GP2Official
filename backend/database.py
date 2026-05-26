@@ -111,6 +111,14 @@ async def ensure_tables_exist():
             )
         ''')
 
+        # Ensure subscription_tier column exists on users (lightweight migration)
+        try:
+            await conn.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier TEXT DEFAULT 'free'"
+            )
+        except Exception as e:
+            print(f"[DB] Could not ensure users.subscription_tier column: {e}")
+
         # Create refresh_tokens table
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS refresh_tokens (

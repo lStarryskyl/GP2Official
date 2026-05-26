@@ -49,7 +49,16 @@ class ProjectRepository:
     
     async def update_phase_status(self, project_id: str, organization: str, phase_status: Dict[str, str]) -> Optional[Project]:
         return await self._repo.update_phase_status(project_id, organization, phase_status)
-    
+
+    async def update_phase_completion(
+        self,
+        project_id: str,
+        organization: str,
+        phase_status: Dict[str, str],
+        phase_completion_meta: Dict[str, Any],
+    ) -> Optional[Project]:
+        return await self._repo.update_phase_completion(project_id, organization, phase_status, phase_completion_meta)
+
     async def set_team_members(self, project_id: str, organization: str, members: List[Dict[str, Any]]) -> Optional[Project]:
         return await self._repo.set_team_members(project_id, organization, members)
 
@@ -152,7 +161,7 @@ class _SupabaseProjectRepository:
         """Convert database row to Project model."""
         data = dict(row)
         # Parse JSON fields
-        for field in ['questionnaire_data', 'phase_status', 'roadmap', 'roadmap_summary', 
+        for field in ['questionnaire_data', 'phase_status', 'phase_completion_meta', 'roadmap', 'roadmap_summary', 
                        'feasibility_studies', 'feasibility_sections', 'scenario_metadata', 
                        'ui_preferences', 'team_members', 'development_stack', 'development_notes']:
             if field in data and isinstance(data[field], str):
@@ -253,7 +262,30 @@ class _SupabaseProjectRepository:
         if row:
             return self._row_to_project(row)
         return None
-    
+
+    async def update_phase_completion(
+        self,
+        project_id: str,
+        organization: str,
+        phase_status: Dict[str, str],
+        phase_completion_meta: Dict[str, Any],
+    ) -> Optional[Project]:
+        """Update phase status and completion metadata together."""
+        pool = self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                'UPDATE projects SET phase_status = $3, phase_completion_meta = $4, updated_at = $5 '
+                'WHERE id = $1 AND organization = $2 RETURNING *',
+                project_id,
+                organization,
+                json.dumps(phase_status),
+                json.dumps(phase_completion_meta or dict()),
+                datetime.utcnow(),
+            )
+        if row:
+            return self._row_to_project(row)
+        return None
+
     async def set_team_members(self, project_id: str, organization: str, members: List[Dict[str, Any]]) -> Optional[Project]:
         """Replace the team member list for a project."""
         pool = self._get_pool()
@@ -399,6 +431,28 @@ class _MongoProjectRepository:
             {"_id": project_id, "organization": organization},
             {"$set": {"phase_status": phase_status, "updated_at": datetime.utcnow()}},
             return_document=True
+        )
+        if result:
+            return Project(**result)
+        return None
+
+    async def update_phase_completion(
+        self,
+        project_id: str,
+        organization: str,
+        phase_status: Dict[str, str],
+        phase_completion_meta: Dict[str, Any],
+    ) -> Optional[Project]:
+        """Update phase status and completion metadata together."""
+        db = get_db()
+        result = await db[self.collection_name].find_one_and_update(
+            {"_id": project_id, "organization": organization},
+            {"$set": {
+                "phase_status": phase_status,
+                "phase_completion_meta": phase_completion_meta or {},
+                "updated_at": datetime.utcnow(),
+            }},
+            return_document=True,
         )
         if result:
             return Project(**result)

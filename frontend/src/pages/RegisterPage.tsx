@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
+import { AcornLogo } from '@/components/AcornLogo';
 import {
   User,
   Building2,
@@ -11,7 +12,6 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  TreePine,
   Rocket,
   Shield,
   Sparkles
@@ -88,6 +88,7 @@ export const RegisterPage: React.FC = () => {
         <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24 w-full">
           {/* Logo */}
           <div className={`flex items-center gap-4 mb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
+<<<<<<< HEAD
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl blur-xl opacity-50" style={{ background: 'linear-gradient(to bottom right, var(--blue-400), var(--brand-600))' }} />
               <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(to bottom right, var(--blue-400), var(--blue-500))' }}>
@@ -95,6 +96,9 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
             <span className="text-4xl font-bold" style={{ background: 'linear-gradient(to right, var(--blue-400), var(--blue-300))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Acorn</span>
+=======
+            <AcornLogo height={52} white />
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           </div>
 
           {/* Headline */}
@@ -139,10 +143,14 @@ export const RegisterPage: React.FC = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-3">
+<<<<<<< HEAD
               <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, var(--blue-400), var(--blue-500))' }}>
                 <TreePine className="w-6 h-6" style={{ color: 'var(--brand-900)' }} />
               </div>
               <span className="text-2xl font-bold" style={{ background: 'linear-gradient(to right, var(--blue-400), var(--blue-300))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Acorn</span>
+=======
+              <AcornLogo height={40} white />
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             </Link>
           </div>
 

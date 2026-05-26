@@ -33,6 +33,7 @@ interface Props {
 
 // Per-phase accent colors
 const PHASE_COLORS: Record<string, string> = {
+<<<<<<< HEAD
   planning:               '#D4A017',
   feasibility_study:      '#7BA05B',
   requirements_gathering: 'var(--blue-500)',
@@ -44,6 +45,19 @@ const PHASE_COLORS: Record<string, string> = {
   risks:                  '#C1440E',
   testing:                '#0EA5E9',
   summary:                'var(--blue-400)',
+=======
+  planning: '#D4A017',
+  feasibility_study: '#7BA05B',
+  requirements_gathering: 'var(--blue-500)',
+  validation: '#5F7A8A',
+  design: '#6B4C8A',
+  development: '#8B5E3C',
+  tasks: '#D4A017',
+  cost_benefit: '#2A9D8F',
+  risks: '#C1440E',
+  testing: '#0EA5E9',
+  summary: 'var(--blue-400)',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 };
 
 const QUICK_PROMPTS = [
@@ -81,6 +95,16 @@ export const AIChatAssistant: React.FC<Props> = ({
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen, messages]);
+
+  // Signal open state to other floating panels (e.g. AIDebatePanel) via body attribute
+  useEffect(() => {
+    if (isOpen) {
+      document.body.setAttribute('data-athena-chat-open', 'true');
+    } else {
+      document.body.removeAttribute('data-athena-chat-open');
+    }
+    return () => document.body.removeAttribute('data-athena-chat-open');
+  }, [isOpen]);
 
   const sendMessage = async (text?: string) => {
     const msgText = (text || input).trim();

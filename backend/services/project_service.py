@@ -26,9 +26,29 @@ from repositories.artifact_repository import ArtifactRepository
 from repositories.ai_run_repository import AiRunRepository
 from repositories.user_repository import UserRepository
 from services.phase_flow_service import PhaseFlowService, PHASE_ORDER
+from services.plan_limits import (
+    PLAN_LIMITS,
+    build_usage_snapshot,
+    enforce_team_size,
+    get_limits,
+    get_user_tier,
+)
 
 
 logger = logging.getLogger(__name__)
+
+
+# Backwards-compat shim: project limits are now sourced from PLAN_LIMITS so the
+# pricing page, billing service, and enforcement points all read from the same
+# place.
+PLAN_PROJECT_LIMITS: Dict[str, Optional[int]] = {
+    tier: limits.get("max_projects") for tier, limits in PLAN_LIMITS.items()
+}
+
+
+def get_plan_limit(tier: Optional[str]) -> Optional[int]:
+    """Return the active project limit for a subscription tier."""
+    return get_limits(tier).get("max_projects")
 
 
 class ProjectService:
@@ -107,8 +127,49 @@ class ProjectService:
             updated_at=project.updated_at,
         )
 
+    async def get_usage(self, current_user: User) -> Dict[str, Any]:
+        """Return current usage vs. plan limits across all premium features."""
+        projects = await self.project_repo.list_by_organization(
+            current_user.organization,
+            current_user.id,
+        )
+        used = sum(1 for p in projects if p.status != "archived")
+        tier = get_user_tier(current_user)
+        limit = get_limits(tier).get("max_projects")
+        snapshot = await build_usage_snapshot(
+            current_user,
+            active_project_count=used,
+            ai_run_repo=self.ai_run_repo,
+        )
+        # Keep legacy top-level fields for the existing usage UI.
+        snapshot.update({
+            "used": used,
+            "limit": limit,
+            "unlimited": limit is None,
+            "can_create": limit is None or used < limit,
+        })
+        return snapshot
+
     async def create_project(self, project_data: ProjectCreate, current_user: User) -> ProjectResponse:
         """Create a new project."""
+        # Enforce per-tier project limits
+        tier = (getattr(current_user, "subscription_tier", None) or "free").lower()
+        limit = get_plan_limit(tier)
+        if limit is not None:
+            existing = await self.project_repo.list_by_organization(
+                current_user.organization,
+                current_user.id,
+            )
+            active_count = sum(1 for p in existing if p.status != "archived")
+            if active_count >= limit:
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail=(
+                        f"You've reached the {tier.title()} plan limit of {limit} active projects. "
+                        "Upgrade to Pro for unlimited projects."
+                    ),
+                )
+
         owner_member = self._build_member_entry(current_user, current_user.role, current_user.id)
         owner_member["status"] = "owner"
 
@@ -182,14 +243,46 @@ class ProjectService:
 
         return self._build_response(project)
 
-    async def list_projects(self, current_user: User) -> List[ProjectResponse]:
-        """List all projects for user's organization."""
+    async def list_projects(
+        self,
+        current_user: User,
+        include_archived: bool = False,
+        only_archived: bool = False,
+    ) -> List[ProjectResponse]:
+        """List projects for user's organization. By default excludes archived."""
         projects = await self.project_repo.list_by_organization(
             current_user.organization,
             current_user.id,
         )
 
+        if only_archived:
+            projects = [p for p in projects if p.status == "archived"]
+        elif not include_archived:
+            projects = [p for p in projects if p.status != "archived"]
+
         return [self._build_response(p) for p in projects]
+
+    async def archive_project(self, project_id: str, current_user: User) -> ProjectResponse:
+        """Soft-delete: set project status to archived."""
+        project = await self.project_repo.update(
+            project_id,
+            current_user.organization,
+            ProjectUpdate(status="archived"),
+        )
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        return self._build_response(project)
+
+    async def restore_project(self, project_id: str, current_user: User) -> ProjectResponse:
+        """Restore an archived project to active status."""
+        project = await self.project_repo.update(
+            project_id,
+            current_user.organization,
+            ProjectUpdate(status="active"),
+        )
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        return self._build_response(project)
     
     async def update_project(
         self,
@@ -271,6 +364,9 @@ class ProjectService:
             (idx for idx, member in enumerate(members) if member.get("user_id") == target.id),
             None,
         )
+        if existing_idx is None:
+            # Enforce per-tier team size limit (owner counts toward total).
+            enforce_team_size(current_user, len(members))
         if existing_idx is not None:
             preserved_assigned_at = members[existing_idx].get("assigned_at", new_entry["assigned_at"])
             new_entry["assigned_at"] = preserved_assigned_at

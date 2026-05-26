@@ -1,0 +1,73 @@
+﻿python : C:\Users\Orang
+e\Documents\GitHub\GP2O
+fficial\backend\emergen
+tintegrations\llm\chat.
+py:13: FutureWarning: 
+At line:1 char:1
++ python 
+trigger_debate.py > 
+err.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (C:\Users\Oran   
+ ge...FutureWarning    
+: :String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+All support for the 
+`google.generativeai` 
+package has ended. It 
+will no longer be 
+receiving 
+updates or bug fixes. 
+Please switch to the 
+`google.genai` package 
+as soon as possible.
+See README for more 
+details:
+
+https://github.com/goog
+le-gemini/deprecated-ge
+nerative-ai-python/blob
+/main/README.md
+
+  import 
+google.generativeai as 
+genai
+Starting debate for 745d694b-2ec0-4a1a-a74f-8e40f776dda6...
+AI generation error: 
+Error code: 429 - 
+{'error': {'message': 
+'You exceeded your 
+current quota, please 
+check your plan and 
+billing details. For 
+more information on 
+this error, read the 
+docs: https://platform.
+openai.com/docs/guides/
+error-codes/api-errors.
+', 'type': 
+'insufficient_quota', 
+'param': None, 'code': 
+'insufficient_quota'}}
+Debate session failed: 
+'GenerationResult' 
+object has no 
+attribute 'get'
+Traceback (most recent call last):
+  File "C:\Users\Orange\Documents\GitHub\GP2Official\backend\trigger_debate.py", line 32, in main
+    session = await service.start_debate(proj_id, "test_user_1", request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Orange\Documents\GitHub\GP2Official\backend\services\debate_service.py", line 294, in start_debate
+    raise e
+  File "C:\Users\Orange\Documents\GitHub\GP2Official\backend\services\debate_service.py", line 145, in start_debate
+    session.tokens_used += result.get("total_tokens", 0)
+                           ^^^^^^^^^^
+AttributeError: 'GenerationResult' object has no attribute 'get'

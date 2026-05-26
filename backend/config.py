@@ -39,7 +39,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
 
+<<<<<<< HEAD
     gemini_api_key: str = "AIzaSyCqHJnleUy8ZWpmzoKulcKLXHECmAB-UOw"
+=======
+    gemini_api_key: str = ""
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     gemini_pro_model: str = "gemini-2.0-flash"     # Flash has higher quota (2.5-pro hits limits fast)
     gemini_flash_model: str = "gemini-2.0-flash"  # For fast tasks
     gemini_fallback_model: str = "gemini-2.0-flash"  # Fallback

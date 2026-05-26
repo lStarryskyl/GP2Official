@@ -203,6 +203,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
     await persistRoadmap(next);
   };
 
+  const currentYear = new Date().getFullYear();
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const statusOptions: RoadmapMilestone['status'][] = ['completed', 'in_progress', 'upcoming'];
@@ -210,6 +211,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
   const colorOptions = ['purple', 'blue', 'red', 'green', 'amber', 'cyan', 'emerald'];
 
   const colorMap: Record<string, { bg: string; border: string; text: string; bar: string }> = {
+<<<<<<< HEAD
     purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700', bar: 'bg-purple-500' },
     blue: { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-700', bar: 'bg-blue-500' },
     red: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700', bar: 'bg-red-500' },
@@ -217,6 +219,15 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
     amber: { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-700', bar: 'bg-amber-500' },
     cyan: { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-700', bar: 'bg-cyan-500' },
     emerald: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300', bar: 'bg-blue-500/40' },
+=======
+    purple: { bg: 'bg-purple-900/30', border: 'border-purple-600/50', text: 'text-purple-300', bar: 'bg-purple-500' },
+    blue: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300', bar: 'bg-blue-500' },
+    red: { bg: 'bg-red-900/30', border: 'border-red-600/50', text: 'text-red-300', bar: 'bg-red-500' },
+    green: { bg: 'bg-green-900/30', border: 'border-green-600/50', text: 'text-green-300', bar: 'bg-green-500/70' },
+    amber: { bg: 'bg-amber-900/30', border: 'border-amber-600/50', text: 'text-amber-300', bar: 'bg-amber-500' },
+    cyan: { bg: 'bg-cyan-900/30', border: 'border-cyan-600/50', text: 'text-cyan-300', bar: 'bg-cyan-500' },
+    emerald: { bg: 'bg-emerald-900/30', border: 'border-emerald-600/50', text: 'text-emerald-300', bar: 'bg-emerald-500/70' },
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   };
 
   const getStatusIcon = (status: string) => {
@@ -263,18 +274,30 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
     <div className="space-y-6">
       {/* Roadmap Builder - Navy Card */}
       <div className="rounded-3xl shadow-xl overflow-hidden" style={{ backgroundColor: 'var(--brand-850)', border: '1px solid var(--brand-700)' }}>
+<<<<<<< HEAD
         <div className="p-6" style={{ background: 'linear-gradient(to right, #b8962e, var(--blue-400), #e6c358)' }}>
+=======
+        <div className="p-6" style={{ background: 'linear-gradient(to right, var(--brand-700), #152238)' }}>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl backdrop-blur-sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
                 <Milestone className="h-6 w-6 text-white" />
               </div>
               <div>
+<<<<<<< HEAD
                 <h2 className="text-2xl font-bold text-white" style={{ color: 'var(--brand-900)' }}>Roadmap Builder</h2>
                 <p className="text-sm" style={{ color: 'rgba(10,15,26,0.8)' }}>Create and manage project milestones</p>
               </div>
             </div>
             <div className={`px-4 py-2 rounded-full text-sm font-semibold ${savingRoadmap ? 'bg-amber-100 text-amber-700' : ''}`} style={!savingRoadmap ? { backgroundColor: 'rgba(10,15,26,0.2)', color: 'var(--brand-900)' } : {}}>
+=======
+                <h2 className="text-2xl font-bold text-white">Roadmap Builder</h2>
+                <p className="text-sm text-gray-400">Create and manage project milestones</p>
+              </div>
+            </div>
+            <div className={`px-4 py-2 rounded-full text-sm font-semibold ${savingRoadmap ? 'bg-amber-900/30 text-amber-300' : 'bg-white/10 text-gray-300'}`}>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               {savingRoadmap ? '⏳ Saving...' : '✓ Autosaved'}
             </div>
           </div>
@@ -437,7 +460,11 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
             {planBullets.map((bullet, idx) => (
               <div key={bullet.id} className="flex items-start gap-4 p-4 rounded-xl transition-shadow" style={{ backgroundColor: 'var(--brand-900)', border: '1px solid var(--brand-700)' }}>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+<<<<<<< HEAD
                   bullet.status === 'completed' ? 'bg-blue-900/200/20 text-blue-400' :
+=======
+                  bullet.status === 'completed' ? 'bg-blue-900/20 text-blue-400' :
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   bullet.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
                   'text-gray-500'
                 }`} style={bullet.status === 'upcoming' ? { backgroundColor: '#152238' } : {}}>
@@ -510,7 +537,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
 
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ backgroundColor: 'var(--brand-900)' }}>
             <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-400">2024</span>
+            <span className="text-sm font-medium text-gray-400">{currentYear}</span>
           </div>
         </div>
 
@@ -581,7 +608,7 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
                           className="flex-1 p-3 text-center font-medium text-gray-300"
                           style={{ minWidth: `${monthWidth * 3}%`, borderRight: '1px solid var(--brand-700)' }}
                         >
-                          {q} 2024
+                          {q} {currentYear}
                         </div>
                       ))
                     : months.map((m) => (
@@ -986,7 +1013,11 @@ export const PlanningRoadmapPhase: React.FC<PlanningRoadmapPhaseProps> = ({
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'var(--brand-900)' }}>
               <span className="text-gray-400">Estimated Completion</span>
-              <span className="font-bold text-white">December 2024</span>
+              <span className="font-bold text-white">
+                {milestonesOnly.length > 0
+                  ? `${months[Math.min(11, Math.max(0, Math.floor(milestonesOnly[milestonesOnly.length - 1].endMonth)))]} ${currentYear}`
+                  : `December ${currentYear}`}
+              </span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'var(--brand-900)' }}>
               <span className="text-gray-400">Next Milestone</span>

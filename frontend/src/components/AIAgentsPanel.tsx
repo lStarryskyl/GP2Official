@@ -12,7 +12,7 @@
  * Renders results inline with formatted JSON / markdown display.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import {
   Sparkles,
@@ -26,7 +26,6 @@ import {
   ChevronDown,
   ChevronUp,
   CheckCircle2,
-  X,
 } from 'lucide-react';
 
 interface AgentConfig {
@@ -100,10 +99,10 @@ interface AgentResult {
 const SeverityBadge: React.FC<{ severity: string }> = ({ severity }) => {
   const colors: Record<string, { bg: string; text: string }> = {
     critical: { bg: 'rgba(193,68,14,0.15)', text: '#C1440E' },
-    high:     { bg: 'rgba(212,160,23,0.15)', text: '#D4A017' },
-    medium:   { bg: 'rgba(95,122,138,0.15)', text: '#5F7A8A' },
-    low:      { bg: 'rgba(123,160,91,0.15)', text: '#7BA05B' },
-    info:     { bg: 'rgba(42,157,143,0.15)', text: '#2A9D8F' },
+    high: { bg: 'rgba(212,160,23,0.15)', text: '#D4A017' },
+    medium: { bg: 'rgba(95,122,138,0.15)', text: '#5F7A8A' },
+    low: { bg: 'rgba(123,160,91,0.15)', text: '#7BA05B' },
+    info: { bg: 'rgba(42,157,143,0.15)', text: '#2A9D8F' },
   };
   const c = colors[severity?.toLowerCase()] || colors.info;
   return (
@@ -123,7 +122,7 @@ const ConflictResultView: React.FC<{ data: any }> = ({ data }) => (
         <p className="text-xs text-[var(--text-muted)]">Total Conflicts</p>
       </div>
       <div className="flex gap-3 text-sm">
-        {[['critical','#C1440E'], ['high','#D4A017'], ['medium','#5F7A8A'], ['low','#7BA05B']].map(([k, c]) => (
+        {[['critical', '#C1440E'], ['high', '#D4A017'], ['medium', '#5F7A8A'], ['low', '#7BA05B']].map(([k, c]) => (
           <span key={k}>
             <span className="font-bold" style={{ color: c }}>{data.summary?.[`${k}_count`] ?? 0}</span>
             <span className="text-[#4a7a56] ml-1">{k}</span>
@@ -217,6 +216,19 @@ export const AIAgentsPanel: React.FC<Props> = ({
   const [results, setResults] = useState<Record<string, AgentResult>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [isOpen, setIsOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Close on Escape key
+  const handleEscKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setIsOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [isOpen, handleEscKey]);
 
   const runAgent = async (agent: AgentConfig) => {
     setRunningAgent(agent.type);
@@ -248,8 +260,19 @@ export const AIAgentsPanel: React.FC<Props> = ({
     }
   };
 
+  // Signal open state to other floating panels (e.g. AIDebatePanel) via body attribute
+  useEffect(() => {
+    if (isOpen) {
+      document.body.setAttribute('data-ai-agents-open', 'true');
+    } else {
+      document.body.removeAttribute('data-ai-agents-open');
+    }
+    return () => document.body.removeAttribute('data-ai-agents-open');
+  }, [isOpen]);
+
   return (
     <>
+<<<<<<< HEAD
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(o => !o)}
@@ -259,10 +282,40 @@ export const AIAgentsPanel: React.FC<Props> = ({
         <Sparkles className="w-4 h-4" />
         AI Agents
       </button>
+=======
+      {/* Toggle button — only visible when panel is closed */}
+      {!isOpen && (
+        <button
+          ref={toggleBtnRef}
+          onClick={() => setIsOpen(true)}
+          aria-label="Open AI Agents panel"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-xl transition-all hover:scale-105"
+          style={{
+            background: 'linear-gradient(135deg, var(--brand-600), var(--blue-400))',
+            color: 'var(--brand-900)',
+            boxShadow: '0 8px 24px rgba(26,111,212,0.25)',
+          }}
+        >
+          <Sparkles className="w-4 h-4" />
+          AI Agents
+        </button>
+      )}
+
+      {/* Backdrop overlay — click to close */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[60]"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
       {/* Slide-in Panel */}
       {isOpen && (
         <div
+<<<<<<< HEAD
           className="fixed right-0 top-0 bottom-0 z-40 overflow-y-auto shadow-2xl"
           style={{ width: '360px', background: 'var(--brand-850)', borderLeft: '1px solid rgba(26,46,69,0.5)' }}
         >
@@ -276,6 +329,27 @@ export const AIAgentsPanel: React.FC<Props> = ({
               className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--brand-700)] transition-all">
               <X className="w-4 h-4" />
             </button>
+=======
+          ref={panelRef}
+          className="fixed right-0 top-0 bottom-0 z-[70] overflow-y-auto shadow-2xl"
+          style={{
+            width: '360px',
+            background: 'var(--brand-850)',
+            borderLeft: '1px solid rgba(26,111,212,0.25)',
+            animation: 'slideInRight 0.25s ease-out',
+          }}
+        >
+          <div className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4"
+            style={{ background: 'var(--brand-850)', borderBottom: '1px solid rgba(26,46,69,0.4)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(26,111,212,0.15)', border: '1px solid rgba(26,111,212,0.3)' }}>
+              <Sparkles className="w-4 h-4 text-[var(--blue-400)]" />
+            </div>
+            <div>
+              <h2 className="font-bold text-[var(--text-primary)] text-sm">AI Agents</h2>
+              <p className="text-[11px] text-[var(--text-muted)]">Specialized analysis tools</p>
+            </div>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           </div>
 
           <div className="p-4 space-y-3">
@@ -339,6 +413,14 @@ export const AIAgentsPanel: React.FC<Props> = ({
           </div>
         </div>
       )}
+
+      {/* Slide-in animation */}
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
     </>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -30,6 +30,24 @@ interface TechStackItem {
 }
 
 type TechStackMap = Record<string, TechStackItem[]>;
+
+interface DevelopmentNotes {
+  bestPractices?: string[] | string;
+  watchOuts?: string[] | string;
+  flowSteps?: string[];
+  folderStructure?: string;
+  components?: string[];
+  requestPath?: string[];
+  responsePath?: string[];
+}
+
+interface RawStackItem {
+  name?: string;
+  category?: string;
+  description?: string;
+  icon?: string;
+  recommended?: boolean;
+}
 
 interface DevelopmentPhaseProps {
   projectId: string;
@@ -76,6 +94,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     ],
   };
 
+<<<<<<< HEAD
   const flowSteps = [
     { id: 1, name: 'Client Request', description: 'User initiates action in browser', icon: Globe, color: 'blue' },
     { id: 2, name: 'API Gateway', description: 'Request routing & authentication', icon: Shield, color: 'amber' },
@@ -85,6 +104,8 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     { id: 6, name: 'Cache Layer', description: 'Fast data retrieval', icon: Zap, color: 'orange' },
     { id: 7, name: 'Response', description: 'JSON response to client', icon: ArrowRight, color: 'cyan' },
   ];
+=======
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const componentBreakdown = [
     {
@@ -113,66 +134,110 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     },
   ];
 
-  const folderStructure = `
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/          # Reusable UI components
-│   │   │   ├── phases/      # Phase-specific components
-│   │   │   └── layout/      # Layout components
-│   │   ├── pages/           # Route pages
-│   │   ├── lib/             # Utilities and API client
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── types/           # TypeScript interfaces
-│   │   └── constants/       # App constants
-│   └── public/              # Static assets
-│
-├── backend/
-│   ├── api/
-│   │   ├── views/           # API endpoints
-│   │   ├── serializers/     # Data serialization
-│   │   ├── models/          # Database models
-│   │   └── services/        # Business logic
-│   ├── core/                # Core settings
-│   └── utils/               # Helper functions
-│
-├── docker/                  # Docker configuration
-├── docs/                    # Documentation
-└── tests/                   # Test suites
-  `.trim();
-
   const colorMap: Record<string, { bg: string; border: string; text: string }> = {
     blue: { bg: 'bg-blue-900/30', border: 'border-blue-600/50', text: 'text-blue-300' },
+<<<<<<< HEAD
     purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700' },
     amber: { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-700' },
     red: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700' },
     orange: { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-700' },
     cyan: { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-700' },
+=======
+    purple: { bg: 'bg-purple-900/30', border: 'border-purple-600/50', text: 'text-purple-300' },
+    amber: { bg: 'bg-amber-900/30', border: 'border-amber-600/50', text: 'text-amber-300' },
+    red: { bg: 'bg-red-900/30', border: 'border-red-600/50', text: 'text-red-300' },
+    orange: { bg: 'bg-orange-900/30', border: 'border-orange-600/50', text: 'text-orange-300' },
+    cyan: { bg: 'bg-cyan-900/30', border: 'border-cyan-600/50', text: 'text-cyan-300' },
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   };
 
   const [techStackData, setTechStackData] = useState<TechStackMap>(initialTechStack);
-  const [bestPractices, setBestPractices] = useState<string[]>([
-    'Use connection pooling for database',
-    'Implement Redis caching for hot data',
-    'Enable gzip compression for API responses',
-    'Use CDN for static assets',
-    'Implement lazy loading in frontend',
-  ]);
-  const [watchOuts, setWatchOuts] = useState<string[]>([
-    'N+1 query problems in ORM',
-    'Memory leaks in long-running processes',
-    'Unbounded pagination queries',
-    'Missing database indexes',
-    'Synchronous blocking operations',
-  ]);
+  const [bestPractices, setBestPractices] = useState<string[]>([]);
+  const [watchOuts, setWatchOuts] = useState<string[]>([]);
+  const [requestPath, setRequestPath] = useState<string[]>([]);
+  const [responsePath, setResponsePath] = useState<string[]>([]);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState({
-    bestPractices: bestPractices.join('\n'),
-    watchOuts: watchOuts.join('\n'),
+    bestPractices: '',
+    watchOuts: '',
   });
   const [flowStepsAi, setFlowStepsAi] = useState<string[] | null>(null);
   const [folderStructureAi, setFolderStructureAi] = useState<string | null>(null);
   const [componentsAi, setComponentsAi] = useState<string[] | null>(null);
+  const [developmentLoaded, setDevelopmentLoaded] = useState(false);
+  const lastAppliedContentRef = useRef<string | null>(null);
+
+  const parsedFromContent = React.useMemo(() => {
+    const result = {
+      bestPractices: [] as string[],
+      watchOuts: [] as string[],
+      requestPath: [] as string[],
+      responsePath: [] as string[],
+      folderStructure: null as string | null,
+      flowSteps: [] as string[],
+    };
+    if (!content) return result;
+
+    const lines = content.split('\n');
+    const sectionRegex = /^(#{1,6})\s+(.+?)\s*$/;
+    type Section = { title: string; level: number; lines: string[] };
+    const sections: Section[] = [];
+    let current: Section | null = null;
+    for (const line of lines) {
+      const m = line.match(sectionRegex);
+      if (m) {
+        current = { title: m[2].trim(), level: m[1].length, lines: [] };
+        sections.push(current);
+      } else if (current) {
+        current.lines.push(line);
+      }
+    }
+
+    const findSection = (matcher: (title: string) => boolean): Section | undefined =>
+      sections.find((s) => matcher(s.title.toLowerCase()));
+
+    const bulletRegex = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/;
+    const collectBullets = (sec: Section | undefined): string[] => {
+      if (!sec) return [];
+      const out: string[] = [];
+      for (const l of sec.lines) {
+        const trimmed = l.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith('#')) break;
+        const bm = trimmed.match(bulletRegex);
+        if (bm) out.push(bm[1].trim());
+      }
+      return out;
+    };
+
+    const bp = findSection((t) => t.includes('best practice'));
+    const wo = findSection((t) => t.includes('watch out') || t.includes('pitfall') || t.includes('common mistake'));
+    const rp = findSection((t) => t.includes('request path'));
+    const resp = findSection((t) => t.includes('response path'));
+    const flow = findSection((t) => t === 'flow' || t.includes('development flow') || t.includes('system flow') || t.includes('request flow'));
+    const folder = findSection((t) => t.includes('folder structure') || t.includes('directory structure') || t.includes('project structure'));
+
+    result.bestPractices = collectBullets(bp);
+    result.watchOuts = collectBullets(wo);
+    result.requestPath = collectBullets(rp);
+    result.responsePath = collectBullets(resp);
+    result.flowSteps = collectBullets(flow);
+
+    if (folder) {
+      const text = folder.lines.join('\n');
+      const codeMatch = text.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+      if (codeMatch) {
+        result.folderStructure = codeMatch[1].trimEnd();
+      } else {
+        const treeLines = folder.lines.filter((l) => /[├└│─]/.test(l) || /^\s*\w[\w./-]*\/?\s*$/.test(l));
+        if (treeLines.length >= 3) {
+          result.folderStructure = treeLines.join('\n');
+        }
+      }
+    }
+
+    return result;
+  }, [content]);
 
   const suggestedTechs = React.useMemo(() => {
     const suggestions: { label: string; details: string }[] = [];
@@ -326,7 +391,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
         if (Array.isArray(data.stack) && data.stack.length > 0) {
           const next: TechStackMap = { ...initialTechStack };
-          data.stack.forEach((raw: any) => {
+          (data.stack as RawStackItem[]).forEach((raw) => {
             const category = raw.category || 'frontend';
             const item: TechStackItem = {
               name: raw.name || '',
@@ -342,16 +407,17 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
         }
 
         if (data.notes && typeof data.notes === 'object') {
-          const bp = Array.isArray(data.notes.bestPractices)
-            ? data.notes.bestPractices
-            : typeof data.notes.bestPractices === 'string'
-            ? data.notes.bestPractices.split('\n').map((s: string) => s.trim()).filter(Boolean)
-            : bestPractices;
-          const wo = Array.isArray(data.notes.watchOuts)
-            ? data.notes.watchOuts
-            : typeof data.notes.watchOuts === 'string'
-            ? data.notes.watchOuts.split('\n').map((s: string) => s.trim()).filter(Boolean)
-            : watchOuts;
+          const notes = data.notes as DevelopmentNotes;
+          const bp = Array.isArray(notes.bestPractices)
+            ? notes.bestPractices
+            : typeof notes.bestPractices === 'string'
+            ? notes.bestPractices.split('\n').map((s) => s.trim()).filter(Boolean)
+            : [];
+          const wo = Array.isArray(notes.watchOuts)
+            ? notes.watchOuts
+            : typeof notes.watchOuts === 'string'
+            ? notes.watchOuts.split('\n').map((s) => s.trim()).filter(Boolean)
+            : [];
 
           setBestPractices(bp);
           setWatchOuts(wo);
@@ -360,18 +426,16 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             watchOuts: wo.join('\n'),
           });
 
-          if (Array.isArray((data.notes as any).flowSteps)) {
-            setFlowStepsAi((data.notes as any).flowSteps as string[]);
-          }
-          if (typeof (data.notes as any).folderStructure === 'string') {
-            setFolderStructureAi((data.notes as any).folderStructure as string);
-          }
-          if (Array.isArray((data.notes as any).components)) {
-            setComponentsAi((data.notes as any).components as string[]);
-          }
+          if (Array.isArray(notes.flowSteps)) setFlowStepsAi(notes.flowSteps);
+          if (typeof notes.folderStructure === 'string') setFolderStructureAi(notes.folderStructure);
+          if (Array.isArray(notes.components)) setComponentsAi(notes.components);
+          if (Array.isArray(notes.requestPath)) setRequestPath(notes.requestPath);
+          if (Array.isArray(notes.responsePath)) setResponsePath(notes.responsePath);
         }
       } catch (err) {
         console.error('Failed to load development data', err);
+      } finally {
+        if (!cancelled) setDevelopmentLoaded(true);
       }
     })();
     return () => {
@@ -379,7 +443,18 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     };
   }, [projectId]);
 
-  const persistDevelopment = async (nextStack: TechStackMap, nextBest: string[], nextWatch: string[]) => {
+  const persistDevelopment = async (
+    nextStack: TechStackMap,
+    nextBest: string[],
+    nextWatch: string[],
+    extras?: {
+      flowSteps?: string[] | null;
+      folderStructure?: string | null;
+      components?: string[] | null;
+      requestPath?: string[];
+      responsePath?: string[];
+    }
+  ) => {
     if (!projectId) return;
     const flatStack: any[] = [];
     Object.entries(nextStack).forEach(([category, items]) => {
@@ -393,16 +468,97 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
         });
       });
     });
-    const notes = {
+    const notes: DevelopmentNotes = {
       bestPractices: nextBest,
       watchOuts: nextWatch,
+      requestPath: extras?.requestPath ?? requestPath,
+      responsePath: extras?.responsePath ?? responsePath,
     };
+    const flowVal = extras?.flowSteps !== undefined ? extras.flowSteps : flowStepsAi;
+    if (flowVal && flowVal.length) notes.flowSteps = flowVal;
+    const folderVal = extras?.folderStructure !== undefined ? extras.folderStructure : folderStructureAi;
+    if (folderVal) notes.folderStructure = folderVal;
+    const compsVal = extras?.components !== undefined ? extras.components : componentsAi;
+    if (compsVal && compsVal.length) notes.components = compsVal;
     try {
       await api.saveDevelopment(projectId, { stack: flatStack, notes });
     } catch (err) {
       console.error('Failed to save development data', err);
     }
   };
+
+  // When the AI markdown content surfaces structured sections, hydrate state
+  // and persist them so the Development phase reflects this project's plan
+  // instead of static placeholder text.
+  //
+  // Apply rules:
+  //   - Wait until saved dev data has loaded (so we never overwrite stored
+  //     values with empty defaults on mount).
+  //   - On the first apply for any given content payload: refresh sections
+  //     from the parsed plan (regeneration should update stale notes).
+  //   - For the same content payload, only fill missing sections so we do
+  //     not clobber the user's manual edits between renders.
+  useEffect(() => {
+    if (!projectId) return;
+    if (!developmentLoaded) return;
+    if (!content) return;
+
+    const isNewContent = lastAppliedContentRef.current !== content;
+    const apply = (parsed: string[] | string | null, current: string[] | string | null) => {
+      if (parsed === null || (Array.isArray(parsed) && parsed.length === 0) || parsed === '') return false;
+      if (isNewContent) return true;
+      if (Array.isArray(current)) return current.length === 0;
+      return !current;
+    };
+
+    const updates: {
+      bp?: string[];
+      wo?: string[];
+      req?: string[];
+      res?: string[];
+      flow?: string[];
+      folder?: string;
+    } = {};
+    if (apply(parsedFromContent.bestPractices, bestPractices)) updates.bp = parsedFromContent.bestPractices;
+    if (apply(parsedFromContent.watchOuts, watchOuts)) updates.wo = parsedFromContent.watchOuts;
+    if (apply(parsedFromContent.requestPath, requestPath)) updates.req = parsedFromContent.requestPath;
+    if (apply(parsedFromContent.responsePath, responsePath)) updates.res = parsedFromContent.responsePath;
+    if (apply(parsedFromContent.flowSteps, flowStepsAi)) updates.flow = parsedFromContent.flowSteps;
+    if (apply(parsedFromContent.folderStructure, folderStructureAi)) {
+      updates.folder = parsedFromContent.folderStructure as string;
+    }
+
+    lastAppliedContentRef.current = content;
+
+    if (Object.keys(updates).length === 0) return;
+
+    const nextBest = updates.bp ?? bestPractices;
+    const nextWatch = updates.wo ?? watchOuts;
+    const nextReq = updates.req ?? requestPath;
+    const nextRes = updates.res ?? responsePath;
+    const nextFlow = updates.flow ?? flowStepsAi;
+    const nextFolder = updates.folder ?? folderStructureAi;
+
+    if (updates.bp) setBestPractices(nextBest);
+    if (updates.wo) setWatchOuts(nextWatch);
+    if (updates.req) setRequestPath(nextReq);
+    if (updates.res) setResponsePath(nextRes);
+    if (updates.flow) setFlowStepsAi(nextFlow ?? null);
+    if (updates.folder) setFolderStructureAi(nextFolder ?? null);
+    if (updates.bp || updates.wo) {
+      setNotesDraft({
+        bestPractices: nextBest.join('\n'),
+        watchOuts: nextWatch.join('\n'),
+      });
+    }
+    persistDevelopment(techStackData, nextBest, nextWatch, {
+      flowSteps: nextFlow,
+      folderStructure: nextFolder,
+      requestPath: nextReq,
+      responsePath: nextRes,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedFromContent, projectId, developmentLoaded, content]);
 
   const handleToggleRecommended = (category: string, idx: number) => {
     setTechStackData((prev) => {
@@ -430,8 +586,8 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
   const startEditingNotes = () => {
     setNotesDraft({
-      bestPractices: bestPractices.join('\n'),
-      watchOuts: watchOuts.join('\n'),
+      bestPractices: (bestPractices.length > 0 ? bestPractices : parsedFromContent.bestPractices).join('\n'),
+      watchOuts: (watchOuts.length > 0 ? watchOuts : parsedFromContent.watchOuts).join('\n'),
     });
     setEditingNotes(true);
   };
@@ -452,6 +608,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
   };
 
   const resolvedFlowSteps = React.useMemo(() => {
+<<<<<<< HEAD
     if (flowStepsAi && flowStepsAi.length) {
       return flowStepsAi.map((raw, index) => {
         const [namePart, descPart] = raw.split(':');
@@ -468,13 +625,34 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
     }
     return flowSteps;
   }, [flowStepsAi]);
+=======
+    const source = flowStepsAi && flowStepsAi.length ? flowStepsAi : parsedFromContent.flowSteps;
+    if (!source || source.length === 0) return [];
+    return source.map((raw, index) => {
+      const [namePart, descPart] = raw.split(':');
+      const name = (namePart || `Step ${index + 1}`).trim();
+      const description = (descPart || name).trim();
+      return {
+        id: index + 1,
+        name,
+        description,
+        icon: GitBranch,
+        color: 'blue' as const,
+      };
+    });
+  }, [flowStepsAi, parsedFromContent.flowSteps]);
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
-  const resolvedFolderStructure = folderStructureAi || folderStructure;
+  const resolvedFolderStructure = folderStructureAi || parsedFromContent.folderStructure || '';
+  const resolvedRequestPath = requestPath.length > 0 ? requestPath : parsedFromContent.requestPath;
+  const resolvedResponsePath = responsePath.length > 0 ? responsePath : parsedFromContent.responsePath;
+  const resolvedBestPractices = bestPractices.length > 0 ? bestPractices : parsedFromContent.bestPractices;
+  const resolvedWatchOuts = watchOuts.length > 0 ? watchOuts : parsedFromContent.watchOuts;
 
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex items-center gap-2 bg-[var(--brand-850)] border border-[var(--brand-700)] p-1 rounded-xl w-fit">
         {[
           { id: 'stack', label: 'Tech Stack', icon: Layers },
           { id: 'flow', label: 'System Flow', icon: GitBranch },
@@ -485,8 +663,8 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               activeTab === tab.id
-                ? 'bg-white shadow text-gray-900'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-[var(--brand-700)] shadow text-white'
+                : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             <tab.icon className="h-4 w-4" />
@@ -499,7 +677,11 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       {activeTab === 'stack' && (
         <div className="space-y-4">
           {suggestedTechs.length > 0 && (
+<<<<<<< HEAD
             <Card className="border-blue-700/40 bg-blue-900/20/60">
+=======
+            <Card className="border-blue-700/40 bg-blue-900/20">
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-200 text-base">
                   <Sparkles className="h-4 w-4" />
@@ -513,7 +695,11 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 {suggestedTechs.map((s) => (
                   <div
                     key={s.label}
+<<<<<<< HEAD
                     className="px-3 py-2 rounded-lg bg-white shadow-sm border border-blue-700/40 max-w-xs"
+=======
+                    className="px-3 py-2 rounded-lg bg-[var(--brand-800)] border border-blue-700/40 max-w-xs"
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   >
                     <div className="text-xs font-semibold text-blue-200 mb-1">{s.label}</div>
                     <div className="text-[11px] text-blue-300 leading-snug">{s.details}</div>
@@ -532,7 +718,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <ol className="space-y-1 text-xs text-gray-700 list-decimal list-inside">
+                <ol className="space-y-1 text-xs text-gray-300 list-decimal list-inside">
                   {suggestedTechs.map((s, idx) => {
                     const level: 'Beginner' | 'Intermediate' | 'Advanced' =
                       idx <= 2 ? 'Beginner' : idx <= 5 ? 'Intermediate' : 'Advanced';
@@ -540,8 +726,8 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                       level === 'Beginner'
                         ? 'bg-blue-900/20 text-blue-300 border-blue-700/40'
                         : level === 'Intermediate'
-                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-purple-50 text-purple-700 border-purple-200';
+                        ? 'bg-amber-900/20 text-amber-300 border-amber-700/40'
+                        : 'bg-purple-900/20 text-purple-300 border-purple-700/40';
                     return (
                       <li key={s.label} className="flex flex-wrap items-start gap-2">
                         <span className={`px-1.5 py-0.5 rounded-full border text-[10px] font-semibold ${levelClass}`}>
@@ -566,10 +752,15 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                   Start with these 1–3 roadmap areas and ship a small vertical slice using them.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 space-y-2 text-xs text-gray-700">
+              <CardContent className="pt-0 space-y-2 text-xs text-gray-300">
                 {suggestedTechs.slice(0, 3).map((s) => (
+<<<<<<< HEAD
                   <div key={s.label} className="p-2 rounded-lg border border-[var(--brand-700)] bg-white">
                     <div className="font-semibold mb-0.5">{s.label}</div>
+=======
+                  <div key={s.label} className="p-2 rounded-lg border border-[var(--brand-700)] bg-[var(--brand-800)]">
+                    <div className="font-semibold mb-0.5 text-gray-200">{s.label}</div>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     <div className="text-[11px] leading-snug">{s.details}</div>
                   </div>
                 ))}
@@ -581,12 +772,12 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
           <Card>
             <CardContent className="flex flex-wrap items-center gap-3">
               <input
-                className="border rounded-lg px-3 py-1.5 text-xs flex-1 min-w-[160px]"
+                className="border border-[var(--brand-700)] rounded-lg px-3 py-1.5 text-xs flex-1 min-w-[160px] bg-[#152238] text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 placeholder="Filter technologies by name or description"
                 value={stackFilter}
                 onChange={(e) => setStackFilter(e.target.value)}
               />
-              <label className="flex items-center gap-1 text-xs text-gray-600">
+              <label className="flex items-center gap-1 text-xs text-gray-400">
                 <input
                   type="checkbox"
                   checked={showRecommendedOnly}
@@ -629,6 +820,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                     {visibleItems.map((item, idx) => (
                       <div
                         key={item.name}
+<<<<<<< HEAD
                         className="p-3 rounded-xl border border-[var(--brand-700)] bg-white hover:border-blue-600/50 hover:bg-blue-900/20 transition-all"
                       >
                         <div className="flex items-center justify-between mb-1">
@@ -641,20 +833,57 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                           >
                             {item.recommended ? 'Recommended' : 'Mark' }
                           </Button>
+=======
+                        className="p-3 rounded-xl transition-all"
+                        style={{
+                          border: item.recommended
+                            ? '2px solid rgba(59,130,246,0.5)'
+                            : '1px solid var(--brand-700)',
+                          background: item.recommended
+                            ? 'rgba(59,130,246,0.06)'
+                            : 'var(--brand-850)',
+                          boxShadow: item.recommended ? '0 0 0 1px rgba(59,130,246,0.15)' : 'none',
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-gray-200 text-sm">{item.name}</span>
+                          <div className="flex items-center gap-1">
+                            {item.recommended && (
+                              <span
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                                style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                Recommended
+                              </span>
+                            )}
+                          </div>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         </div>
-                        <p className="text-[11px] text-gray-600 mb-1">{item.description}</p>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {item.category}
-                        </Badge>
-                        <div className="mt-1 flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-red-500 px-1 h-6"
-                            onClick={() => handleDeleteTech(category, idx)}
-                          >
-                            Remove
-                          </Button>
+                        <p className="text-[11px] text-gray-400 mb-2">{item.description}</p>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary" className="text-[10px]">
+                            {item.category}
+                          </Badge>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-[10px] text-blue-400 px-1 h-6"
+                              onClick={() => handleToggleRecommended(category, idx)}
+                              title={item.recommended ? 'Remove recommended status' : 'Mark as recommended'}
+                            >
+                              {item.recommended ? 'Unmark' : 'Mark'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-[10px] text-red-500 px-1 h-6"
+                              onClick={() => handleDeleteTech(category, idx)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -679,6 +908,12 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             </CardHeader>
             <CardContent className="p-6">
               <div className="relative">
+                {resolvedFlowSteps.length === 0 && (
+                  <div className="text-sm text-gray-400 mb-4">
+                    No flow steps generated yet. Generate a Development Plan to render a system flow tailored to this
+                    project.
+                  </div>
+                )}
                 {/* Flow Steps */}
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {resolvedFlowSteps.map((step, idx) => {
@@ -701,28 +936,44 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 </div>
 
                 {/* Flow Legend */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                  <h4 className="font-medium text-gray-900 mb-3">Flow Details</h4>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <h5 className="font-medium text-gray-700 mb-2">Request Path</h5>
-                      <ol className="space-y-1 text-gray-600">
-                        <li>1. Client sends HTTP request</li>
-                        <li>2. API Gateway validates JWT token</li>
-                        <li>3. Load balancer routes to healthy instance</li>
-                        <li>4. Application processes business logic</li>
-                      </ol>
+                <div className="mt-6 p-4 bg-[var(--brand-850)] rounded-xl border border-[var(--brand-700)]">
+                  <h4 className="font-medium text-gray-200 mb-3">Flow Details</h4>
+                  {resolvedRequestPath.length === 0 && resolvedResponsePath.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      Request and response paths will appear here once you generate a Development Plan for this project.
+                    </p>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <h5 className="font-medium text-gray-300 mb-2">Request Path</h5>
+                        {resolvedRequestPath.length > 0 ? (
+                          <ol className="space-y-1 text-gray-400">
+                            {resolvedRequestPath.map((step, idx) => (
+                              <li key={idx}>
+                                {idx + 1}. {step}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="text-xs text-gray-500">No request path generated yet.</p>
+                        )}
+                      </div>
+                      <div>
+                        <h5 className="font-medium text-gray-300 mb-2">Response Path</h5>
+                        {resolvedResponsePath.length > 0 ? (
+                          <ol className="space-y-1 text-gray-400">
+                            {resolvedResponsePath.map((step, idx) => (
+                              <li key={idx}>
+                                {resolvedRequestPath.length + idx + 1}. {step}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="text-xs text-gray-500">No response path generated yet.</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="font-medium text-gray-700 mb-2">Response Path</h5>
-                      <ol className="space-y-1 text-gray-600">
-                        <li>5. Check cache for existing data</li>
-                        <li>6. Query database if cache miss</li>
-                        <li>7. Serialize response to JSON</li>
-                        <li>8. Return to client with headers</li>
-                      </ol>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -735,7 +986,7 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
                 How to think about request/response flows for different API styles.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0 text-xs text-gray-700 space-y-2">
+            <CardContent className="pt-0 text-xs text-gray-400 space-y-2">
               <div>
                 <p className="font-semibold mb-1">REST APIs</p>
                 <ul className="list-disc list-inside space-y-0.5">
@@ -768,13 +1019,13 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
       {/* Folder Structure Tab */}
       {activeTab === 'structure' && (
         <Card>
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 border-b flex-row items-center justify-between">
+          <CardHeader className="bg-[var(--brand-850)] border-b border-[var(--brand-700)] flex-row items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <FolderTree className="h-5 w-5 text-purple-600" />
+              <CardTitle className="flex items-center gap-2 text-white">
+                <FolderTree className="h-5 w-5 text-purple-400" />
                 Project Folder Structure
               </CardTitle>
-              <CardDescription>Recommended directory organization</CardDescription>
+              <CardDescription className="text-gray-400">Recommended directory organization</CardDescription>
             </div>
             <Button variant="outline" size="sm">
               <Copy className="mr-2 h-4 w-4" />
@@ -782,9 +1033,16 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            <pre className="p-6 bg-gray-900 text-gray-100 text-sm font-mono overflow-x-auto">
-              {resolvedFolderStructure}
-            </pre>
+            {resolvedFolderStructure ? (
+              <pre className="p-6 bg-gray-900 text-gray-100 text-sm font-mono overflow-x-auto">
+                {resolvedFolderStructure}
+              </pre>
+            ) : (
+              <div className="p-6 text-sm text-gray-400">
+                No folder structure has been generated for this project yet. Generate a Development Plan to see a tree
+                tailored to your chosen stack.
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -846,9 +1104,9 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
       {/* Performance Notes */}
       <Card>
-        <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50">
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-600" />
+        <CardHeader className="bg-[var(--brand-850)] border-b border-[var(--brand-700)]">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Zap className="h-5 w-5 text-orange-400" />
             Performance & Scalability Notes
           </CardTitle>
           <Button variant="outline" size="sm" onClick={editingNotes ? saveNotes : startEditingNotes}>
@@ -858,43 +1116,55 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
         <CardContent className="p-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
+<<<<<<< HEAD
               <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+=======
+              <h4 className="font-medium text-gray-200 mb-3 flex items-center gap-2">
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 <CheckCircle2 className="h-4 w-4 text-blue-400" />
                 Best Practices
               </h4>
               {editingNotes ? (
                 <textarea
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-2 text-sm bg-[#152238] text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   rows={6}
                   value={notesDraft.bestPractices}
                   onChange={(e) => setNotesDraft((prev) => ({ ...prev, bestPractices: e.target.value }))}
                 />
-              ) : (
-                <ul className="space-y-2 text-sm text-gray-600">
-                  {bestPractices.map((note, idx) => (
+              ) : resolvedBestPractices.length > 0 ? (
+                <ul className="space-y-2 text-sm text-gray-400">
+                  {resolvedBestPractices.map((note, idx) => (
                     <li key={idx}>• {note}</li>
                   ))}
                 </ul>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Generate a Development Plan to populate stack-specific best practices, or click Edit Notes to add your own.
+                </p>
               )}
             </div>
             <div>
-              <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <h4 className="font-medium text-gray-200 mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-orange-400" />
                 Watch Out For
               </h4>
               {editingNotes ? (
                 <textarea
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-2 text-sm bg-[#152238] text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   rows={6}
                   value={notesDraft.watchOuts}
                   onChange={(e) => setNotesDraft((prev) => ({ ...prev, watchOuts: e.target.value }))}
                 />
-              ) : (
-                <ul className="space-y-2 text-sm text-gray-600">
-                  {watchOuts.map((note, idx) => (
+              ) : resolvedWatchOuts.length > 0 ? (
+                <ul className="space-y-2 text-sm text-gray-400">
+                  {resolvedWatchOuts.map((note, idx) => (
                     <li key={idx}>• {note}</li>
                   ))}
                 </ul>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Generate a Development Plan to populate stack-specific pitfalls, or click Edit Notes to add your own.
+                </p>
               )}
             </div>
           </div>
@@ -903,33 +1173,33 @@ export const DevelopmentPhase: React.FC<DevelopmentPhaseProps> = ({
 
       {/* Summary */}
       <Card>
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-gray-600" />
+        <CardHeader className="bg-[var(--brand-850)] border-b border-[var(--brand-700)]">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <CheckCircle2 className="h-5 w-5 text-blue-400" />
             Development Phase Summary
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid md:grid-cols-4 gap-4">
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
-              <div className="text-2xl font-bold text-blue-700">
+            <div className="p-4 bg-blue-900/20 rounded-xl border border-blue-700/40 text-center">
+              <div className="text-2xl font-bold text-blue-300">
                 {Object.values(techStackData).flat().length}
               </div>
-              <div className="text-sm text-blue-600">Technologies</div>
+              <div className="text-sm text-blue-400">Technologies</div>
             </div>
             <div className="p-4 bg-blue-900/20 rounded-xl border border-blue-700/40 text-center">
               <div className="text-2xl font-bold text-blue-300">4</div>
               <div className="text-sm text-blue-400">Layers</div>
             </div>
-            <div className="p-4 bg-purple-50 rounded-xl border border-purple-200 text-center">
-              <div className="text-2xl font-bold text-purple-700">
+            <div className="p-4 bg-purple-900/20 rounded-xl border border-purple-700/40 text-center">
+              <div className="text-2xl font-bold text-purple-300">
                 {componentBreakdown.reduce((a, c) => a + c.items.length, 0)}
               </div>
-              <div className="text-sm text-purple-600">Components</div>
+              <div className="text-sm text-purple-400">Components</div>
             </div>
-            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-center">
-              <div className="text-2xl font-bold text-amber-700">7</div>
-              <div className="text-sm text-amber-600">Flow Steps</div>
+            <div className="p-4 bg-orange-900/20 rounded-xl border border-orange-700/40 text-center">
+              <div className="text-2xl font-bold text-orange-300">{resolvedFlowSteps.length}</div>
+              <div className="text-sm text-orange-400">Flow Steps</div>
             </div>
           </div>
         </CardContent>

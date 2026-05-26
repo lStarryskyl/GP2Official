@@ -7,13 +7,16 @@ from models.generation import GenerationRequest, GenerationResponse
 from models.requirement import RequirementResponse
 from models.user import User
 from services.generation_service import GenerationService
+from services.plan_limits import enforce_ai_run_quota
 from repositories.requirement_repository import RequirementRepository
+from repositories.ai_run_repository import AiRunRepository
 from routes.auth import get_current_user
 
 router = APIRouter()
 jobs_router = APIRouter()
 generation_service = GenerationService()
 requirement_repo = RequirementRepository()
+ai_run_repo = AiRunRepository()
 
 
 @router.post("/start", response_model=GenerationResponse)
@@ -22,6 +25,7 @@ async def start_generation(
     current_user: User = Depends(get_current_user)
 ):
     """Start AI generation process."""
+    await enforce_ai_run_quota(current_user, ai_run_repo)
     return await generation_service.start_generation(request, current_user)
 
 

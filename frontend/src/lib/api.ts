@@ -29,6 +29,90 @@ import type {
   SandboxRunResult,
 } from '@/types';
 
+<<<<<<< HEAD
+=======
+// New types for Phase B
+export interface AgentPersona {
+  id: string;
+  role: string;
+  name: string;
+  emoji: string;
+  avatar_color: string;
+  system_prompt: string;
+  focus_areas: string[];
+}
+
+export interface DebateArgument {
+  id: string;
+  agent_id: string;
+  round_number: number;
+  stance: 'support' | 'concern' | 'neutral';
+  title: string;
+  content: string;
+  evidence?: string;
+  confidence: number;
+  target_argument_id?: string;
+}
+
+export interface DebateRound {
+  round_number: number;
+  topic: string;
+  arguments: DebateArgument[];
+  duration_ms: number;
+}
+
+export interface ConsensusPoint {
+  topic: string;
+  agreed_position: string;
+  dissenting_views: string[];
+  confidence: number;
+  action_items: string[];
+}
+
+export interface ConsensusReport {
+  overall_summary: string;
+  points: ConsensusPoint[];
+  final_verdict: string;
+  readiness_score: number;
+}
+
+export interface DebateSession {
+  id: string;
+  project_id: string;
+  topic: string;
+  status: 'pending' | 'running' | 'synthesizing' | 'completed' | 'failed';
+  active_agent_id?: string;
+  participating_agents: AgentPersona[];
+  rounds: DebateRound[];
+  consensus?: ConsensusReport;
+  created_at: string;
+  completed_at?: string;
+  created_by: string;
+  duration_ms: number;
+  tokens_used: number;
+}
+
+export interface ScaffoldFile {
+  path: string;
+  content: string;
+  language: string;
+  description?: string;
+}
+
+export interface ScaffoldResult {
+  id: string;
+  project_id: string;
+  target_stack: string;
+  files: ScaffoldFile[];
+  setup_instructions: string;
+  tree_visualization: string;
+  created_at: string;
+  created_by: string;
+  duration_ms: number;
+  tokens_used: number;
+}
+
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 const normalizeId = <T extends Record<string, any>>(item: T): T => {
   if (!item) return item;
   if (item.id || !item._id) return item;
@@ -46,8 +130,11 @@ const normalizeVersionEntry = (entry: any): VersionHistoryEntry =>
 
 const normalizeTraceabilityLink = (link: any): TraceabilityLink =>
   normalizeId(link) as TraceabilityLink;
+<<<<<<< HEAD
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+=======
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 type ArtifactUpdatePayload = {
   title?: string;
@@ -69,6 +156,8 @@ type PhaseGenerateResponse = {
   raw_markdown?: string;
   formatted_markdown?: string;
 };
+
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -171,7 +260,7 @@ class ApiClient {
     const response = await this.client.get('/auth/me');
     return response.data;
   }
-  
+
   async getProfile(): Promise<User> {
     const response = await this.client.get('/users/me/profile');
     return response.data;
@@ -180,6 +269,14 @@ class ApiClient {
   async updateProfile(payload: UserProfileUpdatePayload): Promise<User> {
     const response = await this.client.patch('/users/me/profile', payload);
     return response.data;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> {
+    await this.client.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    });
   }
 
   async getWorkspaceInvites(): Promise<WorkspaceInvite[]> {
@@ -228,6 +325,17 @@ class ApiClient {
   // Projects
   async getProjects(filters?: Record<string, any>): Promise<Project[]> {
     const response = await this.client.get('/projects/', { params: filters });
+    return response.data;
+  }
+
+  async getProjectsUsage(): Promise<{
+    tier: string;
+    used: number;
+    limit: number | null;
+    unlimited: boolean;
+    can_create: boolean;
+  }> {
+    const response = await this.client.get('/projects/usage/');
     return response.data;
   }
 
@@ -285,6 +393,16 @@ class ApiClient {
 
   async deleteProject(id: string): Promise<void> {
     await this.client.delete(`/projects/${id}`);
+  }
+
+  async archiveProject(id: string): Promise<Project> {
+    const response = await this.client.post(`/projects/${id}/archive`);
+    return response.data;
+  }
+
+  async restoreProject(id: string): Promise<Project> {
+    const response = await this.client.post(`/projects/${id}/restore`);
+    return response.data;
   }
 
   async generateProject(
@@ -471,6 +589,58 @@ class ApiClient {
   async unlockPhases(projectId: string): Promise<Record<string, string>> {
     const response = await this.client.post(`/projects/${projectId}/phases/unlock-all/`);
     return response.data.phases;
+  }
+
+  async markPhaseComplete(
+    projectId: string,
+    phase: string,
+    notes: string = ''
+  ): Promise<{
+    phases: Record<string, string>;
+    completion_meta: Record<string, import('@/types').PhaseCompletionMeta>;
+  }> {
+    const response = await this.client.post(
+      `/projects/${projectId}/phases/${phase}/complete/`,
+      { notes }
+    );
+    return {
+      phases: response.data.phases,
+      completion_meta: response.data.completion_meta || {},
+    };
+  }
+
+  async editPhaseCompletionNote(
+    projectId: string,
+    phase: string,
+    notes: string
+  ): Promise<{
+    phases: Record<string, string>;
+    completion_meta: Record<string, import('@/types').PhaseCompletionMeta>;
+  }> {
+    const response = await this.client.patch(
+      `/projects/${projectId}/phases/${phase}/complete/`,
+      { notes }
+    );
+    return {
+      phases: response.data.phases,
+      completion_meta: response.data.completion_meta || {},
+    };
+  }
+
+  async undoPhaseCompletion(
+    projectId: string,
+    phase: string
+  ): Promise<{
+    phases: Record<string, string>;
+    completion_meta: Record<string, import('@/types').PhaseCompletionMeta>;
+  }> {
+    const response = await this.client.delete(
+      `/projects/${projectId}/phases/${phase}/complete/`
+    );
+    return {
+      phases: response.data.phases,
+      completion_meta: response.data.completion_meta || {},
+    };
   }
 
   async getRoadmap(projectId: string): Promise<{ milestones: any[]; summary?: any[] }> {
@@ -705,6 +875,17 @@ class ApiClient {
     return response.data;
   }
 
+<<<<<<< HEAD
+=======
+  async triggerValidation(projectId: string, phasesToReview?: string[]): Promise<any> {
+    const payload = phasesToReview ? { phases_to_review: phasesToReview } : {};
+    const response = await this.client.post(`/projects/${projectId}/validate`, payload, {
+      timeout: 120000,
+    });
+    return response.data;
+  }
+
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   // Testing
   async generateTestData(projectId: string, options?: any): Promise<any> {
     const response = await this.client.post(`/projects/${projectId}/testing/generate-test-data`, options || {});
@@ -720,6 +901,64 @@ class ApiClient {
     const response = await this.client.get(`/projects/${projectId}/testing/results`);
     return response.data;
   }
+<<<<<<< HEAD
+=======
+
+  async getValidations(projectId: string): Promise<any> {
+    const response = await this.client.get(`/projects/${projectId}/validations`);
+    return response.data;
+  }
+
+  async submitValidationFeedback(
+    projectId: string,
+    reportId: string,
+    findingId: string,
+    helpful: boolean,
+    comment?: string
+  ): Promise<any> {
+    const response = await this.client.post(
+      `/projects/${projectId}/validations/${reportId}/feedback`,
+      { finding_id: findingId, helpful, comment }
+    );
+    return response.data;
+  }
+
+  // Multi-Agent Debates
+  async startDebate(projectId: string, topic?: string, roles?: string[], maxRounds: number = 2): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/debate`, {
+      topic: topic || "Project Plan Architecture Review",
+      participating_roles: roles,
+      max_rounds: maxRounds
+    });
+    return response.data;
+  }
+
+  async getDebates(projectId: string): Promise<{ success: boolean; sessions: DebateSession[]; total: number }> {
+    const response = await this.client.get(`/projects/${projectId}/debates`);
+    return response.data;
+  }
+
+  async getDebate(projectId: string, sessionId: string): Promise<DebateSession> {
+    const response = await this.client.get(`/projects/${projectId}/debates/${sessionId}`);
+    return response.data;
+  }
+
+  // Code Scaffolding
+  async generateScaffold(
+    projectId: string, 
+    options: { target_stack?: string; include_tests?: boolean; include_docker?: boolean; project_tier?: string }
+  ): Promise<{ success: boolean; scaffold: ScaffoldResult; message: string }> {
+    const response = await this.client.post(`/projects/${projectId}/scaffold`, options, {
+      timeout: 300000, // 5 min timeout for large scaffolding
+    });
+    return response.data;
+  }
+
+  async getScaffolds(projectId: string): Promise<{ success: boolean; scaffolds: ScaffoldResult[]; total: number }> {
+    const response = await this.client.get(`/projects/${projectId}/scaffolds`);
+    return response.data;
+  }
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 }
 
 export const api = new ApiClient();

@@ -29,6 +29,7 @@ async def websocket_endpoint(
     token: Optional[str] = Query(None)
 ):
     """WebSocket endpoint for real-time collaboration."""
+    await websocket.accept()
     
     # Authenticate user
     if not token:
@@ -42,7 +43,7 @@ async def websocket_endpoint(
     
     # Verify project access
     try:
-        project = await project_service.get_project(project_id, user.organization)
+        project = await project_service.get_project(project_id, user)
         if not project:
             await websocket.close(code=4004, reason="Project not found")
             return
@@ -75,7 +76,7 @@ async def get_active_collaborators(
     """Get list of active collaborators in a project."""
     
     # Verify project access
-    project = await project_service.get_project(project_id, current_user.organization)
+    project = await project_service.get_project(project_id, current_user)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -98,7 +99,7 @@ async def broadcast_message(
     """Broadcast a message to all collaborators in a project."""
     
     # Verify project access
-    project = await project_service.get_project(project_id, current_user.organization)
+    project = await project_service.get_project(project_id, current_user)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -131,7 +132,7 @@ async def get_collaboration_stats(
     """Get collaboration statistics for a project."""
     
     # Verify project access
-    project = await project_service.get_project(project_id, current_user.organization)
+    project = await project_service.get_project(project_id, current_user)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     

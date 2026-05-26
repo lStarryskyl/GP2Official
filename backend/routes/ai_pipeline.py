@@ -5,10 +5,13 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 
 from services.ai_pipeline_service import ai_pipeline, TaskType, ModelProvider
+from services.plan_limits import enforce_and_record_ai_run
+from repositories.ai_run_repository import AiRunRepository
 from routes.auth import get_current_user
 from models.user import User
 
 router = APIRouter()
+ai_run_repo = AiRunRepository()
 
 
 class GenerationRequest(BaseModel):
@@ -33,7 +36,12 @@ async def generate_content(
     current_user: User = Depends(get_current_user)
 ):
     """Generate content using the best available model."""
-    
+    await enforce_and_record_ai_run(
+        current_user,
+        ai_run_repo,
+        project_id=None,
+        job_type=f"pipeline_generate:{request.task_type}",
+    )
     try:
         result = await ai_pipeline.generate_with_best_model(
             task_type=request.task_type,
@@ -69,7 +77,12 @@ async def compare_models(
     current_user: User = Depends(get_current_user)
 ):
     """Compare multiple models on the same task."""
-    
+    await enforce_and_record_ai_run(
+        current_user,
+        ai_run_repo,
+        project_id=None,
+        job_type=f"pipeline_compare:{request.task_type}",
+    )
     try:
         results = await ai_pipeline.compare_models(
             task_type=request.task_type,
@@ -202,7 +215,12 @@ async def generate_for_task(
     current_user: User = Depends(get_current_user)
 ):
     """Generate content for a specific task type."""
-    
+    await enforce_and_record_ai_run(
+        current_user,
+        ai_run_repo,
+        project_id=None,
+        job_type=f"pipeline_task:{task_type}",
+    )
     try:
         result = await ai_pipeline.generate_with_best_model(
             task_type=task_type,

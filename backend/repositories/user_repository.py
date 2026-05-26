@@ -45,6 +45,9 @@ class UserRepository:
     async def update_profile(self, user_id: str, updates: Dict[str, Any]) -> Optional[User]:
         return await self._repo.update_profile(user_id, updates)
     
+    async def update_password(self, user_id: str, new_hashed_password: str) -> None:
+        return await self._repo.update_password(user_id, new_hashed_password)
+
     async def update_workspace(self, user_id: str, organization: str, role: str) -> Optional[User]:
         return await self._repo.update_workspace(user_id, organization, role)
     
@@ -134,6 +137,14 @@ class _SupabaseUserRepository:
             return User(**data)
         return None
     
+    async def update_password(self, user_id: str, new_hashed_password: str) -> None:
+        pool = self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE users SET hashed_password = $2, updated_at = $3 WHERE id = $1",
+                user_id, new_hashed_password, datetime.utcnow()
+            )
+
     async def update_workspace(self, user_id: str, organization: str, role: str) -> Optional[User]:
         return await self.update_profile(user_id, {
             "organization": organization,
@@ -217,6 +228,13 @@ class _MongoUserRepository:
         if not result:
             return None
         return User(**result)
+
+    async def update_password(self, user_id: str, new_hashed_password: str) -> None:
+        db = get_db()
+        await db[self.collection_name].update_one(
+            {"_id": user_id},
+            {"$set": {"hashed_password": new_hashed_password, "updated_at": datetime.utcnow()}},
+        )
 
     async def update_workspace(self, user_id: str, organization: str, role: str) -> Optional[User]:
         """Assign user to a workspace and role."""

@@ -5,10 +5,12 @@ from typing import Dict, Any
 
 from models.subscription import ProcessPaymentRequest
 from services.subscription_service import SubscriptionService
+from repositories.user_repository import UserRepository
 from routes.auth import get_current_user
 
 router = APIRouter()
 subscription_service = SubscriptionService()
+user_repo = UserRepository()
 
 
 @router.get("/billing/plans")
@@ -31,6 +33,17 @@ async def create_subscription(
             organization=current_user.organization,
             billing_cycle=billing_cycle
         )
+        # Persist the chosen tier on the user so plan limits are enforced.
+        # If we can't persist it, the user would believe they upgraded but
+        # still hit Free-tier limits; treat this as a hard failure.
+        try:
+            await user_repo.update_profile(current_user.id, {"subscription_tier": plan})
+        except Exception as e:
+            print(f"[BILLING] Failed to persist subscription_tier for user {current_user.id}: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Subscription created but plan could not be activated. Please contact support.",
+            )
         return subscription
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

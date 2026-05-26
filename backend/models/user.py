@@ -79,8 +79,9 @@ class User(UserBase):
     id: str = Field(..., alias="_id")
     hashed_password: str
     is_active: bool = True
+    subscription_tier: Optional[str] = "free"
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     class Config:
         populate_by_name = True
 
@@ -94,6 +95,7 @@ class UserResponse(BaseModel):
     role: str
     role_label: str
     role_authority: int
+    subscription_tier: str = "free"
     avatar_url: Optional[Union[HttpUrl, str]] = None
     banner_url: Optional[Union[HttpUrl, str]] = None
     bio: Optional[str] = None
@@ -147,6 +149,7 @@ def build_user_response(user: "User") -> UserResponse:
         role=role_key,
         role_label=str(meta.get("label")),
         role_authority=int(meta.get("authority", 1)),
+        subscription_tier=(getattr(user, "subscription_tier", None) or "free"),
         avatar_url=getattr(user, "avatar_url", None),
         banner_url=getattr(user, "banner_url", None),
         bio=getattr(user, "bio", None),

@@ -2,15 +2,25 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
+import { ScaffoldPanel } from '@/components/ScaffoldPanel';
 import { ExportButtons } from '@/components/ExportButtons';
 import { api } from '@/lib/api';
+<<<<<<< HEAD
 import type { Artifact, Project, Requirement, Task } from '@/types';
 import { phaseConfigs, phaseHexColors } from '@/constants/phases';
 import { AlertCircle, ArrowLeft, Loader2, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
+=======
+import type { Artifact, PhaseCompletionMeta, Project, Requirement, Task } from '@/types';
+import type { ScaffoldResult } from '@/lib/api';
+import { phaseConfigs, phaseHexColors } from '@/constants/phases';
+import { AlertCircle, ArrowLeft, Loader2, CheckCircle2, Circle, ChevronRight, Terminal } from 'lucide-react';
+import { PhaseActivityTimeline, type PhaseActivityEntry } from '@/components/PhaseActivityTimeline';
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import Joyride, { STATUS as JoyrideStatus, Step } from 'react-joyride';
 import { formatDate } from '@/lib/utils';
-import { workspacePresets } from '@/constants/workspacePresets';
 import { AIAgentsPanel } from '@/components/AIAgentsPanel';
+import { ProjectProgressBar } from '@/components/ProjectProgressBar';
+import { exportFullProjectPdf } from '@/lib/exportFullProjectPdf';
 
 type DraftSectionKey = 'overview';
 
@@ -130,6 +140,48 @@ const PhaseKanban: React.FC<{
 };
 
 /* =========================================================
+   PROJECT ACTIVITY TIMELINE
+   Consolidated, chronological list of every phase completion
+   ========================================================= */
+const ProjectActivityTimeline: React.FC<{
+  phaseCompletionMeta: Record<string, PhaseCompletionMeta>;
+  phaseStatus: Record<string, string>;
+  onPhaseClick: (phaseId: string) => void;
+}> = ({ phaseCompletionMeta, phaseStatus, onPhaseClick }) => {
+  const entries = useMemo<PhaseActivityEntry[]>(() => {
+    return phaseConfigs
+      .map<PhaseActivityEntry | null>((phase) => {
+        const meta: PhaseCompletionMeta = phaseCompletionMeta[phase.id] || {};
+        const status = (phaseStatus[phase.id] || '').toLowerCase();
+        if (status !== 'completed' && !meta.completed_at) return null;
+        return {
+          key: phase.id,
+          phaseId: phase.id,
+          phaseTitle: phase.title,
+          stepNumber: phase.stepNumber,
+          completedAt: meta.completed_at ?? null,
+          confirmer: meta.completed_by_name || meta.completed_by || null,
+          note: meta.notes ?? null,
+        };
+      })
+      .filter((entry): entry is PhaseActivityEntry => entry !== null)
+      .sort((a, b) => {
+        const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return tb - ta;
+      });
+  }, [phaseCompletionMeta, phaseStatus]);
+
+  return (
+    <PhaseActivityTimeline
+      entries={entries}
+      showFilters
+      onEntryClick={(entry) => onPhaseClick(entry.phaseId)}
+    />
+  );
+};
+
+/* =========================================================
    MAIN PROJECT DETAIL PAGE
    ========================================================= */
 export const ProjectDetailPage: React.FC = () => {
@@ -140,11 +192,17 @@ export const ProjectDetailPage: React.FC = () => {
   const [tasks, setTasks]             = useState<Task[]>([]);
   const [artifacts, setArtifacts]     = useState<Artifact[]>([]);
   const [phaseStatus, setPhaseStatus] = useState<Record<string, string>>({});
+  const [phaseCompletionMeta, setPhaseCompletionMeta] = useState<Record<string, PhaseCompletionMeta>>({});
   const [tourRun, setTourRun]         = useState(false);
   const [isLoading, setIsLoading]     = useState(true);
   const [error, setError]             = useState<string | null>(null);
   const [updatingPreset, setUpdatingPreset] = useState(false);
   const [treeView, setTreeView]       = useState(true); // Toggle between tree and list view
+
+  // Scaffolding state
+  const [scaffoldingTarget, setScaffoldingTarget] = useState<string | null>(null);
+  const [isScaffolding, setIsScaffolding] = useState(false);
+  const [scaffoldResult, setScaffoldResult] = useState<ScaffoldResult | null>(null);
 
   const tourSteps: Step[] = [
     {
@@ -157,41 +215,11 @@ export const ProjectDetailPage: React.FC = () => {
     },
   ];
 
-  const activePreset   = project?.ui_preferences?.preset || 'default';
-  const presetConfig   = workspacePresets.find((preset) => preset.id === activePreset) || workspacePresets[0];
-  const showSummaryPanel = presetConfig.layout.showSummary !== false;
-  const condensePhases   = !!presetConfig.layout.condensePhases;
-  const phaseRowPadding  = condensePhases ? 'py-3 px-2' : 'py-4 px-2';
-
   const handleTourCallback = (data: any) => {
     const { status } = data;
     if ([JoyrideStatus.FINISHED, JoyrideStatus.SKIPPED].includes(status)) {
       setTourRun(false);
       localStorage.setItem('acorn_phase_tour', 'seen');
-    }
-  };
-
-  const handlePresetChange = async (presetId: string) => {
-    if (!project || updatingPreset || presetId === activePreset) return;
-    const projectIdentifier = project.project_id || project.id;
-    if (!projectIdentifier) return;
-    const previousPreset = activePreset;
-    setUpdatingPreset(true);
-    setProject((prev) =>
-      prev ? { ...prev, ui_preferences: { ...(prev.ui_preferences || {}), preset: presetId } } : prev
-    );
-    try {
-      const updated = await api.updateProject(projectIdentifier, {
-        ui_preferences: { ...(project.ui_preferences || {}), preset: presetId },
-      } as any);
-      setProject(updated);
-    } catch (err) {
-      console.error('Failed to update preset', err);
-      setProject((prev) =>
-        prev ? { ...prev, ui_preferences: { ...(prev.ui_preferences || {}), preset: previousPreset } } : prev
-      );
-    } finally {
-      setUpdatingPreset(false);
     }
   };
 
@@ -211,6 +239,7 @@ export const ProjectDetailPage: React.FC = () => {
       const projectData = await api.getProject(id);
       setProject(projectData);
       if (projectData.phase_status) setPhaseStatus(projectData.phase_status);
+      setPhaseCompletionMeta(projectData.phase_completion_meta ?? {});
 
       const [reqData, taskData, artifactData] = await Promise.all([
         api.getRequirements(id),
@@ -220,6 +249,11 @@ export const ProjectDetailPage: React.FC = () => {
       setRequirements(reqData);
       setTasks(taskData);
       setArtifacts(artifactData);
+
+      const scaffolds = await api.getScaffolds(id);
+      if (scaffolds?.scaffolds?.length > 0) {
+        setScaffoldResult(scaffolds.scaffolds[0]); // Most recent
+      }
 
       try {
         const statusResponse = await api.getPhaseStatus(id);
@@ -257,6 +291,41 @@ export const ProjectDetailPage: React.FC = () => {
       setPhaseStatus(status);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to unlock phases');
+    }
+  };
+
+  const handleGenerateScaffold = async () => {
+    if (!id || !project) return;
+    try {
+      setIsScaffolding(true);
+      const targetStack = project?.template_type === 'web_app' ? 'React + Node.js' : 
+                         project?.template_type === 'mobile_app' ? 'React Native + Node.js' : 
+                         'Python FastAPI + React';
+
+      const targetInput = window.prompt("Target Stack (e.g. React + FastAPI):", targetStack);
+      if (!targetInput) {
+        setIsScaffolding(false);
+        return; // Cancelled
+      }
+
+      setScaffoldingTarget(targetInput);
+      
+      const res = await api.generateScaffold(id, {
+        target_stack: targetInput,
+        include_tests: true,
+        include_docker: true,
+        project_tier: 'mvp'
+      });
+      
+      if (res.success && res.scaffold) {
+        setScaffoldResult(res.scaffold);
+      }
+    } catch (err: any) {
+      console.error('Failed to generate scaffold', err);
+      alert('Failed to generate scaffold: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setIsScaffolding(false);
+      setScaffoldingTarget(null);
     }
   };
 
@@ -323,13 +392,29 @@ export const ProjectDetailPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportFullProjectPdf = () => {
+    if (!project) return;
+    const ok = exportFullProjectPdf({ project, phaseOutputs, phaseStatus });
+    if (!ok) {
+      setError(
+        Object.keys(phaseOutputs).length
+          ? 'Could not open the print window. Please allow popups for this site.'
+          : 'No phase content available to export yet.'
+      );
+    }
+  };
+
   const handlePhaseClick = (phaseId: string) => {
     if (!project) return;
     navigate(`/projects/${project.project_id || project.id}/phases/${phaseId}`);
   };
 
   const statusPillStyles: Record<string, string> = {
+<<<<<<< HEAD
     completed:   'bg-blue-900/200/20 text-blue-400 border border-blue-500/30',
+=======
+    completed:   'bg-blue-900/20 text-blue-400 border border-blue-500/30',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     ready:       'bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30',
     in_progress: 'bg-[var(--orange-400)]/20 text-[var(--orange-400)] border border-[var(--orange-400)]/30',
     locked:      'bg-[var(--brand-700)]/30 text-[var(--text-muted)] border border-[var(--brand-700)]',
@@ -342,6 +427,11 @@ export const ProjectDetailPage: React.FC = () => {
     locked:      'Locked',
   };
 
+  const phaseKeys = ['planning','feasibility_study','requirements_gathering','validation','design','development','tasks','cost_benefit','risks','summary'];
+  const doneCount = phaseKeys.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
+  const healthScore = Math.round((doneCount / phaseKeys.length) * 100);
+  const healthColor = healthScore >= 70 ? '#1A6FD4' : healthScore >= 40 ? '#F97316' : '#4a6070';
+
   if (isLoading) {
     return (
       <Layout>
@@ -351,7 +441,10 @@ export const ProjectDetailPage: React.FC = () => {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--blue-400)] to-[var(--blue-500)] flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-900)]" />
               </div>
+<<<<<<< HEAD
               <div className="absolute inset-0 w-16 h-16 mx-auto rounded-2xl bg-[var(--blue-400)]/20 blur-xl animate-pulse" />
+=======
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             </div>
             <p className="text-[var(--text-muted)]">Loading project...</p>
           </div>
@@ -379,13 +472,17 @@ export const ProjectDetailPage: React.FC = () => {
         continuous
         showSkipButton
         callback={handleTourCallback}
+<<<<<<< HEAD
         styles={{
           options: {
             primaryColor: 'var(--blue-400)',
           },
         }}
+=======
+        styles={{ options: { primaryColor: 'var(--blue-400)' } }}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
       />
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-5">
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl flex items-start">
             <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
@@ -393,33 +490,61 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Project Header Card */}
         <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden">
           {/* Header gradient bar - forest green */}
           <div className="h-1.5 bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)]" />
+=======
+        {/* ── Header Card ── */}
+        <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)]" />
+          <div className="p-4 sm:p-6 space-y-4">
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+            {/* Top row: back + actions */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={() => navigate('/projects')}
                 className="inline-flex items-center text-sm font-medium text-[var(--text-muted)] hover:text-[var(--blue-400)] transition-colors"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Projects
+                Projects
               </button>
+<<<<<<< HEAD
               <div className="flex items-center gap-2 sm:gap-3">
                 <Button variant="outline" onClick={() => goToDraft('overview')} className="text-xs sm:text-sm px-2 sm:px-4 border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
                   <span className="hidden sm:inline">Open </span>Draft
                 </Button>
                 <Button
                   className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] hover:from-[var(--blue-300)] hover:to-[var(--blue-400)] text-[var(--brand-900)] font-semibold shadow-lg shadow-[var(--blue-400)]/20 text-xs sm:text-sm px-2 sm:px-4"
+=======
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => goToDraft('overview')}
+                  className="text-xs px-3 border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
+                  Draft
+                </Button>
+                <Button variant="outline"
+                  onClick={() => navigate(`/projects/${project.project_id || project.id}/governance`)}
+                  className="text-xs px-3 border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
+                  Governance
+                </Button>
+                <Button variant="outline"
+                  onClick={() => navigate(`/projects/${project.project_id || project.id}/updates`)}
+                  className="text-xs px-3 border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)]">
+                  Updates
+                </Button>
+                <Button
+                  className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] text-[var(--brand-900)] font-semibold text-xs px-4 shadow-lg shadow-[var(--blue-400)]/20"
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${phaseConfigs[0]?.id}`)}
                 >
-                  <span className="hidden sm:inline">Continue </span>Planning
+                  Continue Planning
                 </Button>
               </div>
             </div>
 
+<<<<<<< HEAD
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
                 <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{project.name}</h1>
@@ -645,13 +770,162 @@ export const ProjectDetailPage: React.FC = () => {
                     <span className="font-medium text-[var(--text-primary)]">{formatDate(project.updated_at)}</span>
                   </div>
                 </dl>
+=======
+            {/* Project name + description */}
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{project.name}</h1>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[var(--blue-400)]/20 text-[var(--blue-400)] border border-[var(--blue-400)]/30 text-xs font-semibold uppercase tracking-wide">
+                  {project.status}
+                </span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[var(--brand-700)]/50 text-[var(--text-muted)] border border-[var(--brand-700)] text-xs font-medium">
+                  {project.template_type.replace('_', ' ')}
+                </span>
+              </div>
+              {project.description && (
+                <p className="text-sm text-[var(--text-muted)] max-w-3xl">{project.description}</p>
+              )}
+            </div>
+
+            {/* Stats bar */}
+            <div className="flex flex-wrap items-stretch gap-3">
+              {[
+                { label: 'Requirements', value: requirements.length, phase: 'requirements_gathering' },
+                { label: 'Tasks',         value: tasks.length,        phase: 'tasks' },
+                { label: 'Artifacts',     value: artifacts.length,    phase: 'summary' },
+                { label: 'Est. Hours',    value: totalHours > 0 ? `${totalHours.toFixed(0)}h` : '—', phase: 'tasks' },
+              ].map((m) => (
+                <button
+                  key={m.label}
+                  onClick={() => navigate(`/projects/${project.project_id || project.id}/phases/${m.phase}`)}
+                  className="flex flex-col items-center justify-center min-w-[80px] px-4 py-3 rounded-xl bg-[var(--brand-800)] border border-[var(--brand-700)] hover:border-[var(--blue-400)]/50 hover:bg-[var(--brand-750)] transition-all group"
+                >
+                  <span className="text-xl font-bold text-[var(--text-primary)] group-hover:text-[var(--blue-400)] transition-colors leading-tight">{m.value}</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--blue-400)]/70 transition-colors">{m.label}</span>
+                </button>
+              ))}
+
+              {/* Health score */}
+              <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 16px', borderRadius:'12px', background:'var(--brand-800)', border:`1px solid ${healthColor}33` }}>
+                <div style={{ width:'36px', height:'36px', borderRadius:'50%', border:`2px solid ${healthColor}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <span style={{ fontSize:'10px', fontWeight:800, color:healthColor }}>{healthScore}%</span>
+                </div>
+                <div>
+                  <div style={{ fontSize:'12px', fontWeight:700, color:healthColor, lineHeight:1 }}>Health</div>
+                  <div style={{ fontSize:'11px', color:'var(--text-muted)' }}>{doneCount}/10 phases</div>
+                </div>
+              </div>
+
+              {/* Owner pill */}
+              <div className="flex items-center px-4 py-3 rounded-xl bg-[var(--brand-800)] border border-[var(--brand-700)]">
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">Owner</div>
+                  <div className="text-sm font-medium text-[var(--text-primary)]">{project.owner_name || 'Unassigned'}</div>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="flex items-center gap-4 px-4 py-3 rounded-xl bg-[var(--brand-800)] border border-[var(--brand-700)]">
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">Created</div>
+                  <div className="text-sm font-medium text-[var(--text-primary)]">{formatDate(project.created_at)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">Updated</div>
+                  <div className="text-sm font-medium text-[var(--text-primary)]">{formatDate(project.updated_at)}</div>
+                </div>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
               </div>
             </div>
+
+            {/* Progress bar */}
+            <ProjectProgressBar
+              projectId={project.project_id || project.id || ''}
+              phaseStatus={phaseStatus}
+            />
           </div>
         </div>
+
+        {/* ── Phase Board ── */}
+        <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-4 sm:p-6 shadow-lg phase-board">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Project Phases</h2>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">Click any phase to open it. Complete them in order for best results.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleUnlockPhases}
+                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)] transition-all"
+              >
+                Unlock all
+              </button>
+              <Button variant="outline" size="sm" onClick={handleExportAllPhases} disabled={!Object.keys(phaseOutputs).length}
+                className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)] text-xs">
+                Export MD
+              </Button>
+              <Button size="sm" onClick={handleExportFullProjectPdf} disabled={!Object.keys(phaseOutputs).length}
+                className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] text-[var(--brand-900)] font-semibold text-xs disabled:opacity-50">
+                Export PDF
+              </Button>
+            </div>
+          </div>
+
+          <PhaseKanban
+            phases={phaseConfigs}
+            phaseStatus={phaseStatus}
+            phaseOutputs={phaseOutputs}
+            onPhaseClick={handlePhaseClick}
+          />
+
+          <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-[var(--brand-700)]/30">
+            {[
+              { color: '#1A6FD4', label: 'Completed' },
+              { color: '#F97316', label: 'In Progress' },
+              { color: '#3d8fe0', label: 'Ready' },
+              { color: '#4a6070', label: 'Locked' },
+              { color: '#F97316', label: '● Output ready', dot: true },
+            ].map(({ color, label, dot }) => (
+              <div key={label} className="flex items-center gap-1.5">
+                {dot
+                  ? <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:color }} />
+                  : <div style={{ width:'12px', height:'12px', borderRadius:'3px', background:color, opacity:0.7 }} />
+                }
+                <span className="text-xs text-[var(--text-muted)]">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Scaffold quick-action (shown once requirements/tasks exist) ── */}
+        {(requirements.length > 0 || tasks.length > 0) && (
+          <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-4 sm:p-6 shadow-lg flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Code Scaffold</h3>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">Generate a starter folder structure and boilerplate from your project plan.</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleGenerateScaffold}
+              disabled={isScaffolding}
+              className="border-[var(--brand-700)] text-[var(--text-muted)] hover:border-[var(--blue-400)]/50 hover:text-[var(--blue-400)] text-sm"
+            >
+              {isScaffolding
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</>
+                : <><Terminal className="w-4 h-4 mr-2" />Generate Scaffold</>
+              }
+            </Button>
+          </div>
+        )}
+
+        {/* ── Activity Timeline ── */}
+        <ProjectActivityTimeline
+          phaseCompletionMeta={phaseCompletionMeta}
+          phaseStatus={phaseStatus}
+          onPhaseClick={handlePhaseClick}
+        />
       </div>
 
-      {/* AI Agents floating panel */}
       {project && (
         <AIAgentsPanel
           projectId={(project.project_id || project.id) ?? ''}

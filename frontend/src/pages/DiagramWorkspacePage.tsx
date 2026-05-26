@@ -198,27 +198,27 @@ const UmlPreviewNode: React.FC<NodeProps<any>> = ({ data, selected }) => {
       : 'Sequence Diagram';
   return (
     <div
-      className={`min-w-[320px] max-w-[420px] bg-white border ${
-        selected ? 'border-blue-400 shadow-2xl' : 'border-gray-200 shadow-lg'
+      className={`min-w-[320px] max-w-[420px] bg-[var(--brand-850)] border ${
+        selected ? 'border-[var(--blue-400)] shadow-2xl' : 'border-[var(--brand-700)] shadow-lg'
       } rounded-xl`}
     >
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--brand-700)]">
         <div>
-          <p className="text-[10px] uppercase text-gray-500">Pinned UML</p>
-          <p className="text-xs font-semibold text-gray-900">{umlLabel}</p>
+          <p className="text-[10px] uppercase text-[var(--text-muted)]">Pinned UML</p>
+          <p className="text-xs font-semibold text-[var(--text-primary)]">{umlLabel}</p>
         </div>
-        <span className="text-[10px] uppercase text-gray-400">Drag me</span>
+        <span className="text-[10px] uppercase text-[var(--text-muted)]">Drag me</span>
       </div>
-      <div className="p-3 bg-gray-50 rounded-b-xl flex items-center justify-center">
+      <div className="p-3 bg-[var(--brand-800)] rounded-b-xl flex items-center justify-center">
         {data?.imageUrl ? (
           <img
             src={data.imageUrl}
             alt={umlLabel}
-            className="max-h-[280px] max-w-full object-contain rounded-lg border border-gray-200 bg-white"
+            className="max-h-[280px] max-w-full object-contain rounded-lg border border-[var(--brand-700)] bg-[var(--brand-900)]"
             draggable={false}
           />
         ) : (
-          <p className="text-xs text-gray-500">Preview unavailable.</p>
+          <p className="text-xs text-[var(--text-muted)]">Preview unavailable.</p>
         )}
       </div>
     </div>
@@ -1331,8 +1331,8 @@ export const DiagramWorkspacePage: React.FC = () => {
             Back to Project
           </Button>
           <div className="text-right">
-            <p className="text-xs uppercase text-gray-500">Workspace</p>
-            <p className="text-lg font-semibold text-gray-900">{projectDisplayName}</p>
+            <p className="text-xs uppercase text-[var(--text-muted)]">Workspace</p>
+            <p className="text-lg font-semibold text-[var(--text-primary)]">{projectDisplayName}</p>
           </div>
         </div>
 
@@ -1344,22 +1344,22 @@ export const DiagramWorkspacePage: React.FC = () => {
 
         <div className={gridClasses}>
           {!focusMode && (
-            <aside className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+            <aside className="bg-[var(--brand-850)] border border-[var(--brand-700)] rounded-lg p-4 space-y-4">
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2 uppercase tracking-wide">
                   Diagram canvas
                 </h3>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[var(--text-muted)]">
                 Use the palette to create flowchart nodes, then drag, connect, and edit them with the assistant.
               </p>
             </div>
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Mode</p>
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Mode</p>
               <div className="grid grid-cols-2 gap-2">
                 {(['freeform', 'requirements', 'srs', 'costs'] as DiagramMode[]).map((diagramMode) => (
                   <Button
                     key={diagramMode}
-                    size="sm"
+                    size="xs"
                     variant={mode === diagramMode ? 'default' : 'outline'}
                     onClick={() => updateMode(diagramMode)}
                   >
@@ -1376,13 +1376,13 @@ export const DiagramWorkspacePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Shapes</p>
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Shapes</p>
               <div className="grid grid-cols-2 gap-2">
                 {shapePalette.map((shape) => (
                   <Button
                     key={shape.id}
                     variant="outline"
-                    size="sm"
+                    size="xs"
                     className="justify-start space-x-2"
                     onClick={() => handleAddShape(shape.id)}
                   >
@@ -1394,7 +1394,7 @@ export const DiagramWorkspacePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Templates</p>
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Templates</p>
               <div className="space-y-2">
                 {templateOptions.map((template) => {
                   const TemplateIcon = iconComponents[template.iconName];
@@ -1402,7 +1402,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                     <Button
                       key={template.id}
                       variant="outline"
-                      size="sm"
+                      size="xs"
                       className="w-full justify-start gap-2"
                       onClick={() => handleAddTemplate(template)}
                     >
@@ -1415,10 +1415,10 @@ export const DiagramWorkspacePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">AI sync & export</p>
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">AI sync & export</p>
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
                 className="w-full justify-start"
                 onClick={handleSyncFromAI}
                 disabled={syncingAI || !projectId}
@@ -1437,7 +1437,7 @@ export const DiagramWorkspacePage: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
                 className="w-full justify-start"
                 onClick={handleExportCanvas}
                 disabled={canvasExporting || nodes.length === 0}
@@ -1457,15 +1457,15 @@ export const DiagramWorkspacePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Snapshots</p>
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Snapshots</p>
               {snapshotHistory.length === 0 ? (
-                <p className="text-xs text-gray-500">Snapshots capture recent canvas states for quick undo.</p>
+                <p className="text-xs text-[var(--text-muted)]">Snapshots capture recent canvas states for quick undo.</p>
               ) : (
                 <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
                   {snapshotHistory.map((snapshot) => (
                     <Button
                       key={snapshot.id}
-                      size="sm"
+                      size="xs"
                       variant="outline"
                       className="w-full justify-between"
                       onClick={() => handleRestoreSnapshot(snapshot.id)}
@@ -1473,7 +1473,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                       <span className="text-left text-xs">
                         {new Date(snapshot.timestamp).toLocaleTimeString()}
                       </span>
-                      <span className="text-[10px] text-gray-500">
+                      <span className="text-[10px] text-[var(--text-muted)]">
                         {snapshot.nodes.length} nodes
                       </span>
                     </Button>
@@ -1483,29 +1483,29 @@ export const DiagramWorkspacePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Selected node</p>
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Selected node</p>
               {selectedNode ? (
                 <div className="space-y-2">
                   <input
                     type="text"
                     value={(selectedNode.data as any)?.label || ''}
                     onChange={(e) => handleNodeDataChange('label', e.target.value)}
-                    className="w-full border border-gray-200 rounded-md px-2 py-1 text-sm"
+                    className="w-full border border-[var(--brand-700)] rounded-md px-2 py-1 text-sm bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                     placeholder="Label"
                   />
                   <textarea
                     value={(selectedNode.data as any)?.description || ''}
                     onChange={(e) => handleNodeDataChange('description', e.target.value)}
-                    className="w-full border border-gray-200 rounded-md px-2 py-1 text-sm"
+                    className="w-full border border-[var(--brand-700)] rounded-md px-2 py-1 text-sm bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                     placeholder="Description"
                     rows={2}
                   />
                   <div className="space-y-1">
-                    <label className="text-xs uppercase text-gray-500">Shape</label>
+                    <label className="text-xs uppercase text-[var(--text-muted)]">Shape</label>
                     <select
                       value={(selectedNode.data as any)?.shape || 'process'}
                       onChange={(e) => handleNodeShapeChange(e.target.value as ShapeType)}
-                      className="w-full border border-gray-200 rounded-md px-2 py-1 text-sm bg-white"
+                      className="w-full border border-[var(--brand-700)] rounded-md px-2 py-1 text-sm bg-[#152238] text-[var(--text-primary)] focus:border-[var(--blue-400)] outline-none"
                     >
                       {shapePalette.map((shape) => (
                         <option key={shape.id} value={shape.id}>
@@ -1515,13 +1515,13 @@ export const DiagramWorkspacePage: React.FC = () => {
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Palette className="h-4 w-4 text-gray-500" />
+                    <Palette className="h-4 w-4 text-[var(--text-muted)]" />
                     <div className="flex gap-1">
                       {colorOptions.map((color) => (
                         <button
                           key={color}
                           type="button"
-                          className={`w-6 h-6 rounded-full border ${((selectedNode.data as any)?.color || '#2563EB') === color ? 'border-gray-900' : 'border-transparent'}`}
+                          className={`w-6 h-6 rounded-full border ${((selectedNode.data as any)?.color || '#2563EB') === color ? 'border-[var(--blue-400)]' : 'border-transparent'}`}
                           style={{ backgroundColor: color }}
                           onClick={() => handleNodeColorChange(color)}
                         />
@@ -1529,32 +1529,32 @@ export const DiagramWorkspacePage: React.FC = () => {
                     </div>
                     <input
                       type="color"
-                      className="h-5 w-10 rounded border border-gray-200"
+                      className="h-5 w-10 rounded border border-[var(--brand-700)]"
                       value={(selectedNode.data as any)?.color || '#2563EB'}
                       onChange={(e) => handleNodeColorChange(e.target.value)}
                     />
                   </div>
-                  <Button onClick={handleDeleteNode} variant="outline" size="sm">
+                  <Button onClick={handleDeleteNode} variant="outline" size="xs">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Remove
                   </Button>
                 </div>
               ) : (
-                <p className="text-xs text-gray-500">Select a node to edit its label, notes, and color.</p>
+                <p className="text-xs text-[var(--text-muted)]">Select a node to edit its label, notes, and color.</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm text-gray-600">
+              <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                 <input
                   type="checkbox"
                   checked={snapToGrid}
                   onChange={(e) => setSnapToGrid(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-[var(--brand-600)]"
                 />
                 Snap to grid
               </label>
-              <Button onClick={() => handleSave()} className="w-full" disabled={isSaving}>
+              <Button size="sm" onClick={() => handleSave()} className="w-full" disabled={isSaving}>
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1567,7 +1567,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                   </>
                 )}
               </Button>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 Autosave:{' '}
                 {autosaveState === 'saving'
                   ? 'saving...'
@@ -1579,18 +1579,18 @@ export const DiagramWorkspacePage: React.FC = () => {
               </p>
             </div>
               {workspace && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-[var(--text-muted)]">
                   Last updated {new Date(workspace.updated_at).toLocaleString()}
                 </div>
               )}
             </aside>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 text-gray-900 shadow w-full overflow-hidden">
+          <div className="bg-[var(--brand-850)] border border-[var(--brand-700)] rounded-lg p-3 sm:p-4 text-[var(--text-primary)] shadow w-full overflow-hidden">
             <div className="mb-3 flex items-center justify-between flex-wrap gap-3">
               <div>
-                <p className="text-xs uppercase text-gray-500">Canvas</p>
-                <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900">
+                <p className="text-xs uppercase text-[var(--text-muted)]">Canvas</p>
+                <h2 className="text-xl font-semibold flex items-center gap-2 text-[var(--text-primary)]">
                   <PenTool className="h-5 w-5 text-blue-500" />
                   Diagram Studio –{' '}
                   {mode === 'freeform'
@@ -1601,7 +1601,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                     ? 'SRS'
                     : 'Costs'}
                 </h2>
-                <p className="text-sm text-gray-500 max-w-3xl">
+                <p className="text-sm text-[var(--text-muted)] max-w-3xl">
                   Use this space as a mind map for flows, architectures, or any software engineering concept. Switch
                   modes to maintain separate canvases for requirements, SRS, or costs.
                 </p>
@@ -1650,7 +1650,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                       type="color"
                       value={penColor}
                       onChange={(e) => setPenColor(e.target.value)}
-                      className="h-8 w-12 border border-gray-200 rounded"
+                      className="h-8 w-12 border border-[var(--brand-700)] rounded"
                       title="Pen color"
                     />
                     <input
@@ -1685,7 +1685,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                       )}
                     </Button>
                     <select
-                      className="border border-gray-200 rounded-lg px-3 py-1 text-sm"
+                      className="border border-[var(--brand-700)] rounded-lg px-3 py-1 text-sm bg-[#152238] text-[var(--text-primary)] focus:border-[var(--blue-400)] outline-none"
                       value={playbackIndex}
                       onChange={(e) => handleFrameJump(Number(e.target.value))}
                     >
@@ -1700,12 +1700,12 @@ export const DiagramWorkspacePage: React.FC = () => {
               </div>
             </div>
             {offlineNotice && (
-              <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
                 {offlineNotice}
               </div>
             )}
             <div
-              className={`relative rounded-lg ${canvasTheme === 'dark' ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-gray-200'}`}
+              className={`relative rounded-lg ${canvasTheme === 'dark' ? 'bg-slate-900 border border-slate-700' : 'bg-[#f8fafc] border border-[var(--brand-700)]'}`}
               style={{ minHeight: canvasHeight, height: canvasHeight, width: '100%' }}
               ref={canvasWrapperRef}
               onContextMenu={handleContextMenu}
@@ -1743,7 +1743,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                     </div>
                   )}
                   {nodes.length > 0 && (
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-2 text-xs text-gray-500 bg-white/80 backdrop-blur rounded-full px-3 py-1 shadow">
+                    <div className="absolute top-2 right-2 z-10 flex items-center gap-2 text-xs text-[var(--text-muted)] bg-[var(--brand-850)]/80 backdrop-blur rounded-full px-3 py-1 shadow border border-[var(--brand-700)]">
                       <span>Nodes: {nodes.length}</span>
                       <span>Edges: {edges.length}</span>
                     </div>
@@ -1759,11 +1759,11 @@ export const DiagramWorkspacePage: React.FC = () => {
                   />
                   {contextMenu.visible && (
                     <div
-                      className="absolute z-20 bg-white border border-gray-200 rounded-md shadow-lg text-sm text-gray-800"
+                      className="absolute z-20 bg-[var(--brand-850)] border border-[var(--brand-700)] rounded-md shadow-lg text-sm text-[var(--text-primary)]"
                       style={{ top: contextMenu.y, left: contextMenu.x, minWidth: '160px' }}
                     >
                       <button
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 disabled:opacity-50"
+                        className="w-full text-left px-3 py-2 hover:bg-[var(--brand-700)] disabled:opacity-50 text-[var(--text-primary)]"
                         onClick={() => {
                           handleCopy();
                           closeContextMenu();
@@ -1773,7 +1773,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                         Copy
                       </button>
                       <button
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 disabled:opacity-50"
+                        className="w-full text-left px-3 py-2 hover:bg-[var(--brand-700)] disabled:opacity-50 text-[var(--text-primary)]"
                         onClick={() => {
                           handleCut();
                           closeContextMenu();
@@ -1783,7 +1783,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                         Cut
                       </button>
                       <button
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 disabled:opacity-50"
+                        className="w-full text-left px-3 py-2 hover:bg-[var(--brand-700)] disabled:opacity-50 text-[var(--text-primary)]"
                         onClick={() => {
                           handlePaste();
                           closeContextMenu();
@@ -1793,7 +1793,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                         Paste
                       </button>
                       <button
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 disabled:opacity-50"
+                        className="w-full text-left px-3 py-2 hover:bg-[var(--brand-700)] disabled:opacity-50 text-[var(--text-primary)]"
                         onClick={() => {
                           handleDeleteNode();
                           closeContextMenu();
@@ -1808,34 +1808,42 @@ export const DiagramWorkspacePage: React.FC = () => {
               )}
             </div>
             {error && (
-              <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 {error}
               </div>
             )}
           </div>
 
           {!focusMode && (
-            <aside className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col space-y-4">
-            <div className="flex items-center justify-between gap-2">
+            <aside className="bg-[var(--brand-850)] border border-[var(--brand-700)] rounded-lg p-4 flex flex-col space-y-4 overflow-hidden">
+            {/* Assistants Header */}
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-purple-500" />
-                <h3 className="text-base font-semibold text-gray-900">Assistants</h3>
+                <Bot className="h-4 w-4 text-purple-400 flex-shrink-0" />
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">Assistants</h3>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={assistantTab === 'canvas' ? 'default' : 'outline'}
+              {/* Segmented tab control */}
+              <div className="flex w-full bg-[var(--brand-800)] rounded-lg p-1 border border-[var(--brand-700)]">
+                <button
                   onClick={() => setAssistantTab('canvas')}
+                  className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all truncate ${
+                    assistantTab === 'canvas'
+                      ? 'bg-[var(--blue-400)] text-[var(--brand-900)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--brand-700)]'
+                  }`}
                 >
                   Canvas AI
-                </Button>
-                <Button
-                  size="sm"
-                  variant={assistantTab === 'uml' ? 'default' : 'outline'}
+                </button>
+                <button
                   onClick={() => setAssistantTab('uml')}
+                  className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all truncate ${
+                    assistantTab === 'uml'
+                      ? 'bg-[var(--blue-400)] text-[var(--brand-900)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--brand-700)]'
+                  }`}
                 >
                   UML AI
-                </Button>
+                </button>
               </div>
             </div>
 
@@ -1847,11 +1855,11 @@ export const DiagramWorkspacePage: React.FC = () => {
                       key={msg.id}
                       className={`rounded-lg px-3 py-2 text-sm ${
                         msg.role === 'user'
-                          ? 'bg-blue-50 text-blue-800 ml-auto max-w-[90%]'
-                          : 'bg-gray-100 text-gray-800 mr-auto max-w-[90%]'
+                          ? 'bg-[rgba(26,111,212,0.15)] text-[var(--blue-300)] ml-auto max-w-[90%]'
+                          : 'bg-[var(--brand-800)] text-[var(--text-primary)] mr-auto max-w-[90%]'
                       }`}
                     >
-                      <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">
+                      <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
                         {msg.role === 'user' ? 'You' : 'Assistant'}
                       </div>
                       <p className="whitespace-pre-line">{msg.content}</p>
@@ -1860,12 +1868,12 @@ export const DiagramWorkspacePage: React.FC = () => {
                 </div>
                 <div className="mt-2">
                   <textarea
-                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 min-h-[90px] resize-none"
+                    className="w-full border border-[var(--brand-700)] rounded-md px-3 py-2 text-sm bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--blue-400)]/40 focus:border-[var(--blue-400)] min-h-[90px] resize-none"
                     placeholder="e.g. Add QA node and connect it after Testing"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                   />
-                  <Button onClick={handleSendChat} disabled={chatLoading || !chatInput.trim()} className="w-full mt-2">
+                  <Button size="sm" onClick={handleSendChat} disabled={chatLoading || !chatInput.trim()} className="w-full mt-2">
                     {chatLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1882,7 +1890,7 @@ export const DiagramWorkspacePage: React.FC = () => {
               </>
             ) : (
               <div className="flex-1 flex flex-col gap-3">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full bg-[var(--brand-800)] rounded-lg p-1 border border-[var(--brand-700)]">
                   {(
                     [
                       { id: 'use_case', label: 'Use Case' },
@@ -1891,18 +1899,21 @@ export const DiagramWorkspacePage: React.FC = () => {
                       { id: 'entity_relationship', label: 'ER' },
                     ] as const
                   ).map((option) => (
-                    <Button
+                    <button
                       key={option.id}
-                      size="sm"
-                      variant={umlType === option.id ? 'default' : 'outline'}
                       onClick={() => setUmlType(option.id)}
+                      className={`flex-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all truncate ${
+                        umlType === option.id
+                          ? 'bg-[var(--blue-400)] text-[var(--brand-900)] shadow-sm'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--brand-700)]'
+                      }`}
                     >
                       {option.label}
-                    </Button>
+                    </button>
                   ))}
                 </div>
 
-                <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-900 space-y-2">
+                <div className="rounded-lg border border-[var(--blue-400)]/20 bg-[rgba(26,111,212,0.08)] p-3 text-xs text-[var(--blue-300)] space-y-2">
                   {umlLoading ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1936,46 +1947,47 @@ export const DiagramWorkspacePage: React.FC = () => {
                 </div>
 
                 <textarea
-                  className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 min-h-[120px]"
+                  className="w-full border border-[var(--brand-700)] rounded-md px-3 py-2 text-sm bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--blue-400)]/40 focus:border-[var(--blue-400)] min-h-[120px]"
                   value={umlSource}
                   onChange={(e) => setUmlSource(e.target.value)}
                   placeholder="PlantUML source"
                 />
-                <div className="flex gap-2 flex-wrap">
-                  <Button onClick={handleUmlSave} disabled={umlSaving}>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button size="xs" onClick={handleUmlSave} disabled={umlSaving}>
                     {umlSaving ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-4 w-4" />
+                        <Save className="mr-1.5 h-3.5 w-3.5" />
                         Save UML
                       </>
                     )}
                   </Button>
-                  <Button variant="outline" onClick={handleUmlRefresh} disabled={umlLoading}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                  <Button size="xs" variant="outline" onClick={handleUmlRefresh} disabled={umlLoading}>
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                     Refresh
                   </Button>
-                  <Button variant="outline" onClick={handleDownloadUmlSource} disabled={!umlSource}>
-                    <Download className="mr-2 h-4 w-4" />
+                  <Button size="xs" variant="outline" onClick={handleDownloadUmlSource} disabled={!umlSource}>
+                    <Download className="mr-1.5 h-3.5 w-3.5" />
                     PlantUML
                   </Button>
                   <Button
+                    size="xs"
                     variant="outline"
                     onClick={handleDownloadUmlSvg}
                     disabled={!(umlPreviewUrl || umlPreviewData[umlType]?.imageUrl) || umlSvgDownloading}
                   >
                     {umlSvgDownloading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                         SVG...
                       </>
                     ) : (
                       <>
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="mr-1.5 h-3.5 w-3.5" />
                         SVG
                       </>
                     )}
@@ -1984,12 +1996,13 @@ export const DiagramWorkspacePage: React.FC = () => {
 
                 <div>
                   <textarea
-                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 min-h-[90px]"
+                    className="w-full border border-[var(--brand-700)] rounded-md px-3 py-2 text-sm bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--blue-400)]/40 focus:border-[var(--blue-400)] min-h-[90px]"
                     placeholder="Describe the update you want (e.g. add PaymentService class)"
                     value={umlChatInput}
                     onChange={(e) => setUmlChatInput(e.target.value)}
                   />
                   <Button
+                    size="sm"
                     onClick={handleUmlChat}
                     disabled={umlChatLoading || !umlChatInput.trim()}
                     className="w-full mt-2"
@@ -2008,7 +2021,7 @@ export const DiagramWorkspacePage: React.FC = () => {
                   </Button>
                 </div>
                 {umlError && (
-                  <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
+                  <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
                     {umlError}
                   </div>
                 )}

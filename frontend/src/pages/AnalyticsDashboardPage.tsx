@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { api } from '@/lib/api';
+<<<<<<< HEAD
+=======
+import { phaseConfigs } from '@/constants/phases';
+import { PhaseActivityTimeline, type PhaseActivityEntry } from '@/components/PhaseActivityTimeline';
+import type { PhaseCompletionMeta, Project } from '@/types';
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import {
   BarChart3,
   TrendingUp,
@@ -18,6 +24,17 @@ import {
   Shield,
   DollarSign,
   Circle,
+<<<<<<< HEAD
+=======
+  ArrowLeft,
+  FolderKanban,
+  ChevronUp,
+  ChevronDown,
+  ExternalLink,
+  ChevronsUpDown,
+  Filter,
+  X,
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -31,7 +48,48 @@ interface AnalyticsData {
   riskLevel: 'low' | 'medium' | 'high';
   weeklyActivity: { day: string; count: number }[];
   phaseBreakdown: { name: string; progress: number; status: string; color: string }[];
+  totalProjects?: number;
 }
+
+type BreakdownStatus = 'active' | 'completed' | 'stalled';
+
+interface ProjectBreakdownRow {
+  id: string;
+  name: string;
+  completionPct: number;
+  phasesCompleted: number;
+  requirementsCount: number;
+  aiRunCount: number;
+  weeklyActivity: number[];
+  status: BreakdownStatus;
+  createdAt: string;
+}
+
+const ProjectSparkline: React.FC<{ data: number[] }> = ({ data }) => {
+  const max = Math.max(1, ...data);
+  const W = 7, GAP = 2, H = 24;
+  const totalW = data.length * W + (data.length - 1) * GAP;
+  return (
+    <svg width={totalW} height={H} style={{ display: 'block', overflow: 'visible' }}>
+      {data.map((v, i) => {
+        const barH = v === 0 ? 2 : Math.max(3, Math.round((v / max) * (H - 2)));
+        const active = v > 0;
+        return (
+          <rect
+            key={i}
+            x={i * (W + GAP)}
+            y={H - barH}
+            width={W}
+            height={barH}
+            rx="1"
+            fill={active ? '#D4A017' : 'rgba(61,36,18,0.45)'}
+            opacity={active ? (0.35 + 0.65 * (v / max)) : 1}
+          />
+        );
+      })}
+    </svg>
+  );
+};
 
 const PHASE_COLORS: Record<string, string> = {
   Planning: '#D4A017',
@@ -47,6 +105,7 @@ const PHASE_COLORS: Record<string, string> = {
 };
 
 const PHASE_META: { key: string; name: string; color: string }[] = [
+<<<<<<< HEAD
   { key: 'planning',               name: 'Planning',         color: '#D4A017' },
   { key: 'feasibility_study',      name: 'Feasibility',      color: '#7BA05B' },
   { key: 'requirements_gathering', name: 'Requirements',     color: 'var(--blue-500)' },
@@ -57,14 +116,41 @@ const PHASE_META: { key: string; name: string; color: string }[] = [
   { key: 'cost_benefit',           name: 'Costs & Benefits', color: '#2A9D8F' },
   { key: 'risks',                  name: 'Risks',            color: '#C1440E' },
   { key: 'summary',                name: 'Summary',          color: 'var(--blue-400)' },
+=======
+  { key: 'planning', name: 'Planning', color: '#D4A017' },
+  { key: 'feasibility_study', name: 'Feasibility', color: '#7BA05B' },
+  { key: 'requirements_gathering', name: 'Requirements', color: 'var(--blue-500)' },
+  { key: 'validation', name: 'Validation', color: '#5F7A8A' },
+  { key: 'design', name: 'Design', color: '#6B4C8A' },
+  { key: 'development', name: 'Development', color: '#8B5E3C' },
+  { key: 'tasks', name: 'Tasks', color: '#D4A017' },
+  { key: 'cost_benefit', name: 'Costs & Benefits', color: '#2A9D8F' },
+  { key: 'risks', name: 'Risks', color: '#C1440E' },
+  { key: 'summary', name: 'Summary', color: 'var(--blue-400)' },
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 ];
 
 export const AnalyticsDashboardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [activityEntries, setActivityEntries] = useState<PhaseActivityEntry[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [projectsBreakdown, setProjectsBreakdown] = useState<ProjectBreakdownRow[]>([]);
+  const [sortBy, setSortBy] = useState<'name' | 'completion' | 'phases' | 'requirements' | 'ai'>('completion');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const [statusFilter, setStatusFilter] = useState<'all' | BreakdownStatus>(
+    () => (searchParams.get('status') as BreakdownStatus | 'all') || 'all'
+  );
+  const [dateFrom, setDateFrom] = useState<string>(() => searchParams.get('from') || '');
+  const [dateTo, setDateTo] = useState<string>(() => searchParams.get('to') || '');
 
   useEffect(() => {
+<<<<<<< HEAD
     const fetchAnalytics = async () => {
       try {
         const projects = await api.getProjects();
@@ -127,11 +213,136 @@ export const AnalyticsDashboardPage: React.FC = () => {
               const dayEnd = new Date(dayStart);
               dayEnd.setDate(dayStart.getDate() + 1);
               const count = sourceItems.filter((item: any) => {
+=======
+    const params: Record<string, string> = {};
+    if (statusFilter !== 'all') params.status = statusFilter;
+    if (dateFrom) params.from = dateFrom;
+    if (dateTo) params.to = dateTo;
+    setSearchParams(params, { replace: true });
+  }, [statusFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const projects: Project[] = await api.getProjects();
+        setProjects(projects);
+        const collectedEntries: PhaseActivityEntry[] = [];
+        for (const proj of projects) {
+          const projectId: string | undefined = proj.project_id || proj.id;
+          const projectName: string = proj.name || 'Untitled project';
+          const meta: Record<string, PhaseCompletionMeta> = proj.phase_completion_meta || {};
+          const status: Record<string, string> = proj.phase_status || {};
+          for (const phase of phaseConfigs) {
+            const m: PhaseCompletionMeta | undefined = meta[phase.id];
+            const st = (status[phase.id] || '').toLowerCase();
+            if (st !== 'completed' && !m?.completed_at) continue;
+            collectedEntries.push({
+              key: `${projectId || projectName}:${phase.id}`,
+              phaseId: phase.id,
+              phaseTitle: phase.title,
+              stepNumber: phase.stepNumber,
+              completedAt: m?.completed_at ?? null,
+              confirmer: m?.completed_by_name || m?.completed_by || null,
+              note: m?.notes ?? null,
+              projectId,
+              projectName,
+            });
+          }
+        }
+        collectedEntries.sort((a, b) => {
+          const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+          const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+          return tb - ta;
+        });
+        setActivityEntries(collectedEntries);
+        const totalProjects = projects.length;
+        const isGlobal = !id;
+
+        let completedPhases = 0;
+        let totalPhasesCount = 10;
+        let phaseBreakdown: { name: string; progress: number; status: string; color: string }[];
+        let totalReqs = 0;
+        let completedReqs = 0;
+        let aiGens = 0;
+        let weeklyActivity: { day: string; count: number }[] = [];
+
+        const weekStart = new Date();
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(weekStart.getDate() - 6);
+
+        if (isGlobal) {
+          // ── Global mode: aggregate across all projects ──
+          totalPhasesCount = projects.length * 10;
+          const allActivityItems: any[] = [];
+          const breakdownRows: ProjectBreakdownRow[] = [];
+
+          phaseBreakdown = PHASE_META.map((pm) => {
+            let phaseCompleted = 0;
+            let phaseInProgress = 0;
+            for (const proj of projects) {
+              const st = ((proj.phase_status || {})[pm.key] || 'locked').toLowerCase();
+              if (st === 'completed') { phaseCompleted++; completedPhases++; }
+              else if (st === 'in_progress') phaseInProgress++;
+            }
+            const progress = projects.length > 0
+              ? Math.round(((phaseCompleted + phaseInProgress * 0.5) / projects.length) * 100)
+              : 0;
+            const status = projects.length > 0 && phaseCompleted === projects.length
+              ? 'completed'
+              : phaseInProgress > 0 || phaseCompleted > 0
+                ? 'in_progress'
+                : 'pending';
+            return { name: pm.name, progress, status, color: pm.color };
+          });
+
+          for (const proj of projects) {
+            const pid = proj.id || proj.project_id;
+            if (!pid) continue;
+
+            const projPhaseStatus: Record<string, string> = proj.phase_status || {};
+            const projPhasesCompleted = PHASE_META.filter(
+              (pm) => (projPhaseStatus[pm.key] || '').toLowerCase() === 'completed'
+            ).length;
+            const projCompletionPct = Math.round((projPhasesCompleted / 10) * 100);
+
+            let projReqCount = 0;
+            let projAiCount = 0;
+            let projActivityItems: any[] = [];
+
+            try {
+              const reqs = await api.getRequirements(pid);
+              projReqCount = reqs.length;
+              totalReqs += reqs.length;
+              completedReqs += reqs.filter((r: any) => r.status === 'approved' || r.status === 'implemented').length;
+            } catch { /* ignore */ }
+            try {
+              const aiRuns = await api.getAiRuns(pid, 200);
+              const projAiCompleted = aiRuns.filter((run: any) => (run.status || '').toLowerCase() === 'completed').length;
+              projAiCount = projAiCompleted || aiRuns.length;
+              aiGens += projAiCount;
+              try {
+                const items = await api.getActivity(pid, 200);
+                projActivityItems = items;
+                allActivityItems.push(...items);
+              } catch {
+                projActivityItems = aiRuns;
+                allActivityItems.push(...aiRuns);
+              }
+            } catch { /* ignore */ }
+
+            const projWeeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+              const dayStart = new Date(weekStart);
+              dayStart.setDate(weekStart.getDate() + i);
+              const dayEnd = new Date(dayStart);
+              dayEnd.setDate(dayStart.getDate() + 1);
+              return projActivityItems.filter((item: any) => {
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                 const raw = item.completed_at || item.created_at;
                 if (!raw) return false;
                 const when = new Date(raw);
                 return when >= dayStart && when < dayEnd;
               }).length;
+<<<<<<< HEAD
               return {
                 day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
                 count,
@@ -150,14 +361,122 @@ export const AnalyticsDashboardPage: React.FC = () => {
           weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
             const day = new Date(fallbackStart);
             day.setDate(fallbackStart.getDate() + i);
+=======
+            });
+
+            const derivedStatus: BreakdownStatus =
+              projPhasesCompleted === 10
+                ? 'completed'
+                : projPhasesCompleted > 0
+                  ? 'active'
+                  : 'stalled';
+
+            breakdownRows.push({
+              id: pid,
+              name: proj.name || 'Untitled project',
+              completionPct: projCompletionPct,
+              phasesCompleted: projPhasesCompleted,
+              requirementsCount: projReqCount,
+              aiRunCount: projAiCount,
+              weeklyActivity: projWeeklyActivity,
+              status: derivedStatus,
+              createdAt: proj.created_at || '',
+            });
+          }
+
+          setProjectsBreakdown(breakdownRows);
+
+          weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+            const dayStart = new Date(weekStart);
+            dayStart.setDate(weekStart.getDate() + i);
+            const dayEnd = new Date(dayStart);
+            dayEnd.setDate(dayStart.getDate() + 1);
+            const count = allActivityItems.filter((item: any) => {
+              const raw = item.completed_at || item.created_at;
+              if (!raw) return false;
+              const when = new Date(raw);
+              return when >= dayStart && when < dayEnd;
+            }).length;
+            return { day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }), count };
+          });
+        } else {
+          // ── Per-project mode ──
+          let targetProject = projects[0];
+          const found = projects.find((p: any) => (p.id || p.project_id) === id);
+          if (found) targetProject = found;
+
+          const phaseStatus: Record<string, string> = targetProject?.phase_status || {};
+          phaseBreakdown = PHASE_META.map((pm) => {
+            const st = (phaseStatus[pm.key] || 'locked').toLowerCase();
+            const progress = st === 'completed' ? 100 : st === 'in_progress' ? 50 : st === 'ready' ? 10 : 0;
+            if (st === 'completed') completedPhases++;
+            return { name: pm.name, progress, status: st === 'completed' ? 'completed' : st === 'in_progress' ? 'in_progress' : 'pending', color: pm.color };
+          });
+
+          try {
+            const projectId = targetProject?.id || targetProject?.project_id;
+            if (projectId) {
+              const reqs = await api.getRequirements(projectId);
+              totalReqs = reqs.length;
+              completedReqs = reqs.filter((r: any) => r.status === 'approved' || r.status === 'implemented').length;
+            }
+          } catch { /* ignore */ }
+
+          try {
+            const projectId = targetProject?.id || targetProject?.project_id;
+            if (projectId) {
+              const aiRuns = await api.getAiRuns(projectId, 200);
+              aiGens = aiRuns.filter((run: any) => (run.status || '').toLowerCase() === 'completed').length || aiRuns.length;
+
+              let activityItems: any[] = [];
+              try {
+                activityItems = await api.getActivity(projectId, 200);
+              } catch {
+                activityItems = [];
+              }
+              const sourceItems = activityItems.length > 0 ? activityItems : aiRuns;
+              weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+                const dayStart = new Date(weekStart);
+                dayStart.setDate(weekStart.getDate() + i);
+                const dayEnd = new Date(dayStart);
+                dayEnd.setDate(dayStart.getDate() + 1);
+                const count = sourceItems.filter((item: any) => {
+                  const raw = item.completed_at || item.created_at;
+                  if (!raw) return false;
+                  const when = new Date(raw);
+                  return when >= dayStart && when < dayEnd;
+                }).length;
+                return { day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }), count };
+              });
+            }
+          } catch {
+            weeklyActivity = [];
+          }
+        }
+
+        if (weeklyActivity.length === 0) {
+          weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+            const day = new Date(weekStart);
+            day.setDate(weekStart.getDate() + i);
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             return { day: day.toLocaleDateString('en-US', { weekday: 'short' }), count: 0 };
           });
         }
 
+<<<<<<< HEAD
         const riskLevel: 'low' | 'medium' | 'high' = completedPhases >= 7 ? 'low' : completedPhases >= 4 ? 'medium' : 'high';
 
         const now = new Date();
         const estDate = new Date(now.getTime() + (10 - completedPhases) * 14 * 86400000);
+=======
+        const progressPct = totalPhasesCount > 0 ? Math.round((completedPhases / totalPhasesCount) * 100) : 0;
+        const riskLevel: 'low' | 'medium' | 'high' = completedPhases >= 7 ? 'low' : completedPhases >= 4 ? 'medium' : 'high';
+        const now = new Date();
+        const remainingPhases = isGlobal
+          ? Math.max(0, totalPhasesCount - completedPhases)
+          : Math.max(0, 10 - completedPhases);
+        const estDate = new Date(now.getTime() + remainingPhases * 14 * 86400000);
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         const estimatedCompletion = estDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
         setAnalytics({
@@ -165,12 +484,20 @@ export const AnalyticsDashboardPage: React.FC = () => {
           totalRequirements: totalReqs,
           completedRequirements: completedReqs,
           aiGenerations: aiGens,
+<<<<<<< HEAD
           totalPhases: 10,
+=======
+          totalPhases: totalPhasesCount,
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           completedPhases,
           estimatedCompletion,
           riskLevel,
           weeklyActivity,
           phaseBreakdown,
+<<<<<<< HEAD
+=======
+          totalProjects: isGlobal ? totalProjects : undefined,
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         });
       } catch (err) {
         console.error('Failed to fetch analytics', err);
@@ -184,12 +511,33 @@ export const AnalyticsDashboardPage: React.FC = () => {
   }, [id]);
 
   const getRiskConfig = (risk: string) => ({
+<<<<<<< HEAD
     low:    { color: 'var(--blue-400)', bg: 'rgba(26,111,212,0.12)',  label: 'Low Risk' },
     medium: { color: '#D4A017', bg: 'rgba(212,160,23,0.12)',  label: 'Medium Risk' },
     high:   { color: '#C1440E', bg: 'rgba(193,68,14,0.12)',   label: 'High Risk' },
   }[risk] || { color: 'var(--text-muted)', bg: 'rgba(107,158,122,0.12)', label: 'Unknown' });
 
   const maxActivity = Math.max(1, ...(analytics?.weeklyActivity.map(d => d.count) || []));
+=======
+    low: { color: 'var(--blue-400)', bg: 'rgba(26,111,212,0.12)', label: 'Low Risk' },
+    medium: { color: '#D4A017', bg: 'rgba(212,160,23,0.12)', label: 'Medium Risk' },
+    high: { color: '#C1440E', bg: 'rgba(193,68,14,0.12)', label: 'High Risk' },
+  }[risk] || { color: 'var(--text-muted)', bg: 'rgba(107,158,122,0.12)', label: 'Unknown' });
+
+  const isGlobal = !id;
+  const maxActivity = Math.max(1, ...(analytics?.weeklyActivity.map(d => d.count) || []));
+
+  const filteredActivityEntries = isGlobal && selectedProjectId !== 'all'
+    ? activityEntries.filter((e) => e.projectId === selectedProjectId)
+    : activityEntries;
+
+  const projectsWithActivity = isGlobal
+    ? projects.filter((p) => {
+        const pid = p.project_id || p.id;
+        return activityEntries.some((e) => e.projectId === pid);
+      })
+    : [];
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   const risk = getRiskConfig(analytics?.riskLevel || 'low');
 
   const cardStyle = {
@@ -218,18 +566,42 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+              style={{
+                background: 'rgba(26,111,212,0.1)',
+                border: '1px solid rgba(26,111,212,0.25)',
+                color: 'var(--blue-400)',
+              }}
+              title="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, var(--blue-600), var(--blue-400))', boxShadow: '0 10px 30px rgba(26,111,212,0.2)' }}>
               <BarChart3 className="w-7 h-7 text-[var(--brand-900)]" />
             </div>
             <div>
+<<<<<<< HEAD
               <h1 className="text-3xl font-bold text-[var(--text-primary)]">Analytics Dashboard</h1>
               <p className="text-[var(--text-muted)]">Project insights and performance metrics</p>
+=======
+              <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+                {isGlobal ? 'Workspace Analytics' : 'Analytics Dashboard'}
+              </h1>
+              <p className="text-[var(--text-muted)]">
+                {isGlobal
+                  ? `Insights across all ${analytics?.totalProjects ?? ''} projects`
+                  : 'Project insights and performance metrics'}
+              </p>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
             </div>
           </div>
 
           {/* Key Metrics */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<<<<<<< HEAD
             {/* Progress */}
             <div className="p-6" style={cardStyle}>
               <div className="flex items-center gap-3 mb-3">
@@ -242,8 +614,35 @@ export const AnalyticsDashboardPage: React.FC = () => {
               <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(26,46,69,0.5)' }}>
                 <div className="h-full rounded-full transition-all"
                   style={{ width: `${analytics?.projectProgress}%`, background: 'linear-gradient(to right, var(--blue-600), var(--blue-400))' }} />
+=======
+            {/* Progress / Total Projects */}
+            {isGlobal ? (
+              <div className="p-6" style={cardStyle}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.12)' }}>
+                    <FolderKanban className="w-5 h-5 text-[var(--blue-400)]" />
+                  </div>
+                  <span className="text-[var(--text-muted)] text-sm">Projects</span>
+                </div>
+                <p className="text-3xl font-bold text-[var(--text-primary)]">{analytics?.totalProjects ?? 0}</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">Total projects</p>
               </div>
-            </div>
+            ) : (
+              <div className="p-6" style={cardStyle}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.12)' }}>
+                    <TrendingUp className="w-5 h-5 text-[var(--blue-400)]" />
+                  </div>
+                  <span className="text-[var(--text-muted)] text-sm">Progress</span>
+                </div>
+                <p className="text-3xl font-bold text-[var(--text-primary)]">{analytics?.projectProgress}%</p>
+                <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(26,46,69,0.5)' }}>
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${analytics?.projectProgress}%`, background: 'linear-gradient(to right, var(--blue-600), var(--blue-400))' }} />
+                </div>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
+              </div>
+            )}
 
             {/* Requirements */}
             <div className="p-6" style={cardStyle}>
@@ -291,7 +690,11 @@ export const AnalyticsDashboardPage: React.FC = () => {
               </div>
               <div className="flex items-end justify-between h-40 gap-2">
                 {analytics?.weeklyActivity.map((day, i) => {
+<<<<<<< HEAD
                   const colors = ['var(--blue-400)','#D4A017','#2A9D8F','#6B4C8A','var(--blue-400)','#7BA05B','#8B5E3C'];
+=======
+                  const colors = ['var(--blue-400)', '#D4A017', '#2A9D8F', '#6B4C8A', 'var(--blue-400)', '#7BA05B', '#8B5E3C'];
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   const c = colors[i % colors.length];
                   return (
                     <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
@@ -332,8 +735,13 @@ export const AnalyticsDashboardPage: React.FC = () => {
                           background: phase.status === 'completed'
                             ? phase.color
                             : phase.status === 'in_progress'
+<<<<<<< HEAD
                             ? `linear-gradient(to right, ${phase.color}88, ${phase.color})`
                             : 'rgba(26,46,69,0.2)',
+=======
+                              ? `linear-gradient(to right, ${phase.color}88, ${phase.color})`
+                              : 'rgba(26,46,69,0.2)',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                         }}
                       />
                     </div>
@@ -365,7 +773,11 @@ export const AnalyticsDashboardPage: React.FC = () => {
                     style={{
                       background: phase.status === 'completed' ? phase.color
                         : phase.status === 'in_progress' ? `${phase.color}55`
+<<<<<<< HEAD
                         : 'rgba(26,46,69,0.4)',
+=======
+                          : 'rgba(26,46,69,0.4)',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     }}
                   />
                 ))}
@@ -430,8 +842,13 @@ export const AnalyticsDashboardPage: React.FC = () => {
                     {status === 'completed'
                       ? <CheckCircle2 size={14} color={color} />
                       : status === 'in_progress'
+<<<<<<< HEAD
                       ? <Activity size={14} color={color} />
                       : <Circle size={14} color="rgba(26,46,69,0.5)" />}
+=======
+                        ? <Activity size={14} color={color} />
+                        : <Circle size={14} color="rgba(26,46,69,0.5)" />}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                   </div>
                   <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">{name}</p>
                   <p className="text-xs capitalize" style={{ color: status === 'completed' ? color : status === 'in_progress' ? '#F97316' : 'var(--text-faint)' }}>
@@ -440,6 +857,329 @@ export const AnalyticsDashboardPage: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Projects Breakdown Table — global mode only */}
+          {isGlobal && projectsBreakdown.length > 0 && (() => {
+            const handleSort = (col: typeof sortBy) => {
+              if (sortBy === col) {
+                setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy(col);
+                setSortDir(col === 'name' ? 'asc' : 'desc');
+              }
+            };
+
+            const sorted = [...projectsBreakdown].sort((a, b) => {
+              let cmp = 0;
+              if (sortBy === 'name') cmp = a.name.localeCompare(b.name);
+              else if (sortBy === 'completion') cmp = a.completionPct - b.completionPct;
+              else if (sortBy === 'phases') cmp = a.phasesCompleted - b.phasesCompleted;
+              else if (sortBy === 'requirements') cmp = a.requirementsCount - b.requirementsCount;
+              else if (sortBy === 'ai') cmp = a.aiRunCount - b.aiRunCount;
+              return sortDir === 'asc' ? cmp : -cmp;
+            });
+
+            const SortIcon = ({ col }: { col: typeof sortBy }) => {
+              if (sortBy !== col) return <ChevronsUpDown className="w-3.5 h-3.5 opacity-40" />;
+              return sortDir === 'asc'
+                ? <ChevronUp className="w-3.5 h-3.5" style={{ color: '#D4A017' }} />
+                : <ChevronDown className="w-3.5 h-3.5" style={{ color: '#D4A017' }} />;
+            };
+
+            const thBase: React.CSSProperties = {
+              padding: '10px 14px',
+              fontSize: '11px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              userSelect: 'none',
+              whiteSpace: 'nowrap',
+              background: 'rgba(26,46,69,0.35)',
+            };
+
+            const filtered = sorted.filter((row) => {
+              if (statusFilter !== 'all' && row.status !== statusFilter) return false;
+              if (dateFrom && row.createdAt) {
+                if (new Date(row.createdAt) < new Date(dateFrom)) return false;
+              }
+              if (dateTo && row.createdAt) {
+                const toEnd = new Date(dateTo);
+                toEnd.setDate(toEnd.getDate() + 1);
+                if (new Date(row.createdAt) >= toEnd) return false;
+              }
+              return true;
+            });
+
+            const hasActiveFilters = statusFilter !== 'all' || dateFrom !== '' || dateTo !== '';
+
+            const statusBadge: Record<BreakdownStatus, { label: string; color: string; bg: string }> = {
+              active: { label: 'Active', color: '#D4A017', bg: 'rgba(212,160,23,0.15)' },
+              completed: { label: 'Completed', color: '#5a9e6a', bg: 'rgba(90,158,106,0.15)' },
+              stalled: { label: 'Stalled', color: '#8a7055', bg: 'rgba(138,112,85,0.15)' },
+            };
+
+            return (
+              <div className="mt-6 p-6" style={cardStyle}>
+                <div className="flex items-center gap-3 mb-5">
+                  <FolderKanban className="w-5 h-5" style={{ color: '#D4A017' }} />
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Projects Breakdown</h3>
+                  <span className="ml-auto text-xs text-[var(--text-muted)]">
+                    {filtered.length !== projectsBreakdown.length
+                      ? `${filtered.length} of ${projectsBreakdown.length} project${projectsBreakdown.length !== 1 ? 's' : ''}`
+                      : `${projectsBreakdown.length} project${projectsBreakdown.length !== 1 ? 's' : ''}`}
+                  </span>
+                </div>
+
+                {/* Filter bar */}
+                <div className="flex flex-wrap items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid rgba(61,36,18,0.4)' }}>
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" style={{ color: hasActiveFilters ? '#D4A017' : 'var(--text-muted)' }} />
+                    <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Filter:</span>
+                  </div>
+
+                  {/* Status dropdown */}
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as 'all' | BreakdownStatus)}
+                    className="text-sm rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
+                    style={{
+                      background: statusFilter !== 'all' ? 'rgba(212,160,23,0.12)' : 'rgba(26,16,8,0.6)',
+                      border: `1px solid ${statusFilter !== 'all' ? 'rgba(212,160,23,0.4)' : 'rgba(61,36,18,0.5)'}`,
+                      color: statusFilter !== 'all' ? '#D4A017' : 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="stalled">Stalled</option>
+                  </select>
+
+                  {/* Date from */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>From</span>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="text-sm rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
+                      style={{
+                        background: dateFrom ? 'rgba(212,160,23,0.12)' : 'rgba(26,16,8,0.6)',
+                        border: `1px solid ${dateFrom ? 'rgba(212,160,23,0.4)' : 'rgba(61,36,18,0.5)'}`,
+                        color: dateFrom ? '#D4A017' : 'var(--text-muted)',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                  </div>
+
+                  {/* Date to */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>To</span>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="text-sm rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
+                      style={{
+                        background: dateTo ? 'rgba(212,160,23,0.12)' : 'rgba(26,16,8,0.6)',
+                        border: `1px solid ${dateTo ? 'rgba(212,160,23,0.4)' : 'rgba(61,36,18,0.5)'}`,
+                        color: dateTo ? '#D4A017' : 'var(--text-muted)',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                  </div>
+
+                  {/* Clear filters button */}
+                  {hasActiveFilters && (
+                    <button
+                      onClick={() => { setStatusFilter('all'); setDateFrom(''); setDateTo(''); }}
+                      className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all hover:scale-105"
+                      style={{ background: 'rgba(193,68,14,0.1)', border: '1px solid rgba(193,68,14,0.3)', color: '#C1440E' }}
+                    >
+                      <X className="w-3 h-3" />
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(61,36,18,0.5)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(61,36,18,0.4)' }}>
+                        <th style={{ ...thBase, textAlign: 'left' }} onClick={() => handleSort('name')}>
+                          <span className="flex items-center gap-1.5">Project <SortIcon col="name" /></span>
+                        </th>
+                        <th style={{ ...thBase, textAlign: 'center', cursor: 'default' }}>Status</th>
+                        <th style={{ ...thBase, textAlign: 'center' }} onClick={() => handleSort('completion')}>
+                          <span className="flex items-center justify-center gap-1.5">Completion <SortIcon col="completion" /></span>
+                        </th>
+                        <th style={{ ...thBase, textAlign: 'center' }} onClick={() => handleSort('phases')}>
+                          <span className="flex items-center justify-center gap-1.5">Phases <SortIcon col="phases" /></span>
+                        </th>
+                        <th style={{ ...thBase, textAlign: 'center' }} onClick={() => handleSort('requirements')}>
+                          <span className="flex items-center justify-center gap-1.5">Requirements <SortIcon col="requirements" /></span>
+                        </th>
+                        <th style={{ ...thBase, textAlign: 'center' }} onClick={() => handleSort('ai')}>
+                          <span className="flex items-center justify-center gap-1.5">AI Runs <SortIcon col="ai" /></span>
+                        </th>
+                        <th style={{ ...thBase, textAlign: 'center', cursor: 'default' }}>7-Day Trend</th>
+                        <th style={{ ...thBase, textAlign: 'center', cursor: 'default' }}>View</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                            No projects match the current filters.
+                          </td>
+                        </tr>
+                      ) : filtered.map((row, i) => {
+                        const barColor = row.completionPct >= 70 ? '#D4A017' : row.completionPct >= 40 ? '#c8870f' : '#5c3820';
+                        const isEven = i % 2 === 0;
+                        const rowBg = isEven ? 'transparent' : 'rgba(26,16,8,0.3)';
+                        const badge = statusBadge[row.status];
+                        return (
+                          <tr
+                            key={row.id}
+                            onClick={() => navigate(`/projects/${row.id}`)}
+                            style={{
+                              background: rowBg,
+                              cursor: 'pointer',
+                              transition: 'background 0.15s',
+                              borderBottom: i < filtered.length - 1 ? '1px solid rgba(61,36,18,0.25)' : 'none',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,160,23,0.07)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = rowBg)}
+                          >
+                            {/* Project name */}
+                            <td style={{ padding: '12px 14px', maxWidth: '220px' }}>
+                              <span
+                                className="font-medium text-[var(--text-primary)] truncate block"
+                                style={{ fontSize: '13px', maxWidth: '200px' }}
+                                title={row.name}
+                              >
+                                {row.name}
+                              </span>
+                            </td>
+
+                            {/* Status badge */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <span
+                                className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
+                                style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.color}44` }}
+                              >
+                                {badge.label}
+                              </span>
+                            </td>
+
+                            {/* Completion % with mini bar */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center', minWidth: '120px' }}>
+                              <div className="flex flex-col items-center gap-1">
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: barColor }}>{row.completionPct}%</span>
+                                <div style={{ width: '80px', height: '5px', borderRadius: '3px', background: 'rgba(26,46,69,0.5)', overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${row.completionPct}%`, background: barColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Phases completed / 10 */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                                {row.phasesCompleted}
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/10</span>
+                              </span>
+                            </td>
+
+                            {/* Requirements */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{row.requirementsCount}</span>
+                            </td>
+
+                            {/* AI Runs */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{row.aiRunCount}</span>
+                            </td>
+
+                            {/* 7-Day Sparkline */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <div className="flex justify-center items-end" title={`Activity last 7 days: ${row.weeklyActivity.join(', ')}`}>
+                                <ProjectSparkline data={row.weeklyActivity} />
+                              </div>
+                            </td>
+
+                            {/* Quick link */}
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <div className="flex justify-center">
+                                <button
+                                  onClick={e => { e.stopPropagation(); navigate(`/projects/${row.id}`); }}
+                                  className="p-1.5 rounded-lg transition-all hover:scale-110"
+                                  style={{ background: 'rgba(212,160,23,0.1)', border: '1px solid rgba(212,160,23,0.25)', color: '#D4A017' }}
+                                  title={`Open ${row.name}`}
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Cross-project Activity Timeline */}
+          <div className="mt-6">
+            {isGlobal && projectsWithActivity.length > 0 && (
+              <div className="flex items-center gap-3 mb-3">
+                <FolderKanban className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  className="text-sm bg-[var(--brand-850)] border border-[var(--brand-700)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--blue-400)] transition-colors"
+                >
+                  <option value="all">All Projects</option>
+                  {projectsWithActivity.map((p) => {
+                    const pid = p.project_id || p.id || '';
+                    return (
+                      <option key={pid} value={pid}>
+                        {p.name || 'Untitled project'}
+                      </option>
+                    );
+                  })}
+                </select>
+                {selectedProjectId !== 'all' && (
+                  <button
+                    onClick={() => setSelectedProjectId('all')}
+                    className="text-xs text-[var(--blue-400)] hover:text-[var(--blue-300)] transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+            <PhaseActivityTimeline
+              title="Recent Project Activity"
+              description={
+                isGlobal && selectedProjectId !== 'all'
+                  ? `Confirmed phase completions for ${projectsWithActivity.find((p) => (p.project_id || p.id) === selectedProjectId)?.name ?? 'selected project'}.`
+                  : 'Confirmed phase completions across all of your projects.'
+              }
+              emptyTitle="No phase completions yet"
+              emptyDescription="As your team confirms phases across projects, they'll show up here."
+              entries={filteredActivityEntries}
+              showProject={selectedProjectId === 'all'}
+              previewNotes
+              onEntryClick={(entry) => {
+                if (entry.projectId) {
+                  navigate(`/projects/${entry.projectId}/phases/${entry.phaseId}`);
+                }
+              }}
+            />
           </div>
 
         </div>

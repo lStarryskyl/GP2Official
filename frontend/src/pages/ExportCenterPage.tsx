@@ -62,6 +62,28 @@ const exportOptions: ExportOption[] = [
   }
 ];
 
+async function extractAxiosError(err: unknown): Promise<{ status?: number; detail?: string }> {
+  if (typeof err !== 'object' || err === null) return {};
+  const response = (err as { response?: { status?: number; data?: unknown } }).response;
+  if (!response) return {};
+  let detail: string | undefined;
+  const data = response.data;
+  if (typeof data === 'object' && data !== null && 'detail' in data) {
+    const d = (data as { detail?: unknown }).detail;
+    if (typeof d === 'string') detail = d;
+  }
+  if (!detail && data instanceof Blob) {
+    try {
+      const text = await data.text();
+      const parsed = JSON.parse(text) as { detail?: unknown };
+      if (typeof parsed.detail === 'string') detail = parsed.detail;
+    } catch {
+      // body wasn't JSON; fall through
+    }
+  }
+  return { status: response.status, detail };
+}
+
 export const ExportCenterPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [exporting, setExporting] = useState<string | null>(null);
@@ -111,9 +133,20 @@ export const ExportCenterPage: React.FC = () => {
         alert(`${exportOptions.find(o => o.id === optionId)?.name} exported as ${format}!`);
       }
       setExported(prev => new Set(prev).add(optionId));
+<<<<<<< HEAD
     } catch (err) {
       console.error('Export failed:', err);
       alert('Export failed. Please try again.');
+=======
+    } catch (err: unknown) {
+      console.error('Export failed:', err);
+      const { status, detail } = await extractAxiosError(err);
+      if (status === 402) {
+        alert(detail || 'This export format requires a Pro plan. Upgrade in Billing to unlock PDF and DOCX exports.');
+      } else {
+        alert(detail || 'Export failed. Please try again.');
+      }
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     } finally {
       setExporting(null);
     }

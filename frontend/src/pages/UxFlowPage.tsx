@@ -81,8 +81,8 @@ export const UxFlowPage: React.FC = () => {
             Back to Project
           </Button>
           <div className="text-right">
-            <p className="text-xs uppercase text-gray-500">UX Flow</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs uppercase text-[var(--text-muted)]">UX Flow</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               {project?.name || 'Project'}
             </p>
           </div>
@@ -92,7 +92,7 @@ export const UxFlowPage: React.FC = () => {
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
               <CardTitle>AI-Generated UX Flow</CardTitle>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[var(--text-muted)]">
                 End-to-end user flow, IA, and UX spec based on your project brief and requirements.
               </p>
             </div>
@@ -132,7 +132,7 @@ export const UxFlowPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+              <div className="mb-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
                 {error}
               </div>
             )}
@@ -141,12 +141,12 @@ export const UxFlowPage: React.FC = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
               </div>
             ) : !markdown ? (
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[var(--text-muted)]">
                 No UX flow has been generated for this project yet. Click{" "}
                 <span className="font-semibold">Generate UX Flow</span> to create one.
               </div>
               ) : (
-                <div className="border border-gray-200 rounded-lg bg-white max-h-[70vh] overflow-auto p-4 prose prose-sm max-w-none">
+                <div className="border border-[var(--brand-700)] rounded-lg bg-[#152238] max-h-[70vh] overflow-auto p-4 prose prose-sm prose-invert max-w-none">
                   <ReactMarkdown>{markdown}</ReactMarkdown>
                 </div>
               )}

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { Requirement } from '@/types';
+import { api } from '@/lib/api';
 import {
   CheckCircle2,
   XCircle,
@@ -14,10 +15,12 @@ import {
   ChevronUp,
   FileText,
   Users,
+  Loader2,
 } from 'lucide-react';
 
 interface ValidationItem {
   id: string;
+  requirementId?: string;
   name: string;
   description: string;
   status: 'approved' | 'pending' | 'rejected' | 'review';
@@ -39,9 +42,12 @@ const buildRequirementItems = (requirements?: Requirement[]): ValidationItem[] =
   let counter = 1;
   return requirements.map((req) => ({
     id: `r${counter++}`,
+    requirementId: req.requirement_id,
     name: req.title,
     description: req.description,
-    status: 'pending',
+    status: (req.status === 'approved' || req.status === 'rejected' || req.status === 'review')
+      ? req.status as ValidationItem['status']
+      : 'pending',
   }));
 };
 
@@ -81,6 +87,8 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
     setExpandedItems(newExpanded);
   };
 
+  const [savingId, setSavingId] = useState<string | null>(null);
+
   // Local editable state for all items parsed from AI content
   const [itemsById, setItemsById] = useState<Record<string, ValidationItem>>(() => {
     const map: Record<string, ValidationItem> = {};
@@ -89,6 +97,22 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
     });
     return map;
   });
+
+  const handleSetStatus = async (itemId: string, status: 'approved' | 'rejected') => {
+    const item = itemsById[itemId];
+    setItemsById((prev) => ({ ...prev, [itemId]: { ...prev[itemId], status } }));
+    if (!item?.requirementId) return;
+    setSavingId(itemId);
+    try {
+      await api.updateRequirement(item.requirementId, { status });
+    } catch (err) {
+      console.error('Failed to persist validation status', err);
+      setItemsById((prev) => ({ ...prev, [itemId]: { ...prev[itemId], status: item.status } }));
+      window.location.reload();
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const getStats = (items: ValidationItem[]) => {
     const approved = items.filter(i => i.status === 'approved').length;
@@ -105,10 +129,10 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
     <div className="space-y-6">
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 border-teal-200">
+        <Card className="bg-blue-900/20 border-blue-700/40">
           <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-teal-700">{overallProgress}%</div>
-            <div className="text-sm text-teal-600">Overall Validated</div>
+            <div className="text-3xl font-bold text-blue-300">{overallProgress}%</div>
+            <div className="text-sm text-blue-400">Overall Validated</div>
           </CardContent>
         </Card>
         <Card>
@@ -156,10 +180,17 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
               return (
                 <div
                   key={item.id}
+<<<<<<< HEAD
                   className={`border rounded-lg transition-all ${liveItem.status === 'approved' ? 'border-blue-700/40 bg-blue-900/20/50' :
                       liveItem.status === 'pending' ? 'border-amber-200 bg-amber-50/50' :
                         liveItem.status === 'rejected' ? 'border-red-200 bg-red-50/50' :
                           'border-gray-200 bg-white'
+=======
+                  className={`border rounded-lg transition-all ${liveItem.status === 'approved' ? 'border-blue-700/40 bg-blue-900/20' :
+                      liveItem.status === 'pending' ? 'border-amber-700/40 bg-amber-900/10' :
+                        liveItem.status === 'rejected' ? 'border-red-700/40 bg-red-900/10' :
+                          'border-[var(--brand-700)] bg-[var(--brand-850)]'
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                     }`}
                 >
                   <div
@@ -177,8 +208,8 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
                         <MessageSquare className="h-5 w-5 text-blue-500" />
                       )}
                       <div>
-                        <div className="font-medium text-gray-900">{item.name}</div>
-                        <div className="text-sm text-gray-500">{item.description}</div>
+                        <div className="font-medium text-gray-200">{item.name}</div>
+                        <div className="text-sm text-gray-400">{item.description}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -206,9 +237,9 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
                         <div className="flex items-start gap-2 text-sm">
                           <MessageSquare className="h-4 w-4 text-gray-400 mt-0.5" />
                           <div className="flex-1">
-                            <span className="text-gray-600">Reviewer comments</span>
+                            <span className="text-gray-400">Reviewer comments</span>
                             <textarea
-                              className="mt-1 w-full border border-gray-200 rounded-md px-2 py-1 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              className="mt-1 w-full border border-[var(--brand-700)] rounded-md px-2 py-1 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-[#152238] text-gray-200 placeholder-gray-500"
                               rows={2}
                               value={liveItem.comments || ''}
                               onChange={(e) =>
@@ -229,33 +260,29 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
                             size="sm"
                             variant="outline"
                             className="flex items-center gap-1"
-                            onClick={() =>
-                              setItemsById((prev) => ({
-                                ...prev,
-                                [item.id]: {
-                                  ...prev[item.id],
-                                  status: 'approved',
-                                },
-                              }))
-                            }
+                            disabled={savingId === item.id}
+                            onClick={() => handleSetStatus(item.id, 'approved')}
                           >
-                            <ThumbsUp className="h-3 w-3" /> Approve
+                            {savingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ThumbsUp className="h-3 w-3" />
+                            )}{' '}
+                            Approve
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             className="flex items-center gap-1 text-red-600"
-                            onClick={() =>
-                              setItemsById((prev) => ({
-                                ...prev,
-                                [item.id]: {
-                                  ...prev[item.id],
-                                  status: 'rejected',
-                                },
-                              }))
-                            }
+                            disabled={savingId === item.id}
+                            onClick={() => handleSetStatus(item.id, 'rejected')}
                           >
-                            <ThumbsDown className="h-3 w-3" /> Reject
+                            {savingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ThumbsDown className="h-3 w-3" />
+                            )}{' '}
+                            Reject
                           </Button>
                         </div>
                       </div>

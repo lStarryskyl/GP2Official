@@ -80,6 +80,9 @@ class AiRunRepository:
     async def list_by_projects(self, project_ids: List[str], limit: int = 200) -> List[AiRun]:
         return await self._repo.list_by_projects(project_ids, limit)
 
+    async def count_user_runs_since(self, user_id: str, since: datetime) -> int:
+        return await self._repo.count_user_runs_since(user_id, since)
+
 
 class _SupabaseAiRunRepository:
     """PostgreSQL implementation."""
@@ -203,6 +206,17 @@ class _SupabaseAiRunRepository:
         
         return [self._row_to_ai_run(row) for row in rows]
 
+    async def count_user_runs_since(self, user_id: str, since: datetime) -> int:
+        if not user_id:
+            return 0
+        pool = self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                'SELECT COUNT(*) AS n FROM ai_runs WHERE user_id = $1 AND created_at >= $2',
+                user_id, since,
+            )
+        return int(row["n"]) if row else 0
+
 
 class _MongoAiRunRepository:
     """MongoDB/Memory implementation."""
@@ -317,3 +331,11 @@ class _MongoAiRunRepository:
             runs.append(AiRun(**doc))
             count += 1
         return runs
+
+    async def count_user_runs_since(self, user_id: str, since: datetime) -> int:
+        if not user_id:
+            return 0
+        db = get_db()
+        return await db[self.collection_name].count_documents(
+            {"user_id": user_id, "created_at": {"$gte": since}}
+        )

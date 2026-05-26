@@ -11,7 +11,20 @@ from routes.auth import get_current_user
 from models.user import User
 from services.gemini_orchestrator import gemini_orchestrator
 from services.openai_client import call_openai
+<<<<<<< HEAD
+=======
+from services.plan_limits import enforce_ai_run_quota, enforce_and_record_ai_run
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 from repositories.artifact_repository import ArtifactRepository
+from repositories.ai_run_repository import AiRunRepository
+
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    limiter = Limiter(key_func=get_remote_address)
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
 
 try:
     from slowapi import Limiter
@@ -23,6 +36,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+ai_run_repo = AiRunRepository()
 
 
 # ── Request / Response models ─────────────────────────────────────────────
@@ -75,6 +89,15 @@ async def chat_with_phase_ai(
     current_user: User = Depends(get_current_user),
 ):
     """Send a message to the AI Chat Assistant for a specific phase."""
+    await enforce_and_record_ai_run(
+        current_user,
+        ai_run_repo,
+        project_id=request.project_id,
+        job_type="ai_chat",
+        provider="openai",
+        model="gpt-4o-mini",
+        phase=request.phase,
+    )
     try:
         # Get the current phase content for context
         phase_content = await _get_phase_content(request.project_id, request.phase)
@@ -129,6 +152,14 @@ async def run_agent_task(
             detail=f"Invalid task_type. Must be one of: {valid_tasks}"
         )
 
+    await enforce_and_record_ai_run(
+        current_user,
+        ai_run_repo,
+        project_id=request.project_id,
+        job_type=f"agent_task:{request.task_type}",
+        provider="gemini",
+        model="gemini-orchestrator",
+    )
     try:
         context = {
             "project_name": request.project_name,

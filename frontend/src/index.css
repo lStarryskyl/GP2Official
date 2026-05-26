@@ -489,4 +489,108 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
     animation-iteration-count:1 !important;
     transition-duration:0.01ms !important;
   }
+<<<<<<< HEAD
+=======
+
+  /* heading-reveal: skip the opacity-0 initial state so content is
+     always visible, even before the IntersectionObserver fires */
+  .heading-reveal,
+  .heading-revealed {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+
+  /* wave-reveal: make child elements immediately visible with no delays */
+  .wave-revealed > *,
+  .wave-revealed > *:nth-child(1),
+  .wave-revealed > *:nth-child(2),
+  .wave-revealed > *:nth-child(3),
+  .wave-revealed > *:nth-child(4),
+  .wave-revealed > *:nth-child(5),
+  .wave-revealed > *:nth-child(6),
+  .wave-revealed > *:nth-child(n+7) {
+    opacity: 1 !important;
+    animation: none !important;
+    animation-delay: 0ms !important;
+  }
 }
+
+/* ── Space background (splash-stars / splash-aurora) ── */
+@keyframes splashFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes splashStarsDrift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 400px 200px, -300px 150px, 200px -100px, -150px 300px, 300px 100px, -200px -150px, 100px 200px; }
+}
+@keyframes splashAuroraA {
+  0%, 100% { transform: translate3d(-10%, -10%, 0) scale(1); opacity: 0.55; }
+  50%      { transform: translate3d(8%, 6%, 0) scale(1.15); opacity: 0.75; }
+}
+@keyframes splashAuroraB {
+  0%, 100% { transform: translate3d(8%, 12%, 0) scale(1.05); opacity: 0.4; }
+  50%      { transform: translate3d(-6%, -8%, 0) scale(1.2); opacity: 0.6; }
+}
+
+.splash-stars {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.55) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 78% 32%, rgba(255,255,255,0.45) 50%, transparent 51%),
+    radial-gradient(1px 1px at 32% 72%, rgba(255,255,255,0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 84%, rgba(255,255,255,0.4) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 56% 12%, rgba(255,255,255,0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 22% 92%, rgba(255,255,255,0.35) 50%, transparent 51%),
+    radial-gradient(1px 1px at 68% 58%, rgba(255,255,255,0.45) 50%, transparent 51%);
+  background-size: 600px 600px;
+  opacity: 0;
+  animation: splashFadeIn 0.6s ease forwards, splashStarsDrift 60s linear infinite;
+}
+.splash-aurora {
+  position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+  will-change: transform, opacity;
+}
+.splash-aurora-blue {
+  width: 70vmax; height: 70vmax; top: -20%; left: -15%;
+  background: radial-gradient(circle, rgba(26,111,212,0.55), transparent 65%);
+  animation: splashAuroraA 14s ease-in-out infinite;
+}
+.splash-aurora-orange {
+  width: 60vmax; height: 60vmax; bottom: -25%; right: -20%;
+  background: radial-gradient(circle, rgba(249,115,22,0.4), transparent 65%);
+  animation: splashAuroraB 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-stars  { animation: none !important; opacity: 1 !important; }
+  .splash-aurora { animation: none !important; opacity: 0.5 !important; }
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
+}
+
+/* ── Wave-reveal section animation ── */
+@keyframes waveCardIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Section heading reveal — whole block fades up as one unit */
+.heading-reveal {
+  opacity: 0;
+}
+.heading-revealed {
+  animation: waveCardIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Cards wave in; --wave-delay lets a preceding heading lead by ~200 ms */
+.wave-revealed > * {
+  opacity: 0;
+  animation: waveCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.wave-revealed > *:nth-child(1)  { animation-delay: calc(var(--wave-delay, 0ms) + 0ms); }
+.wave-revealed > *:nth-child(2)  { animation-delay: calc(var(--wave-delay, 0ms) + 60ms); }
+.wave-revealed > *:nth-child(3)  { animation-delay: calc(var(--wave-delay, 0ms) + 120ms); }
+.wave-revealed > *:nth-child(4)  { animation-delay: calc(var(--wave-delay, 0ms) + 180ms); }
+.wave-revealed > *:nth-child(5)  { animation-delay: calc(var(--wave-delay, 0ms) + 240ms); }
+.wave-revealed > *:nth-child(6)  { animation-delay: calc(var(--wave-delay, 0ms) + 300ms); }
+.wave-revealed > *:nth-child(n+7){ animation-delay: calc(var(--wave-delay, 0ms) + 360ms); }

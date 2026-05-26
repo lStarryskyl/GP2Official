@@ -11,31 +11,71 @@ from models.subscription import (
     Invoice, InvoiceCreate,
     ProcessPaymentRequest, ProcessPaymentResponse
 )
+from services.plan_limits import PLAN_LIMITS
+
+
+def _fmt_limit(value, suffix: str) -> str:
+    return f"Unlimited {suffix}" if value is None else f"Up to {value} {suffix}"
+
+
+def _build_plans():
+    """Compose the public PLANS catalog from the central PLAN_LIMITS config.
+
+    Keeping prices/feature blurbs here, but limits come from the same source
+    used for runtime enforcement so the pricing page can never drift from
+    what the backend actually allows.
+    """
+    free = PLAN_LIMITS["free"]
+    pro = PLAN_LIMITS["pro"]
+    ent = PLAN_LIMITS["enterprise"]
+    return {
+        'free': {
+            'price': 0,
+            'features': [
+                _fmt_limit(free["max_projects"], "active projects"),
+                f"{free['max_ai_runs_per_month']} AI runs / month",
+                _fmt_limit(free["max_team_members"], "team members per project"),
+                "Markdown export",
+                "Community support",
+            ],
+            'max_projects': free["max_projects"] if free["max_projects"] is not None else -1,
+            'max_users': free["max_team_members"] if free["max_team_members"] is not None else -1,
+            'limits': free,
+        },
+        'pro': {
+            'price': 29,
+            'features': [
+                "Unlimited projects",
+                "Unlimited AI runs",
+                "Advanced AI models",
+                "Export PDF / DOCX / Markdown",
+                _fmt_limit(pro["max_team_members"], "team members per project"),
+                "Priority support",
+            ],
+            'max_projects': -1,
+            'max_users': pro["max_team_members"] if pro["max_team_members"] is not None else -1,
+            'limits': pro,
+        },
+        'enterprise': {
+            'price': 99,
+            'features': [
+                "Everything in Pro",
+                "Unlimited team members",
+                "Custom AI models",
+                "Dedicated support",
+                "SLA guarantee",
+            ],
+            'max_projects': -1,
+            'max_users': ent["max_team_members"] if ent["max_team_members"] is not None else -1,
+            'limits': ent,
+        },
+    }
 
 
 class SubscriptionService:
     """Fake payment gateway for demo purposes."""
-    
-    PLANS = {
-        'free': {
-            'price': 0,
-            'features': ['5 projects', 'Basic AI', 'Community support'],
-            'max_projects': 5,
-            'max_users': 3
-        },
-        'pro': {
-            'price': 29,
-            'features': ['Unlimited projects', 'Advanced AI', 'Export PDF/DOCX', 'Priority support'],
-            'max_projects': -1,  # Unlimited
-            'max_users': 10
-        },
-        'enterprise': {
-            'price': 99,
-            'features': ['Everything in Pro', 'Custom AI models', 'Dedicated support', 'SLA guarantee'],
-            'max_projects': -1,
-            'max_users': -1
-        }
-    }
+
+    PLANS = _build_plans()
     
     async def create_subscription(
         self,

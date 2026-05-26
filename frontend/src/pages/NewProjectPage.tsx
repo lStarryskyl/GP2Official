@@ -77,7 +77,14 @@ export const NewProjectPage: React.FC = () => {
       } else if (error.response?.data?.detail) {
         message = error.response.data.detail;
       }
-      alert(message);
+      if (error.response?.status === 402) {
+        if (window.confirm(`${message}\n\nGo to Billing to upgrade now?`)) {
+          navigate('/billing');
+          return;
+        }
+      } else {
+        alert(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -331,7 +338,11 @@ export const NewProjectPage: React.FC = () => {
               <div className={`transition-all duration-300 ${currentStep === 3 ? 'block' : 'hidden'}`}>
                 <div className="p-6 sm:p-8 border-b border-[var(--brand-700)]/30">
                   <div className="flex items-center gap-3 mb-2">
+<<<<<<< HEAD
                     <div className="p-2 bg-blue-900/200/20 rounded-lg border border-blue-500/30">
+=======
+                    <div className="p-2 bg-blue-900/20 rounded-lg border border-blue-500/30">
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
                       <FileText className="w-5 h-5 text-blue-400" />
                     </div>
                     <h2 className="text-xl font-bold text-[var(--text-primary)]">Project Brief</h2>

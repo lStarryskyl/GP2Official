@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState } from 'react';
+=======
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 import { Swords, X, Trophy, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -25,6 +29,52 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
   const [result, setResult] = useState<DebateResponse | null>(null);
   const [error, setError] = useState('');
   const [verdictExpanded, setVerdictExpanded] = useState(true);
+<<<<<<< HEAD
+=======
+  const [agentsPanelOpen, setAgentsPanelOpen] = useState(false);
+  const [athenaChatOpen, setAthenaChatOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Watch for AI Agents panel and Athena chat open/close via body attributes
+  useEffect(() => {
+    const checkAttr = () => {
+      setAgentsPanelOpen(document.body.hasAttribute('data-ai-agents-open'));
+      setAthenaChatOpen(document.body.hasAttribute('data-athena-chat-open'));
+    };
+    checkAttr(); // initial check
+    const observer = new MutationObserver(checkAttr);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-ai-agents-open', 'data-athena-chat-open'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // Close on click outside
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (
+      panelRef.current &&
+      !panelRef.current.contains(e.target as Node) &&
+      toggleRef.current &&
+      !toggleRef.current.contains(e.target as Node)
+    ) {
+      setOpen(false);
+    }
+  }, []);
+
+  // Close on Escape key
+  const handleEscKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleEscKey);
+    };
+  }, [open, handleClickOutside, handleEscKey]);
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
   const startDebate = async () => {
     if (!topic.trim()) return;
@@ -52,39 +102,79 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
     'Mobile-first vs desktop-first design',
   ];
 
+<<<<<<< HEAD
+=======
+  // Hide entirely when AI Agents panel or Athena chat is open
+  if (agentsPanelOpen || athenaChatOpen) return null;
+
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
   return (
     <>
       {/* Toggle button */}
       <button
+<<<<<<< HEAD
         onClick={() => setOpen(!open)}
         title="AI Debate"
         style={{
           position: 'fixed',
           bottom: '90px',
+=======
+        ref={toggleRef}
+        onClick={() => setOpen(!open)}
+        title={open ? 'Close AI Debate' : 'AI Debate'}
+        aria-label={open ? 'Close AI Debate panel' : 'Open AI Debate panel'}
+        style={{
+          position: 'fixed',
+          bottom: '80px',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           right: '24px',
           zIndex: 1000,
           width: '48px',
           height: '48px',
           borderRadius: '50%',
+<<<<<<< HEAD
           background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
           border: '1px solid rgba(26,111,212,0.5)',
+=======
+          background: open
+            ? 'linear-gradient(135deg, #ef4444, #b91c1c)'
+            : 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
+          border: open
+            ? '1px solid rgba(239,68,68,0.5)'
+            : '1px solid rgba(26,111,212,0.5)',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           color: '#fff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
+<<<<<<< HEAD
           boxShadow: '0 4px 20px rgba(26,111,212,0.4)',
           transition: 'transform 0.2s ease',
+=======
+          boxShadow: open
+            ? '0 4px 20px rgba(239,68,68,0.4)'
+            : '0 4px 20px rgba(26,111,212,0.4)',
+          transition: 'all 0.25s ease',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         }}
         onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
         onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
       >
+<<<<<<< HEAD
         <Swords size={20} />
+=======
+        {open ? <X size={20} /> : <Swords size={20} />}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
       </button>
 
       {/* Panel */}
       {open && (
         <div
+<<<<<<< HEAD
+=======
+          ref={panelRef}
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           style={{
             position: 'fixed',
             bottom: '150px',
@@ -99,6 +189,10 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
             zIndex: 999,
             display: 'flex',
             flexDirection: 'column',
+<<<<<<< HEAD
+=======
+            animation: 'fadeInUp 0.2s ease-out',
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           }}
         >
           {/* Header */}
@@ -301,6 +395,17 @@ export const AIDebatePanel: React.FC<AIDebatePanelProps> = ({ projectId, project
           </div>
         </div>
       )}
+<<<<<<< HEAD
+=======
+
+      {/* Inline keyframe for panel entrance animation */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     </>
   );
 };

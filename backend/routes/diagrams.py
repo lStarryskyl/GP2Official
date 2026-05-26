@@ -82,12 +82,18 @@ def _canonical_diagram_type(diagram_type: str) -> str:
         "entity": "entity_relationship",
         "entity_relationship": "entity_relationship",
         "er": "entity_relationship",
+        "erd": "entity_relationship",
+        "state": "state_machine",
+        "state_machine": "state_machine",
+        "statemachine": "state_machine",
+        "activity": "activity",
+        "activity_diagram": "activity",
     }
     if normalized in mapping:
         return mapping[normalized]
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Unsupported UML diagram type",
+        detail=f"Unsupported UML diagram type: '{diagram_type}'. Supported: use_case, class, sequence, erd, state, activity",
     )
 
 
@@ -98,6 +104,8 @@ def _uml_artifact_type(diagram_type: str) -> str:
         "class_diagram": "uml_class_diagram",
         "sequence": "uml_sequence",
         "entity_relationship": "uml_entity_relationship",
+        "state_machine": "uml_state_machine",
+        "activity": "uml_activity",
     }
     return mapping[canonical]
 
@@ -109,6 +117,8 @@ def _diagram_title(diagram_type: str) -> str:
         "class_diagram": "Class Diagram",
         "sequence": "Sequence Diagram",
         "entity_relationship": "ER Diagram",
+        "state_machine": "State Machine Diagram",
+        "activity": "Activity Diagram",
     }
     return labels.get(canonical, canonical.replace("_", " ").title())
 
@@ -169,6 +179,30 @@ def _default_plantuml(diagram_type: str) -> str:
                 "Project ||--o{ Requirement : contains",
             ]
         )
+    elif canonical == "state_machine":
+        body = [
+            "[*] --> Draft : create",
+            "Draft --> Active : submit",
+            "Active --> UnderReview : complete",
+            "UnderReview --> Done : approve",
+            "UnderReview --> Active : request changes",
+            "Done --> [*]",
+        ]
+    elif canonical == "activity":
+        body = [
+            "start",
+            ":User initiates action;",
+            "if (Valid?) then (yes)",
+            "  :Process request;",
+            "  :Persist to database;",
+            "  :Notify stakeholders;",
+            "else (no)",
+            "  :Return error;",
+            "  stop",
+            "endif",
+            ":Done;",
+            "stop",
+        ]
     else:
         body = ["rectangle Placeholder"]
     return "\n".join(base_header + body + ["@enduml"])

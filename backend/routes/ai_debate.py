@@ -7,9 +7,18 @@ import logging
 
 from routes.auth import get_current_user
 from services.openai_client import call_openai
+<<<<<<< HEAD
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+=======
+from services.plan_limits import enforce_and_record_ai_run
+from repositories.ai_run_repository import AiRunRepository
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+ai_run_repo = AiRunRepository()
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 
 class DebateRequest(BaseModel):
@@ -35,6 +44,16 @@ async def run_debate(
     current_user=Depends(get_current_user),
 ):
     """Run a structured 3-round AI debate on a design/architecture topic."""
+<<<<<<< HEAD
+=======
+    await enforce_and_record_ai_run(
+        current_user,
+        ai_run_repo,
+        project_id=project_id,
+        job_type="ai_debate",
+        provider="openai",
+    )
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
     topic = req.topic
     context = req.context or ""
     rounds: List[DebateRound] = []

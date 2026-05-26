@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+<<<<<<< HEAD
 import { Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Loader2, Zap } from 'lucide-react';
+=======
+import { Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { AcornLogo } from '../components/AcornLogo';
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 /* ── Animated SDLC pipeline on the left panel ── */
 const PIPELINE_NODES = ['Brief', 'Requirements', 'SRS', 'Design', 'Tasks', 'Deploy'];
@@ -129,6 +134,7 @@ const LoginPage: React.FC = () => {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', zIndex: 1 }}>
+<<<<<<< HEAD
           <div style={{
             width: '40px', height: '40px', borderRadius: '10px',
             background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
@@ -138,6 +144,9 @@ const LoginPage: React.FC = () => {
             <Zap size={20} color="#fff" />
           </div>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)' }}>Acorn</span>
+=======
+          <AcornLogo height={44} white />
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         </div>
 
         {/* Centre content */}
@@ -166,10 +175,14 @@ const LoginPage: React.FC = () => {
         <div style={{ width: '100%', maxWidth: '400px' }} className="animate-reveal-up">
           {/* Mobile logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }} className="lg:hidden">
+<<<<<<< HEAD
             <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Zap size={16} color="#fff" />
             </div>
             <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '18px', color: 'var(--text-primary)' }}>Acorn</span>
+=======
+            <AcornLogo height={38} white />
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
           </div>
 
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '28px', color: 'var(--text-primary)', marginBottom: '6px' }}>

@@ -22,7 +22,7 @@ export default defineConfig({
           'vendor-utils': ['axios', 'date-fns', 'pako'],
           'vendor-canvas': ['reactflow'],
           'vendor-state': ['zustand'],
-          
+
           // App chunks
           'pages-auth': [
             './src/pages/LoginPage',
@@ -95,15 +95,11 @@ export default defineConfig({
       strict: false
     },
     host: '0.0.0.0',
-    port: 3000,
-    allowedHosts: [
-      '.preview.emergentagent.com',
-      '.emergentagent.com',
-      'localhost'
-    ],
+    port: 5000,
+    allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8002',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },

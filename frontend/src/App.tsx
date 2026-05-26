@@ -25,13 +25,28 @@ import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { BillingPageRoute } from './pages/BillingPageRoute';
 import DocsPage from './pages/DocsPage';
 import SDLCGuidePage from './pages/SDLCGuidePage';
+<<<<<<< HEAD
+=======
+import { PlanValidationPage } from './pages/PlanValidationPage';
+import { AgentDebatePage } from './pages/AgentDebatePage';
+import { UxFlowPage } from './pages/UxFlowPage';
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
+  const [isChecking, setIsChecking] = React.useState(true);
 
   useEffect(() => {
-    checkAuth();
+    checkAuth().finally(() => setIsChecking(false));
   }, []);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -170,6 +185,14 @@ function App() {
           }
         />
         <Route
+          path="/analytics"
+          element={
+            <PrivateRoute>
+              <AnalyticsDashboardPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/projects/:id/analytics"
           element={
             <PrivateRoute>
@@ -187,6 +210,34 @@ function App() {
         />
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/sdlc-guide" element={<SDLCGuidePage />} />
+<<<<<<< HEAD
+=======
+        <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+        <Route
+          path="/projects/:id/validate"
+          element={
+            <PrivateRoute>
+              <PlanValidationPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/debate"
+          element={
+            <PrivateRoute>
+              <AgentDebatePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/ux-flow"
+          element={
+            <PrivateRoute>
+              <UxFlowPage />
+            </PrivateRoute>
+          }
+        />
+>>>>>>> 06ab8cc70568499c9e8ea30b7f8b9591269255d1
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

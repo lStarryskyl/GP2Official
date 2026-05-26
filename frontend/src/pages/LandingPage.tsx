@@ -354,12 +354,8 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
   const reducedMotion = usePrefersReducedMotion();
   const [skipped, setSkipped] = useState(false);
 
-  useEffect(() => {
-    if (reducedMotion) {
-      const t = setTimeout(() => onComplete?.(), 200);
-      return () => clearTimeout(t);
-    }
-  }, [reducedMotion]);
+  // Never auto-dismiss for reduced-motion — user must click Enter or Skip.
+  // (Previously 200ms auto-complete was making the splash disappear instantly.)
 
   const skip = () => {
     setSkipped(true);
@@ -367,7 +363,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
     onSkip?.();
   };
 
-  const stageClass = `splash-stage${reducedMotion || skipped ? ' is-instant' : ''}`;
+  const stageClass = `splash-stage${skipped ? ' is-instant' : ''}`;
 
   const logoSize = isMobile ? 96 : 128;
   const haloSize = isMobile ? 240 : 360;

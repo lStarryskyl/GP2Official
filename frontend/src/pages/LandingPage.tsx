@@ -1193,11 +1193,13 @@ const LandingPage: React.FC = () => {
   });
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D1B2A', color: '#E8EDF5' }}>
-      {/* Space background — same classes as splash screen */}
-      <div className="splash-stars" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
+    <div style={{ minHeight: '100vh', color: '#E8EDF5' }}>
+      {/* Layer 1: solid dark base (below everything) */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, background: '#0D1B2A', zIndex: -2 }} />
+      {/* Layer 2: space stars + aurora — behind page content */}
+      <div className="splash-stars" aria-hidden style={{ position: 'fixed', zIndex: -1 }} />
+      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'fixed', zIndex: -1 }} />
+      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'fixed', zIndex: -1 }} />
 
       <style>{`
         @media (max-width: 768px) {

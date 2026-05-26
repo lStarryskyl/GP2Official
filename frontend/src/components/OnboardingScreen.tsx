@@ -469,12 +469,18 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onDone }) => {
         overflow: 'hidden',
       }}
     >
+      {/* Space background — stars + aurora behind slide content */}
+      <div className="splash-stars" aria-hidden style={{ position: 'absolute', zIndex: 0 }} />
+      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'absolute', zIndex: 0 }} />
+      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'absolute', zIndex: 0 }} />
+
       <div style={{
         position: 'absolute',
         inset: 0,
         pointerEvents: 'none',
+        zIndex: 1,
         background:
-          'radial-gradient(800px circle at 25% 35%, rgba(26,111,212,0.07), transparent 55%), radial-gradient(600px circle at 75% 65%, rgba(249,115,22,0.05), transparent 55%)',
+          'radial-gradient(800px circle at 25% 35%, rgba(26,111,212,0.12), transparent 55%), radial-gradient(600px circle at 75% 65%, rgba(249,115,22,0.08), transparent 55%)',
       }} />
 
       <WarpOverlay active={warpActive && !reducedMotion} />

@@ -150,6 +150,17 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
     setTiltMap(prev => ({ ...prev, [sectionId]: { rotateX: 0, rotateY: 0 } }));
   }, []);
 
+  const resetAllTilts = useCallback(() => {
+    setTiltMap({});
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('scroll', resetAllTilts, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', resetAllTilts);
+    };
+  }, [resetAllTilts]);
+
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;

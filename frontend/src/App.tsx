@@ -27,6 +27,7 @@ import DocsPage from './pages/DocsPage';
 import SDLCGuidePage from './pages/SDLCGuidePage';
 import { PlanValidationPage } from './pages/PlanValidationPage';
 import { AgentDebatePage } from './pages/AgentDebatePage';
+import { UxFlowPage } from './pages/UxFlowPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -220,6 +221,14 @@ function App() {
           element={
             <PrivateRoute>
               <AgentDebatePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/ux-flow"
+          element={
+            <PrivateRoute>
+              <UxFlowPage />
             </PrivateRoute>
           }
         />

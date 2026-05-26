@@ -1,14 +1,16 @@
 """AI Suggestions endpoint — proactive phase improvement tips."""
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+import json
+import re
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import List
 
 from routes.auth import get_current_user
-from services.openai_client import call_openai
 from services.plan_limits import enforce_and_record_ai_run
 from repositories.ai_run_repository import AiRunRepository
+from config import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,8 +27,8 @@ class SuggestionsRequest(BaseModel):
 class Suggestion(BaseModel):
     title: str
     description: str
-    priority: str  # "high" | "medium" | "low"
-    category: str  # "missing" | "improve" | "risk" | "next"
+    priority: str
+    category: str
 
 
 class SuggestionsResponse(BaseModel):
@@ -45,7 +47,7 @@ async def get_phase_suggestions(
         ai_run_repo,
         project_id=project_id,
         job_type="ai_suggestions",
-        provider="openai",
+        provider="gemini",
         phase=req.phase,
     )
     content_snippet = req.phase_content[:3000] if req.phase_content else "No content yet."
@@ -79,9 +81,11 @@ Categories:
 Be specific to the project context. Vary priorities."""
 
     try:
-        raw = await call_openai(prompt, system="You are a concise project planning AI. Always respond with valid JSON only.")
-        import json, re
-        # Extract JSON from response
+        import google.generativeai as genai
+        genai.configure(api_key=settings.gemini_api_key)
+        model = genai.GenerativeModel(settings.gemini_flash_model)
+        response = model.generate_content(prompt)
+        raw = response.text or ""
         m = re.search(r'\{.*\}', raw, re.DOTALL)
         if not m:
             raise ValueError("No JSON in response")
@@ -90,7 +94,6 @@ Be specific to the project context. Vary priorities."""
         return SuggestionsResponse(suggestions=suggestions[:5])
     except Exception as e:
         logger.error(f"Suggestions error: {e}")
-        # Fallback suggestions
         return SuggestionsResponse(suggestions=[
             Suggestion(title="Add acceptance criteria", description="Define clear acceptance criteria for each requirement in this phase.", priority="high", category="missing"),
             Suggestion(title="Link to next phase", description="Ensure outputs from this phase feed directly into the next phase's inputs.", priority="medium", category="next"),

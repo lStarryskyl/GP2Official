@@ -2,12 +2,12 @@
 
 import time
 import uuid
+import json
 import logging
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
-from motor.motor_asyncio import AsyncIOMotorClient
 
 from models.scaffolding import ScaffoldRequest, ScaffoldResult, ScaffoldFile
 from services.ai_pipeline_service import ai_pipeline, TaskType
@@ -15,42 +15,39 @@ from database import get_db
 
 logger = logging.getLogger(__name__)
 
+
 class ScaffoldingService:
-    def __init__(self, db: AsyncIOMotorClient = get_db):
-        self.db = db()
-        
+    def __init__(self):
+        pass
+
+    def _get_pool(self):
+        return get_db()
+
     async def _collect_project_data(self, project_id: str) -> str:
         """Collect all relevant architectural data for the project."""
-        project = await self.db.projects.find_one({"_id": project_id})
-        if not project:
-            raise ValueError("Project not found")
-            
-        context = f"# Project: {project.get('name', 'Untitled')}\n"
-        context += f"Description: {project.get('description', 'None')}\n\n"
-        
-        # Tech stack
-        dev_doc = await self.db.workspace_elements.find_one({
-            "project_id": project_id,
-            "type": "development"
-        })
-        if dev_doc:
-            context += "## Technical Stack\n"
-            import json
-            context += json.dumps(dev_doc.get("data", {}), indent=2, default=str) + "\n\n"
-            
-        # Architecture / Classes
-        uml_doc = await self.db.workspace_elements.find_one({
-            "project_id": project_id,
-            "type": "uml_class"
-        })
-        if uml_doc:
-            context += "## Class Models (PlantUML)\n"
-            context += uml_doc.get("data", {}).get("plantuml", "") + "\n\n"
-            
+        pool = self._get_pool()
+        async with pool.acquire() as conn:
+            project = await conn.fetchrow(
+                "SELECT name, description FROM projects WHERE id = $1", project_id
+            )
+            if not project:
+                raise ValueError("Project not found")
+
+            context = f"# Project: {project['name']}\n"
+            context += f"Description: {project['description'] or 'None'}\n\n"
+
+            artifacts = await conn.fetch(
+                "SELECT type, content_json FROM artifacts WHERE project_id = $1 AND type IN ('system_design','development','architecture')",
+                project_id
+            )
+            for art in artifacts:
+                if art['content_json']:
+                    context += f"## {art['type'].replace('_', ' ').title()}\n"
+                    context += json.dumps(art['content_json'], indent=2, default=str) + "\n\n"
+
         return context
 
     def _build_scaffold_prompt(self, context: str, request: ScaffoldRequest) -> str:
-        """Build the LLM prompt for generating scaffolding."""
         prompt = """You are an EXPERT LEAD SOFTWARE ENGINEER.
 Your task is to generate a comprehensive, production-ready code scaffold for the requested software project.
 You must read the project context, define a professional folder structure, and write the core boilerplate files.
@@ -58,9 +55,9 @@ You must read the project context, define a professional folder structure, and w
 Project Context:
 """
         prompt += context
-        
+
         target_stack = f" (Target: {request.target_stack})" if request.target_stack else ""
-        
+
         prompt += f"""
 Constraints and Requirements:
 1. Target Stack: Based on the Technical Stack provided above{target_stack}.
@@ -93,32 +90,29 @@ Respond with ONLY valid JSON in this exact structure (no markdown text outside t
     async def generate_scaffold(self, project_id: str, user_id: str, request: ScaffoldRequest) -> ScaffoldResult:
         """Main orchestrator for generating project code."""
         start_time = time.time()
-        
+
         try:
             context = await self._collect_project_data(project_id)
         except ValueError as e:
             raise HTTPException(status_code=404, detail=str(e))
-            
+
         prompt = self._build_scaffold_prompt(context, request)
-        
-        # Use premium model (GPT-4 / equivalent) for scaffolding as it requires extensive multi-file coding
+
         logger.info(f"Generating code scaffold for project {project_id}")
         result = await ai_pipeline.generate_with_best_model(
             prompt=prompt,
             task_type=TaskType.CODE_SCAFFOLDING
         )
-        
+
         try:
             if isinstance(result.content, dict):
                 resp_json = result.content
             else:
-                import json
                 import re
                 raw_text = str(result.content or "{}")
-                # Very common for large scaffolding to get wrapped in markdown backticks
                 clean_text = re.sub(r'```(?:json)?|```', '', raw_text).strip()
                 resp_json = json.loads(clean_text)
-                
+
             files = [
                 ScaffoldFile(
                     path=f.get("path", "unnamed.txt"),
@@ -128,7 +122,7 @@ Respond with ONLY valid JSON in this exact structure (no markdown text outside t
                 )
                 for f in resp_json.get("files", [])
             ]
-            
+
             scaffold = ScaffoldResult(
                 id=str(uuid.uuid4()),
                 project_id=project_id,
@@ -140,36 +134,46 @@ Respond with ONLY valid JSON in this exact structure (no markdown text outside t
                 duration_ms=int((time.time() - start_time) * 1000),
                 tokens_used=result.tokens_used
             )
-            
-            # Save to database
+
             scaffold_dict = scaffold.dict()
             if 'created_at' in scaffold_dict and isinstance(scaffold_dict['created_at'], datetime):
                 scaffold_dict['created_at'] = scaffold_dict['created_at'].isoformat()
-                
-            await self.db.projects.update_one(
-                {"_id": project_id},
-                {"$push": {"scaffolds": scaffold_dict}}
-            )
-            
+
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """INSERT INTO artifacts (id, project_id, type, title, content_json, created_at, updated_at)
+                       VALUES ($1, $2, 'scaffold', $3, $4, NOW(), NOW())
+                       ON CONFLICT (id) DO NOTHING""",
+                    scaffold.id,
+                    project_id,
+                    f"{scaffold.target_stack} scaffold",
+                    json.dumps(scaffold_dict)
+                )
+
             return scaffold
-            
+
         except Exception as e:
             logger.error(f"Failed to parse scaffolding result: {e}")
-            logger.error(f"Raw output (first 500 chars): {str(getattr(result, 'content', ''))[:500]}")
             raise HTTPException(status_code=500, detail="AI returned malformed scaffolding structure.")
 
     async def get_scaffolds(self, project_id: str) -> List[ScaffoldResult]:
         """Retrieve all past generated scaffolds for a project."""
-        project = await self.db.projects.find_one(
-            {"_id": project_id},
-            {"scaffolds": 1}
-        )
-        if not project or "scaffolds" not in project:
-            return []
-            
+        pool = self._get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT content_json FROM artifacts WHERE project_id = $1 AND type = 'scaffold' ORDER BY created_at DESC",
+                project_id
+            )
+
         results = []
-        for s_dict in project["scaffolds"]:
+        for row in rows:
             try:
+                raw = row['content_json']
+                if isinstance(raw, str):
+                    s_dict = json.loads(raw)
+                else:
+                    s_dict = dict(raw)
                 if 'created_at' in s_dict and isinstance(s_dict['created_at'], str):
                     try:
                         s_dict['created_at'] = datetime.fromisoformat(s_dict['created_at'].replace('Z', '+00:00'))
@@ -177,7 +181,6 @@ Respond with ONLY valid JSON in this exact structure (no markdown text outside t
                         pass
                 results.append(ScaffoldResult(**s_dict))
             except Exception as e:
-                logger.error(f"Parse error for scaffold {s_dict.get('id')}: {e}")
-                
-        results.sort(key=lambda x: x.created_at, reverse=True)
+                logger.error(f"Parse error for scaffold row: {e}")
+
         return results

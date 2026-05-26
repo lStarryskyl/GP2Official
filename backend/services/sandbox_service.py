@@ -42,6 +42,8 @@ class SandboxService:
         "py": (sys.executable, "-u"),
         "javascript": ("node",),
         "node": ("node",),
+        "typescript": ("npx", "ts-node"),
+        "ts": ("npx", "ts-node"),
     }
 
     async def run(self, payload: SandboxRunRequest) -> SandboxRunResponse:

@@ -5,8 +5,115 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
 import type { Project, Task, Requirement, ChangeLogEntry, ChangeLogFileDetail } from '@/types';
-import { Loader2, ArrowLeft, Upload, FileCode, ListChecks, GitMerge, UploadCloud } from 'lucide-react';
+import {
+  Loader2, ArrowLeft, Upload, FileCode, ListChecks,
+  GitMerge, UploadCloud, ChevronDown, ChevronUp,
+  GitCommitHorizontal, Sparkles, Image, Eye, EyeOff,
+  Activity, Clock,
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+
+const SectionCard: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}> = ({ icon, title, subtitle, children }) => (
+  <div style={{
+    background: 'var(--brand-850)',
+    border: '1px solid rgba(30,53,82,0.7)',
+    borderRadius: 20, overflow: 'hidden',
+  }}>
+    <div style={{
+      padding: '20px 24px 16px',
+      borderBottom: '1px solid rgba(30,53,82,0.5)',
+      display: 'flex', alignItems: 'center', gap: 12,
+    }}>
+      <div style={{
+        width: 38, height: 38, borderRadius: 10,
+        background: 'rgba(26,111,212,0.12)', border: '1px solid rgba(26,111,212,0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        {icon}
+      </div>
+      <div>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{subtitle}</p>
+      </div>
+    </div>
+    <div style={{ padding: '20px 24px' }}>{children}</div>
+  </div>
+);
+
+const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p style={{
+    fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px',
+  }}>
+    {children}
+  </p>
+);
+
+const DarkTextarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = ({ style, ...props }) => (
+  <textarea
+    style={{
+      width: '100%', boxSizing: 'border-box',
+      background: 'var(--brand-800)', border: '1px solid rgba(30,53,82,0.8)',
+      borderRadius: 10, padding: '10px 12px',
+      fontSize: 13, color: 'var(--text-primary)',
+      outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+      ...style,
+    }}
+    onFocus={e => { e.currentTarget.style.borderColor = 'rgba(26,111,212,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,111,212,0.1)'; }}
+    onBlur={e => { e.currentTarget.style.borderColor = 'rgba(30,53,82,0.8)'; e.currentTarget.style.boxShadow = 'none'; }}
+    {...props}
+  />
+);
+
+const DarkSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ style, children, ...props }) => (
+  <select
+    style={{
+      width: '100%', boxSizing: 'border-box',
+      background: 'var(--brand-800)', border: '1px solid rgba(30,53,82,0.8)',
+      borderRadius: 10, padding: '9px 12px',
+      fontSize: 13, color: 'var(--text-primary)',
+      outline: 'none', cursor: 'pointer',
+      ...style,
+    }}
+    {...props}
+  >
+    {children}
+  </select>
+);
+
+const PrimaryBtn: React.FC<{
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}> = ({ onClick, disabled, loading, icon, children }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled || loading}
+    style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+      background: disabled || loading
+        ? 'rgba(26,111,212,0.2)'
+        : 'linear-gradient(135deg, var(--blue-500), var(--blue-700))',
+      border: '1px solid rgba(26,111,212,0.4)',
+      borderRadius: 10, padding: '9px 20px',
+      fontSize: 13, fontWeight: 600, color: '#fff',
+      cursor: disabled || loading ? 'not-allowed' : 'pointer',
+      transition: 'all 0.2s', whiteSpace: 'nowrap',
+    }}
+    onMouseEnter={e => { if (!disabled && !loading) e.currentTarget.style.boxShadow = '0 4px 16px rgba(26,111,212,0.35)'; }}
+    onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
+  >
+    {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : icon}
+    {children}
+  </button>
+);
 
 export const DevelopmentUpdatesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,39 +122,39 @@ export const DevelopmentUpdatesPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [entries, setEntries] = useState<ChangeLogEntry[]>([]);
+
   const [description, setDescription] = useState('');
   const [filesText, setFilesText] = useState('');
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [selectedRequirements, setSelectedRequirements] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [generateDiagramManual, setGenerateDiagramManual] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadDescription, setUploadDescription] = useState('');
   const [uploadTasks, setUploadTasks] = useState<string[]>([]);
   const [uploadRequirements, setUploadRequirements] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [generateDiagramUpload, setGenerateDiagramUpload] = useState(false);
-  const [autoVisualize, setAutoVisualize] = useState(() => localStorage.getItem('dev_updates_auto_diagram') === 'true');
-  const latestDiagramEntry = entries.find((entry) => entry.diagram_url);
-  type FileDisplay = { name: string; timestamp?: string };
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [expandedEntries, setExpandedEntries] = useState<Record<string, boolean>>({});
+  const [autoVisualize, setAutoVisualize] = useState(
+    () => localStorage.getItem('dev_updates_auto_diagram') === 'true'
+  );
+
+  const latestDiagramEntry = entries.find(e => e.diagram_url);
+
+  type FileDisplay = { name: string; timestamp?: string };
   const formatFilesForEntry = (entry: ChangeLogEntry): FileDisplay[] => {
     const details = (entry.metadata?.file_details as ChangeLogFileDetail[] | undefined) || [];
-    if (details.length > 0) {
-      return details.map((detail) => ({
-        name: detail.name,
-        timestamp: detail.timestamp,
-      }));
-    }
-    return entry.files.map((name) => ({ name }));
+    if (details.length > 0) return details.map(d => ({ name: d.name, timestamp: d.timestamp }));
+    return entry.files.map(name => ({ name }));
   };
-  const manualFilesList = filesText
-    .split(/\n|,/)
-    .map((file) => file.trim())
-    .filter(Boolean);
-  const [expandedEntries, setExpandedEntries] = useState<Record<string, boolean>>({});
+
+  const manualFilesList = filesText.split(/\n|,/).map(f => f.trim()).filter(Boolean);
 
   const loadData = async () => {
     if (!id) return;
@@ -70,9 +177,7 @@ export const DevelopmentUpdatesPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
+  useEffect(() => { loadData(); }, [id]);
 
   useEffect(() => {
     setGenerateDiagramManual(autoVisualize);
@@ -85,19 +190,16 @@ export const DevelopmentUpdatesPage: React.FC = () => {
     setSaving(true);
     setError(null);
     try {
-      const payload = {
+      await api.createChangeLog(id, {
         description: description.trim(),
         files: manualFilesList,
         task_ids: selectedTasks,
         requirement_ids: selectedRequirements,
         entry_type: 'manual',
         generate_diagram: generateDiagramManual,
-      };
-      await api.createChangeLog(id, payload);
-      setDescription('');
-      setFilesText('');
-      setSelectedTasks([]);
-      setSelectedRequirements([]);
+      });
+      setDescription(''); setFilesText('');
+      setSelectedTasks([]); setSelectedRequirements([]);
       await loadData();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Unable to save update.');
@@ -118,10 +220,8 @@ export const DevelopmentUpdatesPage: React.FC = () => {
         requirement_ids: uploadRequirements,
         generate_diagram: generateDiagramUpload,
       });
-      setUploadFile(null);
-      setUploadDescription('');
-      setUploadTasks([]);
-      setUploadRequirements([]);
+      setUploadFile(null); setUploadDescription('');
+      setUploadTasks([]); setUploadRequirements([]);
       await loadData();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Unable to upload file.');
@@ -130,15 +230,21 @@ export const DevelopmentUpdatesPage: React.FC = () => {
     }
   };
 
-  const toggleEntry = (entryId: string) => {
-    setExpandedEntries((prev) => ({ ...prev, [entryId]: !prev[entryId] }));
+  const toggleEntry = (entryId: string) =>
+    setExpandedEntries(prev => ({ ...prev, [entryId]: !prev[entryId] }));
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) setUploadFile(file);
   };
 
   if (isLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 320 }}>
+          <Loader2 style={{ width: 32, height: 32, color: 'var(--blue-400)', animation: 'spin 1s linear infinite' }} />
         </div>
       </Layout>
     );
@@ -147,320 +253,529 @@ export const DevelopmentUpdatesPage: React.FC = () => {
   if (!project) {
     return (
       <Layout>
-        <div className="text-center py-16 space-y-4">
-          <p className="text-gray-600">Project not found.</p>
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Project not found.</p>
           <Button onClick={() => navigate('/projects')}>Back to Projects</Button>
         </div>
       </Layout>
     );
   }
 
+  const projectId = project.project_id || project.id;
+
   return (
     <Layout>
-      <div className="bg-[#F9FAFB] min-h-screen">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <button
-              onClick={() => navigate(`/projects/${project.project_id || project.id}`)}
-              className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Project
-            </button>
-            <span className="text-sm text-gray-500">
-              Last updated {project.updated_at ? new Date(project.updated_at).toLocaleString() : 'n/a'}
-            </span>
-          </div>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-          <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-2">
-            <p className="text-xs uppercase tracking-wide text-[#6B7280]">Operations</p>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-semibold text-[#111827]">Development Updates</h1>
-                <p className="text-sm text-[#4B5563]">
-                  Track progress, attach code, and keep the team aligned on what&apos;s shipped.
-                </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <button
+            onClick={() => navigate(`/projects/${projectId}`)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', fontSize: 13, fontWeight: 500,
+              padding: '6px 10px', borderRadius: 8, transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            <ArrowLeft size={15} /> Back to Project
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+            Last updated {project.updated_at ? new Date(project.updated_at).toLocaleString() : 'n/a'}
+          </span>
+        </div>
+
+        <div style={{
+          background: 'linear-gradient(135deg, var(--brand-800) 0%, var(--brand-850) 100%)',
+          border: '1px solid rgba(26,111,212,0.2)',
+          borderRadius: 20, padding: '28px 32px',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8,
+                background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)',
+                borderRadius: 6, padding: '3px 10px',
+                fontSize: 10, fontWeight: 700, color: '#F97316',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>
+                <Activity size={10} /> Operations
               </div>
-              <Badge variant="outline" className="text-xs text-[#4B5563] border-[#E5E7EB] bg-white">
-                {project.name}
-              </Badge>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                Development Updates
+              </h1>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                Track progress, attach code, and keep the team aligned on what's shipped.
+              </p>
             </div>
-            {error && (
-              <div className="rounded-xl border border-red-100 bg-red-50 text-red-700 px-4 py-3 text-sm">{error}</div>
-            )}
+            <div style={{
+              background: 'rgba(26,46,69,0.6)', border: '1px solid rgba(30,53,82,0.6)',
+              borderRadius: 10, padding: '6px 14px',
+              fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
+            }}>
+              {project.name}
+            </div>
           </div>
+          {error && (
+            <div style={{
+              marginTop: 16, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#f87171',
+            }}>
+              {error}
+            </div>
+          )}
+        </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-            <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-5">
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20 }}>
+
+          <SectionCard
+            icon={<GitCommitHorizontal size={18} color="#3d8fe0" />}
+            title="Manual Development Update"
+            subtitle="Share the story behind the work, link it to planned tasks, and flag diagram needs."
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <h2 className="text-lg font-semibold text-[#111827]">Manual Development Update</h2>
-                <p className="text-sm text-[#6B7280]">Share the story behind the work, link it to planned tasks, and flag diagram needs.</p>
+                <FieldLabel>What changed?</FieldLabel>
+                <DarkTextarea
+                  rows={5}
+                  placeholder="Added retry logic to payment service, updated API contract..."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                />
               </div>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[#6B7280]">What changed?</label>
-                  <textarea
-                    className="w-full border border-[#E5E7EB] rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-[#4F46E5] focus:outline-none min-h-[140px]"
-                    placeholder="Added retry logic to payment service, updated API contract..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#6B7280]">Files touched</label>
-                  <textarea
-                    className="w-full border border-[#E5E7EB] rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-[#4F46E5] focus:outline-none"
-                    rows={3}
-                    placeholder="src/api.ts, backend/services/foo.py or one per line"
-                    value={filesText}
-                    onChange={(e) => setFilesText(e.target.value)}
-                  />
-                  {manualFilesList.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {manualFilesList.map((file, idx) => (
-                        <span
-                          key={`manual-${idx}-${file || 'file'}`}
-                          className="inline-flex items-center rounded-full border border-[#E5E7EB] px-3 py-1 text-xs text-[#4B5563] bg-[#F9FAFB]"
-                        >
-                          <FileCode className="h-3.5 w-3.5 mr-1 text-[#9CA3AF]" />
-                          {file}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[#6B7280]">Linked tasks</label>
-                    <select
-                      multiple
-                      value={selectedTasks}
-                      onChange={(e) => setSelectedTasks(Array.from(e.target.selectedOptions, (opt) => opt.value))}
-                      className="w-full border border-[#E5E7EB] rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] h-32"
-                    >
-                      {tasks.map((task) => (
-                        <option key={task.task_id} value={task.task_id}>
-                          {task.title}
-                        </option>
-                      ))}
-                    </select>
+
+              <div>
+                <FieldLabel>Files touched</FieldLabel>
+                <DarkTextarea
+                  rows={3}
+                  placeholder="src/api.ts, backend/services/foo.py or one per line"
+                  value={filesText}
+                  onChange={e => setFilesText(e.target.value)}
+                />
+                {manualFilesList.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {manualFilesList.map((file, idx) => (
+                      <span
+                        key={`f-${idx}`}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.25)',
+                          borderRadius: 20, padding: '3px 10px',
+                          fontSize: 11, color: '#70b3ee',
+                        }}
+                      >
+                        <FileCode size={11} /> {file}
+                      </span>
+                    ))}
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[#6B7280]">Linked requirements</label>
-                    <select
-                      multiple
-                      value={selectedRequirements}
-                      onChange={(e) => setSelectedRequirements(Array.from(e.target.selectedOptions, (opt) => opt.value))}
-                      className="w-full border border-[#E5E7EB] rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] h-32"
-                    >
-                      {requirements.map((req) => (
-                        <option key={req.requirement_id} value={req.requirement_id}>
-                          {req.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div>
+                  <FieldLabel>Linked tasks</FieldLabel>
+                  <DarkSelect
+                    multiple
+                    value={selectedTasks}
+                    onChange={e => setSelectedTasks(Array.from(e.target.selectedOptions, o => o.value))}
+                    style={{ height: 120 }}
+                  >
+                    {tasks.map(t => <option key={t.task_id} value={t.task_id}>{t.title}</option>)}
+                  </DarkSelect>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4B5563]">
-                    <input
-                      type="checkbox"
-                      checked={generateDiagramManual}
-                      onChange={(e) => setGenerateDiagramManual(e.target.checked)}
-                    />
-                    Generate user flow diagram from this update
-                  </label>
-                  <Button onClick={handleSubmit} disabled={saving || !description.trim()} className="bg-[#4F46E5] hover:bg-[#4338CA]">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Upload className="h-4 w-4 mr-2" />Log Update</>}
-                  </Button>
+                <div>
+                  <FieldLabel>Linked requirements</FieldLabel>
+                  <DarkSelect
+                    multiple
+                    value={selectedRequirements}
+                    onChange={e => setSelectedRequirements(Array.from(e.target.selectedOptions, o => o.value))}
+                    style={{ height: 120 }}
+                  >
+                    {requirements.map(r => <option key={r.requirement_id} value={r.requirement_id}>{r.title}</option>)}
+                  </DarkSelect>
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={generateDiagramManual}
+                    onChange={e => setGenerateDiagramManual(e.target.checked)}
+                    style={{ accentColor: '#1A6FD4' }}
+                  />
+                  Generate user flow diagram from this update
+                </label>
+                <PrimaryBtn
+                  onClick={handleSubmit}
+                  disabled={!description.trim()}
+                  loading={saving}
+                  icon={<Upload size={14} />}
+                >
+                  Log Update
+                </PrimaryBtn>
               </div>
             </div>
+          </SectionCard>
 
-            <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-[#111827]">Upload Code or Snippet</h2>
-                <p className="text-sm text-[#6B7280]">Drop a file or archive. We&apos;ll summarize it and connect it to the plan.</p>
-              </div>
-              <label className="border border-dashed border-[#D1D5DB] rounded-2xl p-6 text-center cursor-pointer flex flex-col items-center gap-2 bg-[#F9FAFB]">
-                <UploadCloud className="h-8 w-8 text-[#4F46E5]" />
-                <div className="text-sm text-[#4B5563]">
-                  Drag &amp; drop or <span className="text-[#4F46E5] font-medium">browse files</span>
+          <SectionCard
+            icon={<UploadCloud size={18} color="#F97316" />}
+            title="Upload Code or Snippet"
+            subtitle="Drop a file or archive. We'll summarize it and connect it to the plan."
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <label
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', gap: 8,
+                  background: dragOver
+                    ? 'rgba(249,115,22,0.08)'
+                    : uploadFile ? 'rgba(26,111,212,0.06)' : 'var(--brand-800)',
+                  border: `2px dashed ${dragOver ? 'rgba(249,115,22,0.5)' : uploadFile ? 'rgba(26,111,212,0.4)' : 'rgba(30,53,82,0.8)'}`,
+                  borderRadius: 14, padding: '28px 20px',
+                  cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s',
+                }}
+              >
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <UploadCloud size={22} color="#F97316" />
                 </div>
-                <p className="text-xs text-[#6B7280]">ZIP, txt, code files. Max 10 MB.</p>
+                {uploadFile ? (
+                  <>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                      {uploadFile.name}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                      {(uploadFile.size / 1024).toFixed(1)} KB · Click to replace
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                      Drag & drop or{' '}
+                      <span style={{ color: '#F97316', fontWeight: 600 }}>browse files</span>
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-faint)', margin: 0 }}>
+                      ZIP, txt, code files. Max 10 MB.
+                    </p>
+                  </>
+                )}
                 <input
                   type="file"
                   accept=".zip,.txt,.md,.py,.js,.ts,.tsx,.json,.php,.java,.rb,.go,.rs,.cs"
                   className="hidden"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                  onChange={e => setUploadFile(e.target.files?.[0] || null)}
                 />
-                {uploadFile && <p className="text-xs text-[#4B5563] mt-2">{uploadFile.name}</p>}
               </label>
-              <textarea
-                className="w-full border border-[#E5E7EB] rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-[#4F46E5] focus:outline-none"
-                rows={3}
-                placeholder="Optional notes for the AI"
-                value={uploadDescription}
-                onChange={(e) => setUploadDescription(e.target.value)}
-              />
-              <div className="grid gap-4 text-sm">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[#6B7280]">Linked tasks</label>
-                  <select
-                    multiple
-                    value={uploadTasks}
-                    onChange={(e) => setUploadTasks(Array.from(e.target.selectedOptions, (opt) => opt.value))}
-                    className="w-full border border-[#E5E7EB] rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] h-28"
-                  >
-                    {tasks.map((task) => (
-                      <option key={task.task_id} value={task.task_id}>
-                        {task.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[#6B7280]">Linked requirements</label>
-                  <select
-                    multiple
-                    value={uploadRequirements}
-                    onChange={(e) => setUploadRequirements(Array.from(e.target.selectedOptions, (opt) => opt.value))}
-                    className="w-full border border-[#E5E7EB] rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] h-28"
-                  >
-                    {requirements.map((req) => (
-                      <option key={req.requirement_id} value={req.requirement_id}>
-                        {req.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
+              <div>
+                <FieldLabel>Optional notes for the AI</FieldLabel>
+                <DarkTextarea
+                  rows={2}
+                  placeholder="E.g. This refactor removes the legacy auth module..."
+                  value={uploadDescription}
+                  onChange={e => setUploadDescription(e.target.value)}
+                />
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <label className="inline-flex items-center gap-2 text-sm text-[#4B5563]">
+
+              <div>
+                <FieldLabel>Linked tasks</FieldLabel>
+                <DarkSelect
+                  multiple
+                  value={uploadTasks}
+                  onChange={e => setUploadTasks(Array.from(e.target.selectedOptions, o => o.value))}
+                  style={{ height: 100 }}
+                >
+                  {tasks.map(t => <option key={t.task_id} value={t.task_id}>{t.title}</option>)}
+                </DarkSelect>
+              </div>
+              <div>
+                <FieldLabel>Linked requirements</FieldLabel>
+                <DarkSelect
+                  multiple
+                  value={uploadRequirements}
+                  onChange={e => setUploadRequirements(Array.from(e.target.selectedOptions, o => o.value))}
+                  style={{ height: 100 }}
+                >
+                  {requirements.map(r => <option key={r.requirement_id} value={r.requirement_id}>{r.title}</option>)}
+                </DarkSelect>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={generateDiagramUpload}
-                    onChange={(e) => setGenerateDiagramUpload(e.target.checked)}
+                    onChange={e => setGenerateDiagramUpload(e.target.checked)}
+                    style={{ accentColor: '#1A6FD4' }}
                   />
                   Generate user flow diagram
                 </label>
-                <Button onClick={handleUpload} disabled={uploading || !uploadFile} className="bg-[#4F46E5] hover:bg-[#4338CA]">
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Upload className="h-4 w-4 mr-2" />Upload &amp; Analyze</>}
-                </Button>
+                <PrimaryBtn
+                  onClick={handleUpload}
+                  disabled={!uploadFile}
+                  loading={uploading}
+                  icon={<Upload size={14} />}
+                >
+                  Upload & Analyze
+                </PrimaryBtn>
               </div>
             </div>
-          </div>
+          </SectionCard>
+        </div>
 
-          <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-[#111827]">User Flow Illustration</h2>
-                <p className="text-sm text-[#6B7280]">AI renders the latest system flow whenever diagrams are enabled.</p>
+        <div style={{
+          background: 'var(--brand-850)', border: '1px solid rgba(30,53,82,0.7)',
+          borderRadius: 20, overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '18px 24px 14px', borderBottom: '1px solid rgba(30,53,82,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Image size={18} color="#0EA5E9" />
               </div>
-              <label className="inline-flex items-center gap-2 text-sm text-[#4B5563]">
-                <input
-                  type="checkbox"
-                  checked={autoVisualize}
-                  onChange={(e) => setAutoVisualize(e.target.checked)}
-                />
-                Auto visualization
-              </label>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  User Flow Illustration
+                </h2>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                  AI renders the latest system flow whenever diagrams are enabled.
+                </p>
+              </div>
             </div>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={autoVisualize}
+                onChange={e => setAutoVisualize(e.target.checked)}
+                style={{ accentColor: '#1A6FD4' }}
+              />
+              Auto visualization
+            </label>
+          </div>
+          <div style={{ padding: '20px 24px' }}>
             {latestDiagramEntry?.diagram_url ? (
-              <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] overflow-hidden">
-                <img src={latestDiagramEntry.diagram_url} alt="User flow diagram" className="w-full object-contain max-h-[360px]" />
+              <div style={{ borderRadius: 14, border: '1px solid rgba(30,53,82,0.6)', overflow: 'hidden', background: 'var(--brand-800)' }}>
+                <img src={latestDiagramEntry.diagram_url} alt="User flow diagram" style={{ width: '100%', objectFit: 'contain', maxHeight: 360 }} />
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB] p-10 text-center">
-                <p className="text-sm text-[#6B7280]">AI will generate diagrams here after each update when visualization is enabled.</p>
+              <div style={{
+                border: '2px dashed rgba(30,53,82,0.6)', borderRadius: 14,
+                padding: '48px 24px', textAlign: 'center',
+                background: 'var(--brand-800)',
+              }}>
+                <Sparkles size={28} color="var(--text-faint)" style={{ marginBottom: 10 }} />
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  AI will generate diagrams here after each update when visualization is enabled.
+                </p>
               </div>
             )}
             {latestDiagramEntry && (
-              <p className="text-xs text-[#6B7280]">
-                Generated {new Date(latestDiagramEntry.created_at).toLocaleString()} from “{latestDiagramEntry.description.slice(0, 48)}{latestDiagramEntry.description.length > 48 ? '…' : ''}”.
+              <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 10 }}>
+                Generated {new Date(latestDiagramEntry.created_at).toLocaleString()} from "
+                {latestDiagramEntry.description.slice(0, 60)}{latestDiagramEntry.description.length > 60 ? '…' : ''}".
               </p>
             )}
           </div>
+        </div>
 
-          <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-[#111827]">Recent Progress</h2>
-                <p className="text-sm text-[#6B7280]">Chronological audit trail of shipped work.</p>
-              </div>
+        <div style={{
+          background: 'var(--brand-850)', border: '1px solid rgba(30,53,82,0.7)',
+          borderRadius: 20, overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '18px 24px 14px', borderBottom: '1px solid rgba(30,53,82,0.5)',
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: 'rgba(42,157,143,0.1)', border: '1px solid rgba(42,157,143,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Clock size={18} color="#2A9D8F" />
             </div>
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                Recent Progress
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                Chronological audit trail of shipped work.
+              </p>
+            </div>
+            {entries.length > 0 && (
+              <div style={{
+                marginLeft: 'auto',
+                background: 'rgba(42,157,143,0.12)', border: '1px solid rgba(42,157,143,0.3)',
+                borderRadius: 20, padding: '3px 12px',
+                fontSize: 12, fontWeight: 600, color: '#2A9D8F',
+              }}>
+                {entries.length} entries
+              </div>
+            )}
+          </div>
+          <div style={{ padding: '20px 24px' }}>
             {entries.length === 0 ? (
-              <p className="text-sm text-[#6B7280]">No updates yet. Log the first one above.</p>
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <GitCommitHorizontal size={28} color="var(--text-faint)" style={{ marginBottom: 10 }} />
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  No updates yet. Log the first one above.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
-                {entries.map((entry) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {entries.map(entry => {
                   const isOpen = expandedEntries[entry.id];
+                  const typeColors: Record<string, { bg: string; text: string; border: string }> = {
+                    manual: { bg: 'rgba(26,111,212,0.1)', text: '#3d8fe0', border: 'rgba(26,111,212,0.3)' },
+                    upload: { bg: 'rgba(249,115,22,0.1)', text: '#F97316', border: 'rgba(249,115,22,0.3)' },
+                    ai: { bg: 'rgba(139,92,246,0.1)', text: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
+                  };
+                  const tc = typeColors[entry.entry_type] || typeColors.manual;
+
                   return (
-                    <div key={entry.id} className="border border-[#E5E7EB] rounded-2xl p-4 space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-xs text-[#6B7280]">
-                          <span className="font-semibold text-[#111827]">{entry.metadata?.author_name || entry.author_id}</span>
-                          <span className="mx-2 text-[#D1D5DB]">•</span>
-                          {new Date(entry.created_at).toLocaleString()}
+                    <div
+                      key={entry.id}
+                      style={{
+                        background: 'var(--brand-800)', border: '1px solid rgba(30,53,82,0.6)',
+                        borderRadius: 14, overflow: 'hidden', transition: 'border-color 0.2s',
+                      }}
+                    >
+                      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                          background: tc.bg, border: `1px solid ${tc.border}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <GitCommitHorizontal size={14} color={tc.text} />
                         </div>
-                        <Badge variant="outline" className="text-xs capitalize border-[#E5E7EB]">
-                          {entry.entry_type}
-                        </Badge>
-                      </div>
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-base font-semibold text-[#111827]">{entry.description}</p>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {entry.metadata?.author_name || entry.author_id}
+                              </span>
+                              <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+                                {new Date(entry.created_at).toLocaleString()}
+                              </span>
+                              <span style={{
+                                background: tc.bg, border: `1px solid ${tc.border}`,
+                                borderRadius: 20, padding: '2px 8px',
+                                fontSize: 10, fontWeight: 700, color: tc.text,
+                                textTransform: 'capitalize',
+                              }}>
+                                {entry.entry_type}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => toggleEntry(entry.id)}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                background: 'var(--brand-700)', border: '1px solid rgba(30,53,82,0.6)',
+                                borderRadius: 8, padding: '4px 10px',
+                                fontSize: 12, fontWeight: 500, color: 'var(--text-muted)',
+                                cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+                            >
+                              {isOpen ? <><EyeOff size={12} />Hide</> : <><Eye size={12} />Details</>}
+                            </button>
+                          </div>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                            {entry.description}
+                          </p>
                           {entry.ai_summary && (
-                            <div className="mt-1 text-sm text-[#4B5563] bg-[#F9FAFB] border border-dashed border-[#E5E7EB] rounded-xl p-3">
+                            <div style={{
+                              background: 'rgba(26,111,212,0.06)', border: '1px dashed rgba(26,111,212,0.25)',
+                              borderRadius: 10, padding: '10px 12px',
+                              fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6,
+                            }}>
                               <ReactMarkdown>{entry.ai_summary}</ReactMarkdown>
                             </div>
                           )}
                         </div>
-                        <Button variant="ghost" onClick={() => toggleEntry(entry.id)} className="text-sm text-[#4F46E5]">
-                          {isOpen ? 'Hide details' : 'View details'}
-                        </Button>
                       </div>
+
                       {isOpen && (
-                        <div className="space-y-3 border-t border-[#F3F4F6] pt-3">
+                        <div style={{
+                          borderTop: '1px solid rgba(30,53,82,0.5)',
+                          padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12,
+                          background: 'rgba(13,27,42,0.4)',
+                        }}>
                           {entry.metadata?.snippet_preview && (
                             <div>
-                              <p className="text-xs uppercase text-[#9CA3AF] mb-1">Code</p>
-                              <pre className="text-sm text-[#111827] bg-[#F3F4F6] rounded-xl p-3 overflow-x-auto">
+                              <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Code</p>
+                              <pre style={{
+                                fontSize: 12, color: '#70b3ee',
+                                background: 'var(--brand-950)', border: '1px solid rgba(30,53,82,0.7)',
+                                borderRadius: 10, padding: '10px 14px', overflowX: 'auto', margin: 0,
+                                fontFamily: "'JetBrains Mono', monospace",
+                              }}>
                                 {entry.metadata.snippet_preview}
                               </pre>
                             </div>
                           )}
                           {entry.files.length > 0 && (
-                            <div className="flex flex-wrap gap-2 text-xs text-[#4B5563]">
-                              {formatFilesForEntry(entry).map((detail, idx) => (
-                                <span
-                                  key={`${entry.id}-detail-${idx}-${detail.name || 'file'}`}
-                                  className="inline-flex items-center gap-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] px-3 py-1"
-                                  title={detail.timestamp ? `Touched at ${new Date(detail.timestamp).toLocaleString()}` : undefined}
-                                >
-                                  <FileCode className="h-3.5 w-3.5" /> {detail.name}
-                                </span>
-                              ))}
+                            <div>
+                              <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Files touched</p>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {formatFilesForEntry(entry).map((detail, idx) => (
+                                  <span
+                                    key={`${entry.id}-f-${idx}`}
+                                    title={detail.timestamp ? `Touched at ${new Date(detail.timestamp).toLocaleString()}` : undefined}
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                                      background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.25)',
+                                      borderRadius: 20, padding: '3px 10px',
+                                      fontSize: 11, color: '#70b3ee',
+                                    }}
+                                  >
+                                    <FileCode size={11} /> {detail.name}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           )}
                           {(entry.task_ids.length > 0 || entry.requirement_ids.length > 0) && (
-                            <div className="flex flex-wrap gap-4 text-xs text-[#4B5563]">
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                               {entry.task_ids.length > 0 && (
-                                <span className="inline-flex items-center gap-1">
-                                  <ListChecks className="h-3.5 w-3.5 text-[#9CA3AF]" />
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-muted)' }}>
+                                  <ListChecks size={12} color="var(--text-faint)" />
                                   {entry.task_ids.join(', ')}
                                 </span>
                               )}
                               {entry.requirement_ids.length > 0 && (
-                                <span className="inline-flex items-center gap-1">
-                                  <GitMerge className="h-3.5 w-3.5 text-[#9CA3AF]" />
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-muted)' }}>
+                                  <GitMerge size={12} color="var(--text-faint)" />
                                   {entry.requirement_ids.join(', ')}
                                 </span>
                               )}
                             </div>
                           )}
                           {entry.diagram_url && (
-                            <div className="rounded-xl border border-[#E5E7EB] overflow-hidden">
-                              <img src={entry.diagram_url} alt="Diagram" className="w-full max-h-60 object-contain" />
+                            <div style={{ borderRadius: 10, border: '1px solid rgba(30,53,82,0.6)', overflow: 'hidden' }}>
+                              <img src={entry.diagram_url} alt="Diagram" style={{ width: '100%', maxHeight: 240, objectFit: 'contain' }} />
                             </div>
                           )}
                         </div>
@@ -472,6 +787,7 @@ export const DevelopmentUpdatesPage: React.FC = () => {
             )}
           </div>
         </div>
+
       </div>
     </Layout>
   );

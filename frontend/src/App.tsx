@@ -25,6 +25,8 @@ import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { BillingPageRoute } from './pages/BillingPageRoute';
 import DocsPage from './pages/DocsPage';
 import SDLCGuidePage from './pages/SDLCGuidePage';
+import { PlanValidationPage } from './pages/PlanValidationPage';
+import { AgentDebatePage } from './pages/AgentDebatePage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -197,6 +199,22 @@ function App() {
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/sdlc-guide" element={<SDLCGuidePage />} />
         <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+        <Route
+          path="/projects/:id/validate"
+          element={
+            <PrivateRoute>
+              <PlanValidationPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/debate"
+          element={
+            <PrivateRoute>
+              <AgentDebatePage />
+            </PrivateRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

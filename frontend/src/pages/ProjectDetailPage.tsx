@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
+import { ScaffoldPanel } from '@/components/ScaffoldPanel';
 import { ExportButtons } from '@/components/ExportButtons';
 import { api } from '@/lib/api';
 import type { Artifact, PhaseCompletionMeta, Project, Requirement, Task } from '@/types';
@@ -192,6 +193,11 @@ export const ProjectDetailPage: React.FC = () => {
   const [updatingPreset, setUpdatingPreset] = useState(false);
   const [treeView, setTreeView]       = useState(true); // Toggle between tree and list view
 
+  // Scaffolding state
+  const [scaffoldingTarget, setScaffoldingTarget] = useState<string | null>(null);
+  const [isScaffolding, setIsScaffolding] = useState(false);
+  const [scaffoldResult, setScaffoldResult] = useState<ScaffoldResult | null>(null);
+
   const tourSteps: Step[] = [
     {
       target: '.phase-board',
@@ -268,6 +274,11 @@ export const ProjectDetailPage: React.FC = () => {
       setTasks(taskData);
       setArtifacts(artifactData);
 
+      const scaffolds = await api.getScaffolds(id);
+      if (scaffolds?.scaffolds?.length > 0) {
+        setScaffoldResult(scaffolds.scaffolds[0]); // Most recent
+      }
+
       try {
         const statusResponse = await api.getPhaseStatus(id);
         setPhaseStatus(statusResponse.phases);
@@ -304,6 +315,41 @@ export const ProjectDetailPage: React.FC = () => {
       setPhaseStatus(status);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to unlock phases');
+    }
+  };
+
+  const handleGenerateScaffold = async () => {
+    if (!id || !project) return;
+    try {
+      setIsScaffolding(true);
+      const targetStack = project?.template_type === 'web_app' ? 'React + Node.js' : 
+                         project?.template_type === 'mobile_app' ? 'React Native + Node.js' : 
+                         'Python FastAPI + React';
+
+      const targetInput = window.prompt("Target Stack (e.g. React + FastAPI):", targetStack);
+      if (!targetInput) {
+        setIsScaffolding(false);
+        return; // Cancelled
+      }
+
+      setScaffoldingTarget(targetInput);
+      
+      const res = await api.generateScaffold(id, {
+        target_stack: targetInput,
+        include_tests: true,
+        include_docker: true,
+        project_tier: 'mvp'
+      });
+      
+      if (res.success && res.scaffold) {
+        setScaffoldResult(res.scaffold);
+      }
+    } catch (err: any) {
+      console.error('Failed to generate scaffold', err);
+      alert('Failed to generate scaffold: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setIsScaffolding(false);
+      setScaffoldingTarget(null);
     }
   };
 
@@ -642,6 +688,23 @@ export const ProjectDetailPage: React.FC = () => {
                   <Button onClick={() => navigate(`/projects/${project.project_id || project.id}/updates`)} className="bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)] text-[var(--brand-900)] font-semibold">
                     Development updates
                   </Button>
+                  
+                  {/* Scaffolding Button */}
+                  {(requirements.length > 0 || tasks.length > 0) && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-indigo-700 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 mt-2"
+                      onClick={handleGenerateScaffold}
+                      disabled={isScaffolding}
+                    >
+                      {isScaffolding ? (
+                        <Loader2 className="w-4 h-4 mr-3 shrink-0 animate-spin" />
+                      ) : (
+                        <Terminal className="w-4 h-4 mr-3 shrink-0" />
+                      )}
+                      {isScaffolding ? 'Generating Scaffold...' : 'Generate Scaffold'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </aside>

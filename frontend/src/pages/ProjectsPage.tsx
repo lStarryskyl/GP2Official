@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/Layout';
 import {
-  Plus, FolderOpen, Calendar, Upload, Lightbulb, HelpCircle, MoreVertical,
-  Clock, CheckCircle, AlertCircle, Loader2, Sparkles, ArrowRight, TrendingUp,
-  Search, Filter, Grid3X3, List, Trash2, Edit3, ExternalLink, FileText,
+  Plus, FolderOpen, Calendar, Upload, MoreVertical,
+  Clock, CheckCircle, Loader2, Sparkles, ArrowRight, TrendingUp,
+  Search, Grid3X3, List, Trash2, ExternalLink, FileText,
   TreePine, Activity, Zap, Archive, RotateCcw, Layers, Crown, Lock,
 } from 'lucide-react';
 import type { Project } from '@/types';
@@ -27,10 +27,8 @@ function getHealthColor(score: number) {
 }
 
 const quickActions = [
-  { icon: Plus,       label: 'New Project',  description: 'Start from scratch',   action: 'new',     color: 'forest' },
-  { icon: Upload,     label: 'Import',       description: 'Upload documents',     action: 'import',  color: 'sage' },
-  { icon: Lightbulb,  label: 'AI Insights',  description: 'Get recommendations',  action: 'insights',color: 'amber' },
-  { icon: HelpCircle, label: 'Documentation',description: 'Learn more',           action: 'docs',    color: 'blue' },
+  { icon: Plus, label: 'New Project', description: 'Start from scratch', action: 'new', color: 'forest' },
+  { icon: Upload, label: 'Import', description: 'Upload documents', action: 'import', color: 'sage' },
 ];
 
 type ViewTab = 'active' | 'archived';
@@ -49,15 +47,15 @@ export const ProjectsPage: React.FC = () => {
   const { success: toastSuccess, error: toastError } = useToast();
 
   const initialTab = (searchParams.get('view') === 'archived' ? 'archived' : 'active') as ViewTab;
-  const [tab, setTab]         = useState<ViewTab>(initialTab);
-  const [projects, setProjects]       = useState<Project[]>([]);
-  const [archived, setArchived]       = useState<Project[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [isVisible, setIsVisible]     = useState(false);
+  const [tab, setTab] = useState<ViewTab>(initialTab);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [archived, setArchived] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode]       = useState<'grid' | 'list'>('grid');
-  const [activeMenu, setActiveMenu]   = useState<string | null>(null);
-  const [usage, setUsage]             = useState<PlanUsage | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [usage, setUsage] = useState<PlanUsage | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
@@ -156,11 +154,11 @@ export const ProjectsPage: React.FC = () => {
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bgColor: string; borderColor: string; icon: React.ElementType; label: string }> = {
-      draft:     { color: 'text-[var(--text-muted)]', bgColor: 'bg-[var(--brand-700)]/20',  borderColor: 'border-[var(--brand-700)]/50', icon: Clock,       label: 'Draft' },
-      planning:  { color: 'text-[var(--blue-300)]',   bgColor: 'bg-[var(--blue-400)]/10',   borderColor: 'border-[var(--blue-400)]/30',  icon: Loader2,     label: 'Planning' },
-      active:    { color: 'text-[var(--blue-400)]',   bgColor: 'bg-[var(--blue-400)]/15',   borderColor: 'border-[var(--blue-400)]/40',  icon: CheckCircle, label: 'Active' },
-      completed: { color: 'text-[var(--orange-400)]', bgColor: 'bg-[var(--orange-400)]/10', borderColor: 'border-[var(--orange-400)]/30',icon: CheckCircle, label: 'Completed' },
-      archived:  { color: 'text-[var(--text-muted)]', bgColor: 'bg-[var(--brand-700)]/10',  borderColor: 'border-[var(--brand-700)]/30', icon: Archive,     label: 'Archived' },
+      draft: { color: 'text-[var(--text-muted)]', bgColor: 'bg-[var(--brand-700)]/20', borderColor: 'border-[var(--brand-700)]/50', icon: Clock, label: 'Draft' },
+      planning: { color: 'text-[var(--blue-300)]', bgColor: 'bg-[var(--blue-400)]/10', borderColor: 'border-[var(--blue-400)]/30', icon: Loader2, label: 'Planning' },
+      active: { color: 'text-[var(--blue-400)]', bgColor: 'bg-[var(--blue-400)]/15', borderColor: 'border-[var(--blue-400)]/40', icon: CheckCircle, label: 'Active' },
+      completed: { color: 'text-[var(--orange-400)]', bgColor: 'bg-[var(--orange-400)]/10', borderColor: 'border-[var(--orange-400)]/30', icon: CheckCircle, label: 'Completed' },
+      archived: { color: 'text-[var(--text-muted)]', bgColor: 'bg-[var(--brand-700)]/10', borderColor: 'border-[var(--brand-700)]/30', icon: Archive, label: 'Archived' },
     };
     return configs[status] || configs.draft;
   };
@@ -182,10 +180,10 @@ export const ProjectsPage: React.FC = () => {
 
   // Stats (always over active list)
   const stats = useMemo(() => {
-    const total       = projects.length;
-    const inProgress  = projects.filter(p => p.status === 'draft' || p.status === 'planning').length;
-    const activeNow   = projects.filter(p => p.status === 'active' || p.status === 'completed').length;
-    const avgHealth   = projects.length === 0 ? 0 : Math.round(
+    const total = projects.length;
+    const inProgress = projects.filter(p => p.status === 'draft' || p.status === 'planning').length;
+    const activeNow = projects.filter(p => p.status === 'active' || p.status === 'completed').length;
+    const avgHealth = projects.length === 0 ? 0 : Math.round(
       projects.reduce((s, p) => s + getHealthScore(p.phase_status), 0) / projects.length,
     );
     return { total, inProgress, activeNow, avgHealth };
@@ -379,9 +377,9 @@ export const ProjectsPage: React.FC = () => {
               const Icon = action.icon;
               const colorClasses = {
                 forest: 'from-[var(--blue-400)] to-[var(--blue-600)]',
-                sage:   'from-[var(--blue-300)] to-[var(--text-muted)]',
-                amber:  'from-[var(--orange-400)] to-[var(--orange-600)]',
-                blue:   'from-blue-500 to-blue-500',
+                sage: 'from-[var(--blue-300)] to-[var(--text-muted)]',
+                amber: 'from-[var(--orange-400)] to-[var(--orange-600)]',
+                blue: 'from-blue-500 to-blue-500',
               }[action.color] || 'from-[var(--blue-400)] to-[var(--blue-600)]';
               return (
                 <button
@@ -404,22 +402,20 @@ export const ProjectsPage: React.FC = () => {
         <div className="flex items-center gap-2 mb-5">
           <button
             onClick={() => setTab('active')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              tab === 'active'
-                ? 'bg-[var(--blue-400)]/15 text-[var(--blue-300)] border border-[var(--blue-400)]/40'
-                : 'text-[var(--text-muted)] border border-transparent hover:text-[var(--text-primary)]'
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === 'active'
+              ? 'bg-[var(--blue-400)]/15 text-[var(--blue-300)] border border-[var(--blue-400)]/40'
+              : 'text-[var(--text-muted)] border border-transparent hover:text-[var(--text-primary)]'
+              }`}
           >
             <FolderOpen className="w-4 h-4 inline mr-1.5 -mt-0.5" />
             Active <span className="opacity-60 ml-1">{projects.length}</span>
           </button>
           <button
             onClick={() => setTab('archived')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              tab === 'archived'
-                ? 'bg-[var(--brand-700)]/40 text-[var(--text-primary)] border border-[var(--brand-700)]'
-                : 'text-[var(--text-muted)] border border-transparent hover:text-[var(--text-primary)]'
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === 'archived'
+              ? 'bg-[var(--brand-700)]/40 text-[var(--text-primary)] border border-[var(--brand-700)]'
+              : 'text-[var(--text-muted)] border border-transparent hover:text-[var(--text-primary)]'
+              }`}
           >
             <Archive className="w-4 h-4 inline mr-1.5 -mt-0.5" />
             Archived <span className="opacity-60 ml-1">{archived.length}</span>
@@ -428,14 +424,15 @@ export const ProjectsPage: React.FC = () => {
 
         {/* ── Search & view ── */}
         <div className={`flex flex-col md:flex-row gap-3 mb-6 transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
+          <div className="relative flex-1 flex items-center">
+            <Search className="absolute left-4 w-5 h-5 text-[var(--text-muted)] pointer-events-none" />
             <input
               type="text"
               placeholder={tab === 'archived' ? 'Search archived…' : 'Search projects…'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-12 w-full"
+              className="input w-full"
+              style={{ paddingLeft: '48px' }}
               data-testid="search-projects-input"
             />
           </div>
@@ -513,11 +510,11 @@ export const ProjectsPage: React.FC = () => {
             {viewMode === 'grid' ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredProjects.map((project, index) => {
-                  const projectId    = project.id || project.project_id || '';
+                  const projectId = project.id || project.project_id || '';
                   const statusConfig = getStatusConfig(project.status);
-                  const StatusIcon   = statusConfig.icon;
-                  const healthScore  = getHealthScore(project.phase_status);
-                  const healthColor  = getHealthColor(healthScore);
+                  const StatusIcon = statusConfig.icon;
+                  const healthScore = getHealthScore(project.phase_status);
+                  const healthColor = getHealthColor(healthScore);
                   const completedCount = PHASE_KEYS.filter(k => (project.phase_status?.[k] || '').toLowerCase() === 'completed').length;
                   const isArchivedCard = tab === 'archived';
 
@@ -595,7 +592,7 @@ export const ProjectsPage: React.FC = () => {
                       </div>
 
                       {/* Hover actions */}
-                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="absolute top-12 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -650,10 +647,10 @@ export const ProjectsPage: React.FC = () => {
             ) : (
               <div className="space-y-2">
                 {filteredProjects.map((project, index) => {
-                  const projectId    = project.id || project.project_id || '';
+                  const projectId = project.id || project.project_id || '';
                   const statusConfig = getStatusConfig(project.status);
-                  const StatusIcon   = statusConfig.icon;
-                  const healthScore  = getHealthScore(project.phase_status);
+                  const StatusIcon = statusConfig.icon;
+                  const healthScore = getHealthScore(project.phase_status);
                   const isArchivedCard = tab === 'archived';
                   return (
                     <div

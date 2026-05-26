@@ -22,7 +22,7 @@ export default defineConfig({
           'vendor-utils': ['axios', 'date-fns', 'pako'],
           'vendor-canvas': ['reactflow'],
           'vendor-state': ['zustand'],
-          
+
           // App chunks
           'pages-auth': [
             './src/pages/LoginPage',

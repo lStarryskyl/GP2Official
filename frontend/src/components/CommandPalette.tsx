@@ -25,21 +25,21 @@ interface CmdItem {
   keywords?: string;
 }
 
-const STATIC_ROUTES: Array<Omit<CmdItem, 'perform'> & { path: string }> = [
-  { id: 'r-projects',  label: 'Projects',          group: 'Navigate',  icon: FolderKanban, path: '/projects',         keywords: 'home dashboard list' },
-  { id: 'r-new',       label: 'New Project',       group: 'Navigate',  icon: Plus,         path: '/projects/new',     keywords: 'create start' },
-  { id: 'r-analytics', label: 'Analytics',         group: 'Navigate',  icon: BarChart3,    path: '/analytics',        keywords: 'stats reports' },
-  { id: 'r-docs',      label: 'Documentation',     group: 'Navigate',  icon: BookOpen,     path: '/docs',             keywords: 'help guide' },
-  { id: 'r-profile',   label: 'Profile',           group: 'Navigate',  icon: UserIcon,     path: '/profile',          keywords: 'account user me' },
-  { id: 'r-billing',   label: 'Billing & Plan',    group: 'Navigate',  icon: CreditCard,   path: '/billing',          keywords: 'subscription pricing' },
-  { id: 'r-notify',    label: 'Notifications',     group: 'Navigate',  icon: Bell,         path: '/notifications',    keywords: 'alerts inbox' },
-  { id: 'r-trash',     label: 'Archived Projects', group: 'Navigate',  icon: Archive,      path: '/projects?view=archived', keywords: 'trash deleted' },
+const getStaticRoutes = (activeProjectId?: string | null): Array<Omit<CmdItem, 'perform'> & { path: string }> => [
+  { id: 'r-projects', label: 'Projects', group: 'Navigate', icon: FolderKanban, path: '/projects', keywords: 'home dashboard list' },
+  { id: 'r-new', label: 'New Project', group: 'Navigate', icon: Plus, path: '/projects/new', keywords: 'create start' },
+  ...(activeProjectId ? [{ id: 'r-analytics', label: 'Analytics', group: 'Navigate', icon: BarChart3, path: `/projects/${activeProjectId}/analytics`, keywords: 'stats reports' }] : []),
+  { id: 'r-docs', label: 'Documentation', group: 'Navigate', icon: BookOpen, path: '/docs', keywords: 'help guide' },
+  { id: 'r-profile', label: 'Profile', group: 'Navigate', icon: UserIcon, path: '/profile', keywords: 'account user me' },
+  { id: 'r-billing', label: 'Billing & Plan', group: 'Navigate', icon: CreditCard, path: '/billing', keywords: 'subscription pricing' },
+  { id: 'r-notify', label: 'Notifications', group: 'Navigate', icon: Bell, path: '/notifications', keywords: 'alerts inbox' },
+  { id: 'r-trash', label: 'Archived Projects', group: 'Navigate', icon: Archive, path: '/projects?view=archived', keywords: 'trash deleted' },
 ];
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, activeProjectId }) => {
   const navigate = useNavigate();
-  const [query, setQuery]       = useState('');
-  const [active, setActive]     = useState(0);
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState(0);
   const [projects, setProjects] = useState<Project[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +75,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, a
     const list: CmdItem[] = [];
 
     // Routes
-    STATIC_ROUTES.forEach(r => list.push({
+    getStaticRoutes(activeProjectId).forEach(r => list.push({
       id: r.id, label: r.label, group: r.group, icon: r.icon,
       keywords: r.keywords, perform: () => { navigate(r.path); onClose(); },
     }));
@@ -218,13 +218,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, a
               }}>{group}</div>
               {list.map(it => {
                 runIdx += 1;
-                const isActive = runIdx === active;
+                const itemIdx = runIdx;       // capture stable index for this item
+                const isActive = itemIdx === active;
                 const Icon = it.icon;
                 return (
                   <button
                     key={it.id}
                     onClick={() => it.perform()}
-                    onMouseEnter={() => setActive(runIdx)}
+                    onMouseEnter={() => setActive(itemIdx)}
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
                       padding: '10px 14px', borderRadius: '10px',

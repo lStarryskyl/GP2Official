@@ -416,46 +416,6 @@ export const PhaseDetailPage: React.FC = () => {
         setPhaseCompletionMeta(proj.phase_completion_meta ?? {});
         setTasks(taskData);
         setRequirements(reqData);
-
-        // Calculate cost data from tasks
-        const baseRate = proj.hourly_rate || 100;
-        const roleRates = { junior: 50, mid: 80, senior: 120, architect: 150, pm: 100 };
-        const totalRoleCount =
-          roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
-        const blendedRate = totalRoleCount
-          ? (
-            roleMix.junior * roleRates.junior +
-            roleMix.mid * roleRates.mid +
-            roleMix.senior * roleRates.senior +
-            roleMix.architect * roleRates.architect +
-            roleMix.pm * roleRates.pm
-          ) / totalRoleCount
-          : baseRate;
-        const hourlyRate = blendedRate * teamSizeMultiplier;
-
-        const phaseGroups: Record<string, { hours: number; tasks: number }> = {};
-        taskData.forEach((task: Task) => {
-          const phase = task.phase || 'unassigned';
-          if (!phaseGroups[phase]) {
-            phaseGroups[phase] = { hours: 0, tasks: 0 };
-          }
-          phaseGroups[phase].hours += task.estimate_hours || 0;
-          phaseGroups[phase].tasks += 1;
-        });
-
-        const phases = Object.entries(phaseGroups).map(([name, data]) => ({
-          name: name.replace('_', ' '),
-          cost: data.hours * hourlyRate,
-          hours: data.hours,
-        }));
-
-        const totalHours = taskData.reduce((sum: number, t: Task) => sum + (t.estimate_hours || 0), 0);
-        setCostData({
-          phases,
-          totalCost: totalHours * hourlyRate,
-          totalHours,
-          hourlyRate,
-        });
       } catch (err) {
         setError('Failed to load phase info');
       } finally {
@@ -464,7 +424,52 @@ export const PhaseDetailPage: React.FC = () => {
     };
 
     loadProjectData();
-  }, [id, teamSizeMultiplier, roleMix]);
+  }, [id]);
+
+  // Recalculate cost data locally whenever tasks, roleMix, or teamSizeMultiplier change
+  // (no API calls needed — this is a pure client-side derivation)
+  useEffect(() => {
+    if (!project || tasks.length === 0) return;
+
+    const baseRate = project.hourly_rate || 100;
+    const roleRates = { junior: 50, mid: 80, senior: 120, architect: 150, pm: 100 };
+    const totalRoleCount =
+      roleMix.junior + roleMix.mid + roleMix.senior + roleMix.architect + roleMix.pm;
+    const blendedRate = totalRoleCount
+      ? (
+        roleMix.junior * roleRates.junior +
+        roleMix.mid * roleRates.mid +
+        roleMix.senior * roleRates.senior +
+        roleMix.architect * roleRates.architect +
+        roleMix.pm * roleRates.pm
+      ) / totalRoleCount
+      : baseRate;
+    const hourlyRate = blendedRate * teamSizeMultiplier;
+
+    const phaseGroups: Record<string, { hours: number; tasks: number }> = {};
+    tasks.forEach((task: Task) => {
+      const phase = task.phase || 'unassigned';
+      if (!phaseGroups[phase]) {
+        phaseGroups[phase] = { hours: 0, tasks: 0 };
+      }
+      phaseGroups[phase].hours += task.estimate_hours || 0;
+      phaseGroups[phase].tasks += 1;
+    });
+
+    const phases = Object.entries(phaseGroups).map(([name, data]) => ({
+      name: name.replace('_', ' '),
+      cost: data.hours * hourlyRate,
+      hours: data.hours,
+    }));
+
+    const totalHours = tasks.reduce((sum: number, t: Task) => sum + (t.estimate_hours || 0), 0);
+    setCostData({
+      phases,
+      totalCost: totalHours * hourlyRate,
+      totalHours,
+      hourlyRate,
+    });
+  }, [project, tasks, teamSizeMultiplier, roleMix]);
 
   useEffect(() => {
     if (phaseBottomTab === 'history') {
@@ -484,20 +489,20 @@ export const PhaseDetailPage: React.FC = () => {
   const autoGenerateTriggeredRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!id || !phaseId || isLoading || isGenerating || !canTriggerAi) return;
-    
+
     // Skip phases that don't support auto-generation
     const autoGenPhases = ['planning', 'feasibility_study', 'requirements_gathering', 'validation', 'design', 'development'];
     if (!autoGenPhases.includes(phaseId)) return;
-    
+
     // Check if we already have content for this phase
     const hasContent = artifacts.some(
       (art) => art.type === `PHASE_${phaseId.toUpperCase()}` && art.content_json?.markdown
     );
-    
+
     // Check if we already triggered auto-generation for this phase in this session
     const cacheKey = `${id}-${phaseId}`;
     if (hasContent || autoGenerateTriggeredRef.current.has(cacheKey)) return;
-    
+
     // Mark as triggered and auto-generate
     autoGenerateTriggeredRef.current.add(cacheKey);
     handleGenerate(`Auto-generate comprehensive ${phaseId.replace('_', ' ')} content for this project`);
@@ -628,7 +633,7 @@ export const PhaseDetailPage: React.FC = () => {
     });
   }, [phaseMarkdown, phaseRawMarkdown, toastSuccess]);
 
-  const RawMarkdownDisclosure: React.FC = () => {
+  const renderRawMarkdownDisclosure = () => {
     if (!phaseRawMarkdown || phaseRawMarkdown === phaseMarkdown) {
       return null;
     }
@@ -644,7 +649,7 @@ export const PhaseDetailPage: React.FC = () => {
     );
   };
 
-  const StreamingOverlay: React.FC = () => {
+  const renderStreamingOverlay = () => {
     if (!isStreaming && !streamingText) return null;
     if (!isStreaming && phaseMarkdown) return null;
     return (
@@ -1710,7 +1715,7 @@ export const PhaseDetailPage: React.FC = () => {
     return colors[phaseId || ''] || 'var(--blue-400)';
   })();
 
-  const PhaseWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const renderPhaseWrapper = (phaseChildren: React.ReactNode) => {
     return (
       <Layout>
         <style>{`
@@ -1815,8 +1820,8 @@ export const PhaseDetailPage: React.FC = () => {
                           status === 'completed'
                             ? { background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.3)' }
                             : status === 'locked'
-                            ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
-                            : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
+                              ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
+                              : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
                         }>
                         {status === 'locked' ? '🔒 Locked' : status === 'completed' ? '✓ Completed' : '● Active'}
                       </span>
@@ -2054,7 +2059,7 @@ export const PhaseDetailPage: React.FC = () => {
               )}
 
               {/* Phase Content */}
-              {children}
+              {phaseChildren}
             </div>
           </div>
         </div>
@@ -2074,12 +2079,13 @@ export const PhaseDetailPage: React.FC = () => {
     );
   };
 
+
   // ============================================
   // FEASIBILITY STUDY PHASE
   // ============================================
   if (phaseId === 'feasibility_study') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <FeasibilityStudyPhase
           projectId={id || ''}
           projectName={project?.name || ''}
@@ -2087,7 +2093,7 @@ export const PhaseDetailPage: React.FC = () => {
           isGenerating={isGenerating}
           content={phaseMarkdown}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2096,13 +2102,13 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'planning') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <PlanningRoadmapPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2111,7 +2117,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'requirements_gathering') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2437,7 +2443,7 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2446,7 +2452,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'validation') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <ValidationPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
@@ -2454,7 +2460,7 @@ export const PhaseDetailPage: React.FC = () => {
           content={phaseMarkdown}
           requirements={requirements}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2464,7 +2470,7 @@ export const PhaseDetailPage: React.FC = () => {
   if (phaseId === 'design') {
     const status = phaseStatus['design'] || 'locked';
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <div className="space-y-6">
           {/* AI Generate Card */}
           <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, var(--brand-850), var(--brand-800))', border: '1px solid rgba(107,76,138,0.4)' }}>
@@ -2490,7 +2496,7 @@ export const PhaseDetailPage: React.FC = () => {
               <div className="rounded-xl p-5 mt-2" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(107,76,138,0.2)' }}>
                 <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-muted)' }}>
                   <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                  <RawMarkdownDisclosure />
+                  {renderRawMarkdownDisclosure()}
                 </div>
               </div>
             )}
@@ -2508,7 +2514,7 @@ export const PhaseDetailPage: React.FC = () => {
             <DesignPhase projectId={id || ''} onOpenCanvas={handleOpenCanvas} />
           </div>
         </div>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2517,14 +2523,14 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'design_architecture') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <SystemDesignPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
           onOpenCanvas={handleOpenCanvas}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2533,7 +2539,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'development') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <DevelopmentPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
@@ -2541,7 +2547,7 @@ export const PhaseDetailPage: React.FC = () => {
           requirements={requirements}
           content={phaseMarkdown}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -2550,7 +2556,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'risks') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <div className="space-y-6">
           {/* Header */}
           <div className="relative">
@@ -3081,7 +3087,7 @@ export const PhaseDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -3090,7 +3096,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'testing') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <TestingPhase
           projectId={id || ''}
           onGenerate={handleGenerate}
@@ -3098,7 +3104,7 @@ export const PhaseDetailPage: React.FC = () => {
           content={phaseMarkdown}
           requirements={requirements}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -3107,7 +3113,7 @@ export const PhaseDetailPage: React.FC = () => {
   // ============================================
   if (phaseId === 'summary') {
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <FinalSummaryPhase
           projectId={id || ''}
           projectName={project?.name || ''}
@@ -3119,7 +3125,7 @@ export const PhaseDetailPage: React.FC = () => {
             progress: Math.round((Object.values(phaseStatus).filter(s => s === 'completed').length / phaseConfigs.length) * 100),
           }}
         />
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -3162,7 +3168,7 @@ export const PhaseDetailPage: React.FC = () => {
     };
 
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <>
           <div className="space-y-6">
 
@@ -3407,7 +3413,7 @@ export const PhaseDetailPage: React.FC = () => {
                   {phaseMarkdown ? (
                     <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                      <RawMarkdownDisclosure />
+                      {renderRawMarkdownDisclosure()}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-sm gap-1 py-6" style={{ color: 'var(--text-muted)' }}>
@@ -3448,7 +3454,7 @@ export const PhaseDetailPage: React.FC = () => {
             )}
           </div>
         </>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -3551,7 +3557,7 @@ export const PhaseDetailPage: React.FC = () => {
     };
 
     return (
-      <PhaseWrapper>
+      renderPhaseWrapper(<>
         <>
           <div className="space-y-6">
 
@@ -3643,7 +3649,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div className="md:col-span-2">
                     <label className="block text-[11px] text-gray-500 mb-1">Description</label>
                     <input
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       placeholder="e.g. Senior backend hire, SaaS subscription"
                       value={newCostItem.description}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, description: e.target.value }))}
@@ -3653,7 +3659,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <label className="block text-[11px] text-gray-500 mb-1">Cost</label>
                     <input
                       type="number"
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       placeholder="e.g. 5000"
                       value={newCostItem.cost}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, cost: e.target.value }))}
@@ -3663,7 +3669,7 @@ export const PhaseDetailPage: React.FC = () => {
                     <label className="block text-[11px] text-gray-500 mb-1">Benefit</label>
                     <input
                       type="number"
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       placeholder="e.g. 15000"
                       value={newCostItem.benefit}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, benefit: e.target.value }))}
@@ -3672,7 +3678,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div>
                     <label className="block text-[11px] text-gray-500 mb-1">Currency</label>
                     <select
-                      className="w-full border rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-xs bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] focus:ring-1 focus:ring-[var(--blue-400)]/30 outline-none transition-colors"
                       value={newCostItem.currency}
                       onChange={(e) => setNewCostItem((prev) => ({ ...prev, currency: e.target.value as 'USD' | 'JOD' }))}
                     >
@@ -3819,7 +3825,7 @@ export const PhaseDetailPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="prose prose-sm max-w-none text-gray-300">
                   <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                  <RawMarkdownDisclosure />
+                  {renderRawMarkdownDisclosure()}
                 </CardContent>
               </Card>
             )}
@@ -3902,7 +3908,7 @@ export const PhaseDetailPage: React.FC = () => {
                       {manualCostSlices.map((slice, idx) => (
                         <div key={slice.id} className="grid grid-cols-12 gap-2 items-center">
                           <input
-                            className="col-span-4 border rounded px-2 py-1"
+                            className="col-span-4 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                             value={slice.label}
                             onChange={(e) =>
                               setManualCostSlices((prev) =>
@@ -3914,7 +3920,7 @@ export const PhaseDetailPage: React.FC = () => {
                           />
                           <input
                             type="number"
-                            className="col-span-3 border rounded px-2 py-1"
+                            className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                             value={slice.cost}
                             onChange={(e) =>
                               setManualCostSlices((prev) =>
@@ -3926,7 +3932,7 @@ export const PhaseDetailPage: React.FC = () => {
                           />
                           <input
                             type="number"
-                            className="col-span-3 border rounded px-2 py-1"
+                            className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                             value={slice.hours}
                             onChange={(e) =>
                               setManualCostSlices((prev) =>
@@ -3949,21 +3955,21 @@ export const PhaseDetailPage: React.FC = () => {
                       ))}
                       <div className="grid grid-cols-12 gap-2 items-center">
                         <input
-                          className="col-span-4 border rounded px-2 py-1"
+                          className="col-span-4 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                           placeholder="Label"
                           value={manualSliceDraft.label}
                           onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, label: e.target.value }))}
                         />
                         <input
                           type="number"
-                          className="col-span-3 border rounded px-2 py-1"
+                          className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                           placeholder="Cost"
                           value={manualSliceDraft.cost}
                           onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, cost: e.target.value }))}
                         />
                         <input
                           type="number"
-                          className="col-span-3 border rounded px-2 py-1"
+                          className="col-span-3 border border-[var(--brand-700)] rounded px-2 py-1 bg-[#152238] text-[var(--text-primary)] placeholder-gray-500 focus:border-[var(--blue-400)] outline-none"
                           placeholder="Hours"
                           value={manualSliceDraft.hours}
                           onChange={(e) => setManualSliceDraft((prev) => ({ ...prev, hours: e.target.value }))}
@@ -4115,7 +4121,7 @@ export const PhaseDetailPage: React.FC = () => {
                   <div className="border border-blue-700/40 rounded-lg bg-[#152238] p-4 mt-4">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                      <RawMarkdownDisclosure />
+                      {renderRawMarkdownDisclosure()}
                     </div>
                   </div>
                 )}
@@ -4123,7 +4129,7 @@ export const PhaseDetailPage: React.FC = () => {
             </Card>
           </div>
         </>
-      </PhaseWrapper>
+      </>)
     );
   }
 
@@ -4487,7 +4493,7 @@ export const PhaseDetailPage: React.FC = () => {
                 <div className="border border-violet-200 rounded-lg bg-[#152238] p-4 mt-4">
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                    <RawMarkdownDisclosure />
+                    {renderRawMarkdownDisclosure()}
                   </div>
                 </div>
               )}
@@ -4563,7 +4569,7 @@ export const PhaseDetailPage: React.FC = () => {
                   {phaseMarkdown ? (
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{phaseMarkdown}</ReactMarkdown>
-                      <RawMarkdownDisclosure />
+                      {renderRawMarkdownDisclosure()}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -4649,11 +4655,10 @@ export const PhaseDetailPage: React.FC = () => {
               <button
                 key={tab}
                 onClick={() => setPhaseBottomTab(tab)}
-                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${
-                  isActive
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${isActive
                     ? 'text-[var(--blue-400)] border-b-2 border-[var(--blue-400)] bg-[var(--brand-800)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] hover:bg-[var(--brand-800)]/50'
-                }`}
+                  }`}
               >
                 {labels[tab]}
               </button>

@@ -9,7 +9,8 @@ from database import init_db, close_db
 from routes import (
     auth, projects, generation, requirements, tasks, diagrams, ux_flow, phase_flow,
     sandbox, users, change_log, websocket, ai_pipeline, personas, srs_audit, billing, export,
-    negotiation, payment, version, notifications, traceability, templates, explainability, utils
+    negotiation, payment, version, notifications, traceability, templates, explainability, utils,
+    validation, debate, scaffolding
 )
 from routes import ai_chat
 from routes import testing

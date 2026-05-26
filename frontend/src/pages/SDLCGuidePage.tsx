@@ -422,7 +422,7 @@ const SDLCGuidePage: React.FC = () => {
         borderBottom: '1px solid rgba(26,111,212,0.18)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8899AA', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8899AA', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
             <ArrowLeft size={14} /> <span className="sg-nav-back-label">Back</span>
           </button>
           <div className="sg-nav-brand-divider" style={{ width: '1px', height: '16px', background: 'rgba(26,111,212,0.3)' }} />

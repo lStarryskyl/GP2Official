@@ -10,6 +10,12 @@ type AcornLogoProps = {
   white?: boolean;
 };
 
+/**
+ * Unified platform logo component.
+ *
+ * - `variant="full"` → SVG logo with wordmark.
+ * - `variant="mark"` → icon/mark only.
+ */
 export function AcornLogo({
   variant = 'full',
   height = 40,

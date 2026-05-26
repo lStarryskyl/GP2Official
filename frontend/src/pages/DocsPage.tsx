@@ -111,7 +111,7 @@ const DocsPage: React.FC = () => {
         zIndex: 10,
       }}>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8899AA', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'DM Sans, sans-serif' }}
         >
           <ArrowLeft size={14} />

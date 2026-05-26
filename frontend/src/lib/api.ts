@@ -29,6 +29,87 @@ import type {
   SandboxRunResult,
 } from '@/types';
 
+// New types for Phase B
+export interface AgentPersona {
+  id: string;
+  role: string;
+  name: string;
+  emoji: string;
+  avatar_color: string;
+  system_prompt: string;
+  focus_areas: string[];
+}
+
+export interface DebateArgument {
+  id: string;
+  agent_id: string;
+  round_number: number;
+  stance: 'support' | 'concern' | 'neutral';
+  title: string;
+  content: string;
+  evidence?: string;
+  confidence: number;
+  target_argument_id?: string;
+}
+
+export interface DebateRound {
+  round_number: number;
+  topic: string;
+  arguments: DebateArgument[];
+  duration_ms: number;
+}
+
+export interface ConsensusPoint {
+  topic: string;
+  agreed_position: string;
+  dissenting_views: string[];
+  confidence: number;
+  action_items: string[];
+}
+
+export interface ConsensusReport {
+  overall_summary: string;
+  points: ConsensusPoint[];
+  final_verdict: string;
+  readiness_score: number;
+}
+
+export interface DebateSession {
+  id: string;
+  project_id: string;
+  topic: string;
+  status: 'pending' | 'running' | 'synthesizing' | 'completed' | 'failed';
+  active_agent_id?: string;
+  participating_agents: AgentPersona[];
+  rounds: DebateRound[];
+  consensus?: ConsensusReport;
+  created_at: string;
+  completed_at?: string;
+  created_by: string;
+  duration_ms: number;
+  tokens_used: number;
+}
+
+export interface ScaffoldFile {
+  path: string;
+  content: string;
+  language: string;
+  description?: string;
+}
+
+export interface ScaffoldResult {
+  id: string;
+  project_id: string;
+  target_stack: string;
+  files: ScaffoldFile[];
+  setup_instructions: string;
+  tree_visualization: string;
+  created_at: string;
+  created_by: string;
+  duration_ms: number;
+  tokens_used: number;
+}
+
 const normalizeId = <T extends Record<string, any>>(item: T): T => {
   if (!item) return item;
   if (item.id || !item._id) return item;
@@ -45,9 +126,7 @@ const normalizeVersionEntry = (entry: any): VersionHistoryEntry =>
   normalizeId(entry) as VersionHistoryEntry;
 
 const normalizeTraceabilityLink = (link: any): TraceabilityLink =>
-  normalizeId(link) as TraceabilityLink;
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+  normalizeId(link) as TraceabilityLink; = import.meta.env.VITE_API_URL || '';
 
 type ArtifactUpdatePayload = {
   title?: string;
@@ -171,7 +250,7 @@ class ApiClient {
     const response = await this.client.get('/auth/me');
     return response.data;
   }
-  
+
   async getProfile(): Promise<User> {
     const response = await this.client.get('/users/me/profile');
     return response.data;
@@ -782,6 +861,11 @@ class ApiClient {
   async exportProjectMarkdown(projectId: string): Promise<Blob> {
     const response = await this.client.get(`/projects/${projectId}/export/markdown`, {
       responseType: 'blob'
+
+  async triggerValidation(projectId: string, phasesToReview?: string[]): Promise<any> {
+    const payload = phasesToReview ? { phases_to_review: phasesToReview } : {};
+    const response = await this.client.post(`/projects/${projectId}/validate`, payload, {
+      timeout: 120000,
     });
     return response.data;
   }
@@ -799,6 +883,60 @@ class ApiClient {
 
   async getTestingResults(projectId: string): Promise<any> {
     const response = await this.client.get(`/projects/${projectId}/testing/results`);
+
+  async getValidations(projectId: string): Promise<any> {
+    const response = await this.client.get(`/projects/${projectId}/validations`);
+    return response.data;
+  }
+
+  async submitValidationFeedback(
+    projectId: string,
+    reportId: string,
+    findingId: string,
+    helpful: boolean,
+    comment?: string
+  ): Promise<any> {
+    const response = await this.client.post(
+      `/projects/${projectId}/validations/${reportId}/feedback`,
+      { finding_id: findingId, helpful, comment }
+    );
+    return response.data;
+  }
+
+  // Multi-Agent Debates
+  async startDebate(projectId: string, topic?: string, roles?: string[], maxRounds: number = 2): Promise<any> {
+    const response = await this.client.post(`/projects/${projectId}/debate`, {
+      topic: topic || "Project Plan Architecture Review",
+      participating_roles: roles,
+      max_rounds: maxRounds
+    });
+    return response.data;
+  }
+
+  async getDebates(projectId: string): Promise<{ success: boolean; sessions: DebateSession[]; total: number }> {
+    const response = await this.client.get(`/projects/${projectId}/debates`);
+    return response.data;
+  }
+
+  async getDebate(projectId: string, sessionId: string): Promise<DebateSession> {
+    const response = await this.client.get(`/projects/${projectId}/debates/${sessionId}`);
+    return response.data;
+  }
+
+  // Code Scaffolding
+  async generateScaffold(
+    projectId: string, 
+    options: { target_stack?: string; include_tests?: boolean; include_docker?: boolean; project_tier?: string }
+  ): Promise<{ success: boolean; scaffold: ScaffoldResult; message: string }> {
+    const response = await this.client.post(`/projects/${projectId}/scaffold`, options, {
+      timeout: 300000, // 5 min timeout for large scaffolding
+    });
+    return response.data;
+  }
+
+  async getScaffolds(projectId: string): Promise<{ success: boolean; scaffolds: ScaffoldResult[]; total: number }> {
+    const response = await this.client.get(`/projects/${projectId}/scaffolds`);
+>>>>>>> origin/new-AI-feature-under-dev
     return response.data;
   }
 }

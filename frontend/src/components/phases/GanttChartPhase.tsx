@@ -275,7 +275,7 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
             {/* Checklist */}
             <div className="space-y-2">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-900">Task To-do List</span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Task To-do List</span>
                 <span className="text-xs text-gray-500">
                   {localTasks.length} total •{' '}
                   {localTasks.filter((t) => (t.status || '').toLowerCase() === 'completed').length} done
@@ -386,7 +386,7 @@ export const GanttChartPhase: React.FC<GanttChartPhaseProps> = ({
                 <select
                   value={filterPriority || ''}
                   onChange={(e) => setFilterPriority(e.target.value || null)}
-                  className="border rounded-lg px-2 py-1.5 text-sm"
+                  className="border border-[var(--brand-700)] rounded-lg px-2 py-1.5 text-sm bg-[#152238] text-[var(--text-primary)] focus:border-[var(--blue-400)] outline-none"
                 >
                   <option value="">All Priorities</option>
                   <option value="critical">Critical</option>

@@ -36,8 +36,7 @@ class ConnectionManager:
         self.project_cursors: Dict[str, Dict[str, Dict[str, Any]]] = {}
         
     async def connect(self, websocket: WebSocket, project_id: str, user: User):
-        """Accept a new WebSocket connection."""
-        await websocket.accept()
+        """Register a new WebSocket connection."""
         
         # Initialize project connections if not exists
         if project_id not in self.active_connections:
@@ -340,14 +339,16 @@ async def authenticate_websocket(token: str) -> Optional[User]:
     """Authenticate WebSocket connection using JWT token."""
     try:
         auth_service = AuthService()
-        payload = auth_service.decode_token(token)
         
-        # Get user from database
-        from repositories.user_repository import UserRepository
-        user_repo = UserRepository()
-        user = await user_repo.get_by_id(payload["user_id"])
+        # We need the direct jwt verify to handle secret_key vs jwt_secret mismatches if any,
+        # but let's just use the REST API approach for safety.
+        from fastapi import HTTPException
+        try:
+            user = await auth_service.get_current_user(token)
+            return user
+        except HTTPException:
+            return None
         
-        return user
     except Exception as e:
         logger.error(f"WebSocket authentication failed: {e}")
         return None

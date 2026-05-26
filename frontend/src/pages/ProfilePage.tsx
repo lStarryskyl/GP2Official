@@ -1,76 +1,102 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import type { User } from '@/types';
-import { 
-  User as UserIcon, 
-  Mail, 
-  Shield, 
-  Bell, 
+import {
+  User as UserIcon,
+  Mail,
+  Shield,
+  Bell,
   Key,
   Save,
   Loader2,
   CheckCircle,
   ChevronDown,
-  ChevronUp,
   CreditCard,
   Activity,
   Sparkles,
   Camera,
   Zap,
-  Star
+  Briefcase,
+  Globe,
 } from 'lucide-react';
 
+/* ─── Collapsible Card Section ─── */
 interface CardSectionProps {
   title: string;
   icon: React.ElementType;
   children: React.ReactNode;
   defaultOpen?: boolean;
-  delay?: number;
-  isVisible?: boolean;
+  accentColor?: string;
 }
 
-const CardSection: React.FC<CardSectionProps> = ({ title, icon: Icon, children, defaultOpen = true, delay = 0, isVisible = true }) => {
+const CardSection: React.FC<CardSectionProps> = ({
+  title,
+  icon: Icon,
+  children,
+  defaultOpen = true,
+  accentColor = 'var(--blue-400)',
+}) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div 
-      className={`bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
+    <div className="rounded-2xl border border-[var(--brand-700)]/60 overflow-hidden bg-[var(--brand-850)] transition-shadow duration-300 hover:shadow-lg hover:shadow-[rgba(26,111,212,0.08)]">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors group"
+        className="w-full flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 transition-colors hover:bg-[var(--brand-800)]/60 group"
       >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-acorn-blue-100 to-acorn-orange-100 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-            <Icon className="w-6 h-6 text-acorn-blue-600" />
+        <div className="flex items-center gap-3.5">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+            style={{
+              background: `color-mix(in srgb, ${accentColor} 15%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${accentColor} 25%, transparent)`,
+            }}
+          >
+            <Icon className="w-5 h-5" style={{ color: accentColor }} />
           </div>
-          <h3 className="font-bold text-lg text-gray-900">{title}</h3>
+          <h3 className="font-semibold text-[15px] text-[var(--text-primary)]">{title}</h3>
         </div>
-        <div className={`w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 ${isOpen ? 'rotate-180 bg-acorn-blue-100' : ''}`}>
-          <ChevronDown className={`w-5 h-5 ${isOpen ? 'text-acorn-blue-600' : 'text-gray-400'}`} />
+        <div
+          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ${
+            isOpen
+              ? 'bg-[rgba(26,111,212,0.15)] rotate-180'
+              : 'bg-[var(--brand-700)]/50'
+          }`}
+        >
+          <ChevronDown
+            className={`w-4 h-4 transition-colors ${
+              isOpen ? 'text-[var(--blue-400)]' : 'text-[var(--text-muted)]'
+            }`}
+          />
         </div>
       </button>
-      <div className={`overflow-hidden transition-all duration-500 ${isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="px-6 pb-6 border-t border-gray-100">{children}</div>
+      <div
+        className={`overflow-hidden transition-all duration-400 ease-in-out ${
+          isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="px-5 pb-5 sm:px-6 sm:pb-6 border-t border-[var(--brand-700)]/40">
+          {children}
+        </div>
       </div>
     </div>
   );
 };
 
+/* ─── Styled Input ─── */
+const inputClasses =
+  'w-full px-4 py-3 rounded-xl border border-[var(--brand-700)] bg-[#152238] text-[var(--text-primary)] placeholder-[var(--text-muted)]/60 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--blue-400)]/40 focus:border-[var(--blue-400)] transition-all';
+
+/* ─── Profile Page ─── */
 const ProfilePage: React.FC = () => {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
-  const observerRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [form, setForm] = useState({
     full_name: '',
@@ -91,25 +117,6 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     loadProfile();
   }, []);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible((prev) => ({ ...prev, [entry.target.id]: true }));
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    Object.values(observerRefs.current).forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
-
-    return () => observer.disconnect();
-  }, [loading]);
 
   const loadProfile = async () => {
     try {
@@ -167,212 +174,221 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  /* ─── Loading state ─── */
   if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-6">
-            <div className="relative w-24 h-24 mx-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-acorn-blue-500 to-acorn-orange-500 rounded-full animate-ping opacity-20" />
-              <div className="absolute inset-0 bg-gradient-to-r from-acorn-blue-500 to-acorn-orange-500 rounded-full animate-pulse flex items-center justify-center">
-                <UserIcon className="w-12 h-12 text-white" />
+          <div className="text-center space-y-4">
+            <div className="relative w-20 h-20 mx-auto">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[var(--blue-400)] to-[#0d2b52] flex items-center justify-center animate-pulse">
+                <UserIcon className="w-10 h-10 text-white/90" />
               </div>
+              <div className="absolute inset-0 rounded-2xl bg-[var(--blue-400)]/20 blur-xl animate-pulse" />
             </div>
-            <p className="text-xl text-gray-600 animate-pulse">Loading your profile...</p>
+            <p className="text-[var(--text-muted)]">Loading profile...</p>
           </div>
         </div>
       </Layout>
     );
   }
 
+  const initials = (profile?.full_name || profile?.email || 'U').charAt(0).toUpperCase();
+
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-8 relative">
-        {/* Animated Background */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute w-96 h-96 rounded-full bg-acorn-blue-100/20 blur-3xl -top-48 -right-48 animate-float" />
-          <div className="absolute w-72 h-72 rounded-full bg-acorn-orange-100/20 blur-3xl -bottom-36 -left-36 animate-float" style={{ animationDelay: '3s' }} />
-          <div className="absolute w-64 h-64 rounded-full bg-purple-100/20 blur-3xl top-1/2 right-1/4 animate-float" style={{ animationDelay: '6s' }} />
-        </div>
-
-        {/* Header */}
-        <div 
-          id="header"
-          ref={(el) => (observerRefs.current['header'] = el)}
-          className={`flex items-center justify-between transition-all duration-700 ${
-            isVisible['header'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+        {/* ── Page Header ── */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-acorn-blue-600 to-acorn-orange-500 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
               Profile Settings
             </h1>
-            <p className="text-gray-500 mt-1">Manage your account and preferences</p>
+            <p className="text-sm text-[var(--text-muted)] mt-1">
+              Manage your account and preferences
+            </p>
           </div>
           <Button
             onClick={handleSave}
             disabled={saving}
-            className={`font-bold shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 ${
-              saved 
-                ? 'bg-blue-900/200 hover:bg-blue-500' 
-                : 'bg-gradient-to-r from-acorn-orange-500 to-acorn-orange-600 hover:from-acorn-orange-600 hover:to-acorn-orange-700'
-            } text-white`}
+            className={`transition-all duration-300 ${
+              saved
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
+                : ''
+            }`}
           >
             {saving ? (
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : saved ? (
-              <CheckCircle className="w-5 h-5 mr-2" />
+              <CheckCircle className="w-4 h-4 mr-2" />
             ) : (
-              <Save className="w-5 h-5 mr-2" />
+              <Save className="w-4 h-4 mr-2" />
             )}
             {saved ? 'Saved!' : 'Save Changes'}
           </Button>
         </div>
 
-        {/* Profile Card */}
-        <div 
-          id="profile-card"
-          ref={(el) => (observerRefs.current['profile-card'] = el)}
-          className={`bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-xl transition-all duration-700 ${
-            isVisible['profile-card'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ transitionDelay: '100ms' }}
-        >
+        {/* ── Profile Hero Card ── */}
+        <div className="rounded-2xl border border-[var(--brand-700)]/60 overflow-hidden bg-[var(--brand-850)] shadow-lg">
           {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-acorn-blue-500 via-acorn-blue-600 to-acorn-orange-500 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80')] bg-cover bg-center opacity-20" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className="w-6 h-6 text-white/20 absolute animate-float" 
-                  style={{ 
-                    left: `${20 + i * 15}%`, 
-                    top: `${30 + (i % 2) * 20}%`,
-                    animationDelay: `${i * 0.5}s` 
-                  }} 
-                />
-              ))}
-            </div>
+          <div className="h-28 sm:h-36 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0d2b52] via-[var(--blue-400)] to-[#1a3a5c]" />
+            {/* Decorative grid dots */}
+            <div
+              className="absolute inset-0 opacity-[0.07]"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+              }}
+            />
+            {/* Glow accent */}
+            <div className="absolute -bottom-12 left-1/3 w-64 h-32 bg-[var(--blue-400)]/20 rounded-full blur-3xl" />
           </div>
 
           {/* Profile Info */}
-          <div className="px-8 pb-8 -mt-16 relative">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
+          <div className="px-5 sm:px-8 pb-6 sm:pb-8 -mt-14 relative">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5">
               {/* Avatar */}
-              <div className="relative group">
-                <div className="w-32 h-32 bg-gradient-to-br from-acorn-blue-400 to-acorn-orange-400 rounded-full flex items-center justify-center text-4xl font-bold text-white ring-4 ring-white shadow-xl group-hover:scale-105 transition-transform duration-300">
-                  {(profile?.full_name || profile?.email || 'U').charAt(0).toUpperCase()}
+              <div className="relative group flex-shrink-0">
+                <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-[var(--blue-400)] to-[#0d2b52] flex items-center justify-center text-4xl font-bold text-white ring-4 ring-[var(--brand-850)] shadow-xl transition-transform duration-300 group-hover:scale-[1.03]">
+                  {initials}
                 </div>
-                <button className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors group-hover:scale-110">
-                  <Camera className="w-5 h-5 text-gray-600" />
+                <button
+                  className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-[var(--brand-800)] border border-[var(--brand-700)] shadow-lg flex items-center justify-center transition-all hover:bg-[var(--brand-700)] hover:scale-110"
+                  title="Change avatar"
+                >
+                  <Camera className="w-4 h-4 text-[var(--text-muted)]" />
                 </button>
               </div>
 
-              {/* Info */}
-              <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-2xl font-bold text-gray-900">{profile?.full_name || 'User'}</h2>
-                <p className="text-gray-500">{profile?.email}</p>
-                <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-acorn-blue-100 text-acorn-blue-700 rounded-full text-sm font-medium">
-                    <Shield className="w-4 h-4" />
-                    {user?.role_label || 'Member'}
+              {/* User info */}
+              <div className="flex-1 text-center sm:text-left min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] truncate">
+                  {profile?.full_name || 'User'}
+                </h2>
+                <p className="text-sm text-[var(--text-muted)] flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+                  <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{profile?.email}</span>
+                </p>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-[rgba(26,111,212,0.15)] text-[var(--blue-300)] border border-[rgba(26,111,212,0.25)]">
+                    <Shield className="w-3.5 h-3.5" />
+                    {(user as any)?.role_label || 'Member'}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-acorn-orange-100 text-acorn-orange-700 rounded-full text-sm font-medium">
-                    <Zap className="w-4 h-4" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-[rgba(249,115,22,0.12)] text-[#F97316] border border-[rgba(249,115,22,0.25)]">
+                    <Zap className="w-3.5 h-3.5" />
                     Pro Plan
                   </span>
+                  {profile?.job_title && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-[var(--brand-700)]/50 text-[var(--text-muted)] border border-[var(--brand-700)]">
+                      <Briefcase className="w-3.5 h-3.5" />
+                      {profile.job_title}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Settings Sections */}
-        <div 
-          id="sections"
-          ref={(el) => (observerRefs.current['sections'] = el)}
-          className="space-y-4"
-        >
-          <CardSection title="Personal Information" icon={UserIcon} isVisible={isVisible['sections']} delay={200}>
-            <div className="pt-6 space-y-5">
-              <div className="grid md:grid-cols-2 gap-5">
-                <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+        {/* ── Settings Sections ── */}
+        <div className="space-y-4">
+          {/* Personal Information */}
+          <CardSection title="Personal Information" icon={UserIcon} accentColor="var(--blue-400)">
+            <div className="pt-5 space-y-5">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                    Full Name
+                  </label>
                   <input
                     type="text"
                     value={form.full_name}
                     onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
+                    className={inputClasses}
                     placeholder="Your full name"
                   />
                 </div>
-                <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                    Job Title
+                  </label>
                   <input
                     type="text"
                     value={form.job_title}
                     onChange={(e) => setForm({ ...form, job_title: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
+                    className={inputClasses}
                     placeholder="e.g. Product Manager"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                  Bio
+                </label>
                 <textarea
                   value={form.bio}
                   onChange={(e) => setForm({ ...form, bio: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all resize-none"
+                  className={`${inputClasses} resize-none`}
                   placeholder="Tell us about yourself..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                  Contact Email
+                </label>
                 <input
                   type="email"
                   value={form.contact_email}
                   onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
+                  className={inputClasses}
                   placeholder="your@email.com"
                 />
               </div>
             </div>
           </CardSection>
 
-          <CardSection title="Security & Password" icon={Key} defaultOpen={false} isVisible={isVisible['sections']} delay={300}>
-            <div className="pt-6 space-y-5">
+          {/* Security & Password */}
+          <CardSection title="Security & Password" icon={Key} defaultOpen={false} accentColor="#F97316">
+            <div className="pt-5 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                  Current Password
+                </label>
                 <input
                   type="password"
                   value={passwordForm.current_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
+                  className={inputClasses}
                   placeholder="Enter current password"
                   autoComplete="current-password"
                 />
               </div>
-              <div className="grid md:grid-cols-2 gap-5">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                    New Password
+                  </label>
                   <input
                     type="password"
                     value={passwordForm.new_password}
                     onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
+                    className={inputClasses}
                     placeholder="Enter new password"
                     autoComplete="new-password"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                    Confirm Password
+                  </label>
                   <input
                     type="password"
                     value={passwordForm.confirm_password}
                     onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-acorn-blue-500 focus:ring-4 focus:ring-acorn-blue-100 transition-all"
+                    className={inputClasses}
                     placeholder="Confirm new password"
                     autoComplete="new-password"
                   />
@@ -380,13 +396,13 @@ const ProfilePage: React.FC = () => {
               </div>
 
               {passwordError && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   {passwordError}
                 </div>
               )}
               {passwordSuccess && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm">
                   <CheckCircle className="w-4 h-4 flex-shrink-0" />
                   Password updated successfully!
                 </div>
@@ -395,7 +411,6 @@ const ProfilePage: React.FC = () => {
               <Button
                 onClick={handlePasswordChange}
                 disabled={passwordSaving}
-                className="bg-gradient-to-r from-acorn-blue-500 to-acorn-blue-600 hover:from-acorn-blue-600 hover:to-acorn-blue-700 text-white font-semibold"
               >
                 {passwordSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating…</>
@@ -410,41 +425,61 @@ const ProfilePage: React.FC = () => {
             </div>
           </CardSection>
 
-          <CardSection title="Notification Preferences" icon={Bell} defaultOpen={false} isVisible={isVisible['sections']} delay={400}>
-            <div className="pt-6 space-y-4">
+          {/* Notification Preferences */}
+          <CardSection title="Notification Preferences" icon={Bell} defaultOpen={false} accentColor="#22c55e">
+            <div className="pt-5 space-y-1">
               {[
                 { label: 'Email notifications for project updates', checked: true },
                 { label: 'Email notifications for AI generation complete', checked: true },
                 { label: 'Weekly digest of project activity', checked: false },
                 { label: 'Marketing and product updates', checked: false },
               ].map((item, index) => (
-                <label key={index} className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-                  <div className="relative">
+                <label
+                  key={index}
+                  className="flex items-center gap-3.5 px-3 py-3 rounded-xl cursor-pointer transition-colors hover:bg-[var(--brand-800)]/60 group"
+                >
+                  <div className="relative flex items-center">
                     <input
                       type="checkbox"
                       defaultChecked={item.checked}
-                      className="w-5 h-5 text-acorn-blue-600 border-2 border-gray-300 rounded focus:ring-acorn-blue-500 transition-all"
+                      className="appearance-none w-5 h-5 rounded-md border-2 border-[var(--brand-600)] bg-[#152238] checked:bg-[var(--blue-400)] checked:border-[var(--blue-400)] transition-all cursor-pointer focus:ring-2 focus:ring-[var(--blue-400)]/40 focus:ring-offset-0"
                     />
+                    <CheckCircle className="absolute w-3.5 h-3.5 text-[var(--brand-900)] left-[3px] top-[3px] pointer-events-none opacity-0 [input:checked~&]:opacity-100" />
                   </div>
-                  <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{item.label}</span>
+                  <span className="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">
+                    {item.label}
+                  </span>
                 </label>
               ))}
             </div>
           </CardSection>
 
-          <CardSection title="Subscription & Billing" icon={CreditCard} defaultOpen={false} isVisible={isVisible['sections']} delay={500}>
-            <div className="pt-6">
-              <div className="bg-gradient-to-r from-acorn-blue-500 to-acorn-orange-500 rounded-2xl p-6 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80')] bg-cover bg-center opacity-10" />
-                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Subscription & Billing */}
+          <CardSection title="Subscription & Billing" icon={CreditCard} defaultOpen={false} accentColor="#a855f7">
+            <div className="pt-5">
+              <div className="rounded-xl border border-[rgba(26,111,212,0.25)] overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0d2b52] via-[rgba(26,111,212,0.2)] to-[#1a3a5c]" />
+                {/* Decorative grid */}
+                <div
+                  className="absolute inset-0 opacity-[0.05]"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)',
+                    backgroundSize: '20px 20px',
+                  }}
+                />
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 sm:p-6">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-5 h-5" />
-                      <span className="font-bold text-lg">Pro Plan</span>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Sparkles className="w-5 h-5 text-[var(--blue-400)]" />
+                      <span className="font-bold text-[var(--text-primary)]">Pro Plan</span>
                     </div>
-                    <p className="text-white/80">Unlimited projects, advanced AI features, priority support</p>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Unlimited projects, advanced AI features, priority support
+                    </p>
                   </div>
-                  <Button className="bg-white text-acorn-blue-600 hover:bg-gray-100 font-bold shadow-lg">
+                  <Button variant="outline" size="sm" className="flex-shrink-0">
+                    <Globe className="w-4 h-4 mr-2" />
                     Manage Plan
                   </Button>
                 </div>
@@ -452,37 +487,37 @@ const ProfilePage: React.FC = () => {
             </div>
           </CardSection>
 
-          <CardSection title="Recent Activity" icon={Activity} defaultOpen={false} isVisible={isVisible['sections']} delay={600}>
-            <div className="pt-6 space-y-3">
+          {/* Recent Activity */}
+          <CardSection title="Recent Activity" icon={Activity} defaultOpen={false} accentColor="#eab308">
+            <div className="pt-5 space-y-1">
               {[
                 { action: 'Created project "E-commerce Platform"', time: '2 hours ago', icon: '🚀' },
                 { action: 'Generated SRS document', time: '5 hours ago', icon: '📄' },
                 { action: 'Updated profile settings', time: '1 day ago', icon: '⚙️' },
                 { action: 'Logged in from new device', time: '3 days ago', icon: '🔐' },
               ].map((item, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group"
+                <div
+                  key={index}
+                  className="flex items-center justify-between px-3 py-3 rounded-xl transition-colors hover:bg-[var(--brand-800)]/60 group"
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">{item.icon}</span>
-                    <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{item.action}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg flex-shrink-0">{item.icon}</span>
+                    <span className="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">
+                      {item.action}
+                    </span>
                   </div>
-                  <span className="text-sm text-gray-500">{item.time}</span>
+                  <span className="text-xs text-[var(--text-muted)]/70 flex-shrink-0 ml-4">
+                    {item.time}
+                  </span>
                 </div>
               ))}
             </div>
           </CardSection>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(3deg); }
-        }
-        .animate-float { animation: float 8s ease-in-out infinite; }
-      `}</style>
+        {/* Bottom spacer for floating elements */}
+        <div className="h-4" />
+      </div>
     </Layout>
   );
 };

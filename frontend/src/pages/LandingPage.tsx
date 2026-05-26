@@ -442,7 +442,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           <div className="splash-ring splash-ring-3" style={{ width: haloSize, height: haloSize }} aria-hidden />
 
           {/* ── Inner orbit ring: 3 nodes, 6s/rev ── */}
-          {!reducedMotion && !skipped && (() => {
+          {!skipped && (() => {
             const innerR = isMobile ? 62 : 92;
             const innerNodes = [
               { color: '#3d8fe0', delay: 0 },
@@ -480,7 +480,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           })()}
 
           {/* ── Middle orbit ring: 5 nodes, 10s/rev ── */}
-          {!reducedMotion && !skipped && (() => {
+          {!skipped && (() => {
             const midR = isMobile ? 108 : 160;
             const midNodes = [
               { color: '#1A6FD4' }, { color: '#F97316' }, { color: '#3d8fe0' },
@@ -517,7 +517,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           })()}
 
           {/* SVG beams from each orbital node into center */}
-          {!reducedMotion && !skipped && (
+          {!skipped && (
             <svg
               className="splash-beams"
               aria-hidden
@@ -560,7 +560,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           )}
 
           {/* Orbital phase nodes */}
-          {!reducedMotion && !skipped && (
+          {!skipped && (
             <div
               className="splash-orbit-wrap"
               aria-hidden
@@ -1034,6 +1034,8 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
             transform: translate(-50%, -50%) !important;
           }
           .splash-ring, .splash-particle { display: none !important; }
+          /* Orbit must always be visible — override opacity-0 start state */
+          .splash-orbit-wrap, .splash-orbit-node, .splash-orbit-dot { opacity: 1 !important; }
         }
       `}</style>
     </div>

@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -59,6 +60,7 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
   requirements,
 }) => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [listRevealRef, listVisible] = useReveal<HTMLDivElement>(0.05);
 
   const initialItems = buildRequirementItems(requirements);
 
@@ -166,7 +168,7 @@ export const ValidationPhase: React.FC<ValidationPhaseProps> = ({
           <CardTitle>Requirements</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div ref={listRevealRef} className="space-y-3 stagger-container" style={{ opacity: listVisible ? undefined : 0 }}>
             {Object.values(itemsById).length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />

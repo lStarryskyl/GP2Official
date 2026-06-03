@@ -354,12 +354,8 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
   const reducedMotion = usePrefersReducedMotion();
   const [skipped, setSkipped] = useState(false);
 
-  useEffect(() => {
-    if (reducedMotion) {
-      const t = setTimeout(() => onComplete?.(), 200);
-      return () => clearTimeout(t);
-    }
-  }, [reducedMotion]);
+  // Never auto-dismiss for reduced-motion — user must click Enter or Skip.
+  // (Previously 200ms auto-complete was making the splash disappear instantly.)
 
   const skip = () => {
     setSkipped(true);
@@ -367,7 +363,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
     onSkip?.();
   };
 
-  const stageClass = `splash-stage${reducedMotion || skipped ? ' is-instant' : ''}`;
+  const stageClass = `splash-stage${skipped ? ' is-instant' : ''}`;
 
   const logoSize = isMobile ? 96 : 128;
   const haloSize = isMobile ? 240 : 360;
@@ -385,16 +381,35 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'radial-gradient(ellipse at 50% 40%, #14315e 0%, #0a1a30 45%, #05080f 100%)',
+        background: '#06090f',
         position: 'relative',
         overflow: 'hidden',
         padding: isMobile ? '24px 16px' : '32px',
         textAlign: 'center',
       }}
     >
+      {/* Deep-space star layers */}
       <div className="splash-stars" aria-hidden />
+      <div className="splash-stars splash-stars-2" aria-hidden />
+      <div className="splash-stars splash-stars-3" aria-hidden />
+
+      {/* Nebula aurora blobs */}
       <div className="splash-aurora splash-aurora-blue" aria-hidden />
       <div className="splash-aurora splash-aurora-orange" aria-hidden />
+      <div className="splash-aurora splash-aurora-purple" aria-hidden />
+
+      {/* Deep nebula glow behind center */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 60% 45% at 50% 50%, rgba(26,111,212,0.18) 0%, rgba(61,143,224,0.07) 45%, transparent 70%)',
+      }} />
+
+      {/* Shooting stars */}
+      <div className="splash-shoot-wrap" aria-hidden>
+        {[0,1,2,3,4].map(i => (
+          <div key={i} className={`splash-shoot splash-shoot-${i}`} />
+        ))}
+      </div>
 
       <button
         onClick={skip}
@@ -445,8 +460,83 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           <div className="splash-ring splash-ring-2" style={{ width: haloSize, height: haloSize }} aria-hidden />
           <div className="splash-ring splash-ring-3" style={{ width: haloSize, height: haloSize }} aria-hidden />
 
+          {/* ── Inner orbit ring: 3 nodes, 6s/rev ── */}
+          {!skipped && (() => {
+            const innerR = isMobile ? 62 : 92;
+            const innerNodes = [
+              { color: '#3d8fe0', delay: 0 },
+              { color: '#F97316', delay: 2 },
+              { color: '#3d8fe0', delay: 4 },
+            ];
+            return (
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: 0, height: 0,
+                  animation: `splashOrbitFade 0.7s ease-out 0.3s forwards, splashInnerSpin 6s linear 0.3s infinite`,
+                }}
+              >
+                {innerNodes.map((n, i) => {
+                  const ang = (i / innerNodes.length) * Math.PI * 2;
+                  const ix = innerR * Math.cos(ang);
+                  const iy = innerR * Math.sin(ang);
+                  return (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      top: iy, left: ix,
+                      width: isMobile ? 10 : 13, height: isMobile ? 10 : 13,
+                      borderRadius: '50%',
+                      background: n.color,
+                      boxShadow: `0 0 10px ${n.color}cc`,
+                      transform: 'translate(-50%, -50%)',
+                      animation: `splashInnerCounterSpin 6s linear 0.3s infinite`,
+                    }} />
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* ── Middle orbit ring: 5 nodes, 10s/rev ── */}
+          {!skipped && (() => {
+            const midR = isMobile ? 108 : 160;
+            const midNodes = [
+              { color: '#1A6FD4' }, { color: '#F97316' }, { color: '#3d8fe0' },
+              { color: '#fb9042' }, { color: '#1A6FD4' },
+            ];
+            return (
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: 0, height: 0,
+                  animation: `splashOrbitFade 0.8s ease-out 0.5s forwards, splashMidSpin 10s linear 0.5s infinite`,
+                }}
+              >
+                {midNodes.map((n, i) => {
+                  const ang = (i / midNodes.length) * Math.PI * 2;
+                  const mx = midR * Math.cos(ang);
+                  const my = midR * Math.sin(ang);
+                  return (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      top: my, left: mx,
+                      width: isMobile ? 8 : 10, height: isMobile ? 8 : 10,
+                      borderRadius: '50%',
+                      background: n.color,
+                      boxShadow: `0 0 8px ${n.color}bb`,
+                      transform: 'translate(-50%, -50%)',
+                      animation: `splashMidCounterSpin 10s linear 0.5s infinite`,
+                    }} />
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* SVG beams from each orbital node into center */}
-          {!reducedMotion && !skipped && (
+          {!skipped && (
             <svg
               className="splash-beams"
               aria-hidden
@@ -489,7 +579,7 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           )}
 
           {/* Orbital phase nodes */}
-          {!reducedMotion && !skipped && (
+          {!skipped && (
             <div
               className="splash-orbit-wrap"
               aria-hidden
@@ -649,7 +739,9 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
         }}>
           <button
             onClick={onEnter}
+            className="splash-enter-btn"
             style={{
+              position: 'relative', overflow: 'hidden',
               padding: '14px 32px',
               background: 'linear-gradient(135deg, #F97316, #cc4900)',
               border: 'none', borderRadius: '12px', cursor: 'pointer',
@@ -661,21 +753,8 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(249,115,22,0.6)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 32px rgba(249,115,22,0.5)'; }}
           >
+            <span className="splash-enter-shimmer" aria-hidden />
             <ArrowRight size={18} /> Start Building Free
-          </button>
-          <button
-            onClick={onViewDocs}
-            style={{
-              padding: '14px 26px',
-              background: 'rgba(26,111,212,0.12)',
-              border: '1px solid rgba(26,111,212,0.4)', borderRadius: '12px', cursor: 'pointer',
-              color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
-              fontSize: '15px', transition: 'background 0.2s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,111,212,0.2)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,111,212,0.12)'; }}
-          >
-            View SDLC Guide
           </button>
         </div>
 
@@ -817,6 +896,19 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
           will-change: transform, opacity;
           animation: splashRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 2.4s both;
         }
+        .splash-enter-shimmer {
+          position: absolute; inset: 0;
+          background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%);
+          background-size: 200% 100%;
+          background-position: 200% 0;
+          border-radius: inherit;
+          pointer-events: none;
+          transition: background-position 0s;
+        }
+        .splash-enter-btn:hover .splash-enter-shimmer {
+          background-position: -200% 0;
+          transition: background-position 0.55s ease;
+        }
         .splash-stats {
           will-change: transform, opacity;
           animation: splashRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 2.7s both;
@@ -851,6 +943,22 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
         @keyframes splashOrbitSpin {
           from { transform: translate(-50%, -50%) rotate(0deg); }
           to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes splashInnerSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes splashInnerCounterSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+        @keyframes splashMidSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes splashMidCounterSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(-360deg); }
         }
         .splash-orbit-node {
           opacity: 0;
@@ -931,6 +1039,8 @@ const SplashScreen: React.FC<SplashProps> = ({ onEnter, onViewDocs, onComplete, 
             transform: translate(-50%, -50%) !important;
           }
           .splash-ring, .splash-particle { display: none !important; }
+          /* Orbit must always be visible — override opacity-0 start state */
+          .splash-orbit-wrap, .splash-orbit-node, .splash-orbit-dot { opacity: 1 !important; }
         }
       `}</style>
     </div>
@@ -955,6 +1065,19 @@ const OrbitalRing: React.FC<{
 }> = ({ reducedMotion }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  // Track actual ring rotation angle so label/card positions stay correct
+  const [ringAngleDeg, setRingAngleDeg] = useState(0);
+  const startTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const intervalId = setInterval(() => {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      setRingAngleDeg(((elapsed / 45) * 360) % 360);
+    }, 200);
+    return () => clearInterval(intervalId);
+  }, [reducedMotion]);
+
   const SIZE = 560;
   const R = 228;
   const CX = SIZE / 2;
@@ -1017,20 +1140,31 @@ const OrbitalRing: React.FC<{
         <AcornLogo variant="mark" height={70} white />
       </div>
 
-      {/* Phase nodes */}
+      {/* Rotating orbit wrapper — counter-rotates node content to stay upright */}
+      <div
+        style={{
+          position: 'absolute', inset: 0,
+          animation: reducedMotion ? 'none' : 'orbitRingSpin 45s linear infinite',
+        }}
+      >
       {PHASES.map((phase, i) => {
         const PhaseIcon = phase.icon;
-        const angle = ((i / PHASES.length) * 360 - 90) * Math.PI / 180;
+        const staticAngleDeg = (i / PHASES.length) * 360 - 90;
+        const angle = staticAngleDeg * Math.PI / 180;
         const nx = CX + R * Math.cos(angle);
         const ny = CY + R * Math.sin(angle);
+        // Effective position after ring rotation — used for label/card placement
+        const effectiveAngleRad = (staticAngleDeg + ringAngleDeg) * Math.PI / 180;
+        const effectiveNx = CX + R * Math.cos(effectiveAngleRad);
+        const effectiveNy = CY + R * Math.sin(effectiveAngleRad);
         const isOrange = i >= 5;
         const accent = isOrange ? '#F97316' : '#3d8fe0';
         const darkAccent = isOrange ? '#cc4900' : '#1452a0';
         const isHov = hoveredIdx === i;
         const isSel = selectedIdx === i;
         const NODE = 44;
-        const inBottom = ny > CY + 30;
-        const tipX = nx < CX - 70 ? '0%' : nx > CX + 70 ? '-100%' : '-50%';
+        const inBottom = effectiveNy > CY + 30;
+        const tipX = effectiveNx < CX - 70 ? '0%' : effectiveNx > CX + 70 ? '-100%' : '-50%';
 
         return (
           <div
@@ -1045,6 +1179,8 @@ const OrbitalRing: React.FC<{
             onMouseLeave={() => setHoveredIdx(null)}
             onClick={() => handleNodeClick(i)}
           >
+          {/* Counter-rotate content so icons + labels stay upright */}
+          <div style={{ animation: reducedMotion ? 'none' : 'orbitRingCounterSpin 45s linear infinite' }}>
             {/* Node dot */}
             <div style={{
               width: NODE, height: NODE,
@@ -1122,8 +1258,10 @@ const OrbitalRing: React.FC<{
               </div>
             )}
           </div>
+          </div>
         );
       })}
+      </div>
     </div>
   );
 };
@@ -1133,7 +1271,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const reducedMotion = usePrefersReducedMotion();
-  const [showSplash, setShowSplash] = useState(() => !reducedMotion);
+  const [showSplash, setShowSplash] = useState(true);
   // Reduced-motion users skip the splash entirely — start them straight in onboarding
   const [showOnboarding, setShowOnboarding] = useState(() => reducedMotion);
   const [heroReady, setHeroReady] = useState(() => reducedMotion);
@@ -1197,11 +1335,13 @@ const LandingPage: React.FC = () => {
   });
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D1B2A', color: '#E8EDF5' }}>
-      {/* Space background — same classes as splash screen */}
-      <div className="splash-stars" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
+    <div style={{ minHeight: '100vh', color: '#E8EDF5' }}>
+      {/* Layer 1: solid dark base (below everything) */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, background: '#0D1B2A', zIndex: -2 }} />
+      {/* Layer 2: space stars + aurora — behind page content */}
+      <div className="splash-stars" aria-hidden style={{ position: 'fixed', zIndex: -1 }} />
+      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'fixed', zIndex: -1 }} />
+      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'fixed', zIndex: -1 }} />
 
       <style>{`
         @media (max-width: 768px) {
@@ -1225,6 +1365,18 @@ const LandingPage: React.FC = () => {
         @keyframes orbPulse {
           0%, 100% { filter: brightness(0.85); }
           50%       { filter: brightness(1.25); }
+        }
+        @keyframes orbitRingSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes orbitRingCounterSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(-360deg); }
+        }
+        @keyframes heroWordIn {
+          from { opacity: 0; transform: translateY(28px); filter: blur(4px); }
+          to   { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
         .lp-orbital-ring { display: block; }
         .lp-pipeline-fallback { display: none; }
@@ -1260,12 +1412,6 @@ const LandingPage: React.FC = () => {
 
         {/* Desktop nav links */}
         <div className="lp-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <button onClick={() => navigate('/sdlc-guide')} style={{ padding: '8px 14px', background: 'none', border: 'none', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', cursor: 'pointer', borderRadius: '8px', transition: 'color 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#E8EDF5'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#8899AA'; }}
-          >
-            SDLC Guide
-          </button>
           <button onClick={() => scrollTo('features')} style={{ padding: '8px 14px', background: 'none', border: 'none', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', cursor: 'pointer', borderRadius: '8px', transition: 'color 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.color = '#E8EDF5'; }}
             onMouseLeave={e => { e.currentTarget.style.color = '#8899AA'; }}
@@ -1322,7 +1468,6 @@ const LandingPage: React.FC = () => {
         overflow: 'hidden', transition: 'max-height 0.3s ease, padding 0.3s ease',
       }}>
         {[
-          { label: 'SDLC Guide', action: () => { navigate('/sdlc-guide'); setMobileMenuOpen(false); } },
           { label: 'Features', action: () => { scrollTo('features'); setMobileMenuOpen(false); } },
           { label: 'How It Works', action: () => { scrollTo('how-it-works'); setMobileMenuOpen(false); } },
           { label: 'Pricing', action: () => { scrollTo('pricing'); setMobileMenuOpen(false); } },
@@ -1352,21 +1497,58 @@ const LandingPage: React.FC = () => {
             animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 0ms forwards' : 'none',
           }}>
             <Sparkles size={14} color="#3d8fe0" />
-            <span style={{ fontSize: '13px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: '0.02em' }}>AI-Powered SDLC Platform</span>
+            <span style={{ fontSize: '13px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: '0.02em' }}>AI-Powered Planning Platform</span>
           </div>
 
-          {/* Headline */}
-          <div style={{
-            opacity: heroReady ? 1 : 0,
-            animation: heroReady ? 'heroSlideUp 700ms cubic-bezier(0.22,1,0.36,1) 80ms forwards' : 'none',
-          }}>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(36px, 6vw, 68px)', lineHeight: 1.08, maxWidth: '820px', letterSpacing: '-0.03em', margin: '0 auto 20px' }}>
-              Ship better software,{' '}
-              <span style={{ background: 'linear-gradient(135deg, #1A6FD4 30%, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                10x faster.
-              </span>
+          {/* Headline — word-by-word reveal */}
+          <div>
+            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(36px, 6vw, 68px)', lineHeight: 1.15, maxWidth: '820px', letterSpacing: '-0.03em', margin: '0 auto 20px' }}>
+              {reducedMotion ? (
+                <>
+                  Ship better software,{' '}
+                  <span style={{ background: 'linear-gradient(135deg, #1A6FD4 30%, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    10x faster.
+                  </span>
+                </>
+              ) : (
+                <>
+                  {['Ship', 'better', 'software,'].map((word, i) => (
+                    <span
+                      key={word}
+                      style={{
+                        display: 'inline-block',
+                        opacity: heroReady ? undefined : 0,
+                        animation: heroReady ? `heroWordIn 600ms cubic-bezier(0.22,1,0.36,1) ${i * 80}ms both` : 'none',
+                        marginRight: '0.25em',
+                      }}
+                    >
+                      {word}
+                    </span>
+                  ))}{' '}
+                  <span style={{ background: 'linear-gradient(135deg, #1A6FD4 30%, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>
+                    {['10x', 'faster.'].map((word, i) => (
+                      <span
+                        key={word}
+                        style={{
+                          display: 'inline-block',
+                          opacity: heroReady ? undefined : 0,
+                          animation: heroReady ? `heroWordIn 600ms cubic-bezier(0.22,1,0.36,1) ${(3 + i) * 80}ms both` : 'none',
+                          marginRight: i === 0 ? '0.25em' : 0,
+                        }}
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </span>
+                </>
+              )}
             </h1>
-            <p style={{ color: '#8899AA', fontSize: 'clamp(15px, 2vw, 18px)', fontFamily: "'DM Sans', sans-serif", maxWidth: '580px', lineHeight: 1.75, margin: '0 auto' }}>
+            <p style={{
+              color: '#8899AA', fontSize: 'clamp(15px, 2vw, 18px)', fontFamily: "'DM Sans', sans-serif",
+              maxWidth: '580px', lineHeight: 1.75, margin: '0 auto',
+              opacity: heroReady ? 1 : 0,
+              animation: heroReady ? 'heroWordIn 700ms cubic-bezier(0.22,1,0.36,1) 440ms both' : 'none',
+            }}>
               Describe your project in plain language. Acorn generates a complete, production-ready SDLC plan — requirements, architecture, tasks, risk analysis, and cost estimates — in under five minutes.
             </p>
           </div>
@@ -1383,13 +1565,6 @@ const LandingPage: React.FC = () => {
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 28px rgba(249,115,22,0.4)'; }}
             >
               <Rocket size={18} /> Start Building Free
-            </button>
-            <button onClick={() => navigate('/sdlc-guide')}
-              style={{ padding: '15px 28px', background: 'rgba(26,111,212,0.1)', border: '1px solid rgba(26,111,212,0.35)', borderRadius: '12px', color: '#3d8fe0', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.25s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(26,111,212,0.18)'; e.currentTarget.style.borderColor = 'rgba(26,111,212,0.6)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(26,111,212,0.1)'; e.currentTarget.style.borderColor = 'rgba(26,111,212,0.35)'; }}
-            >
-              View SDLC Guide <ChevronRight size={16} />
             </button>
           </div>
 
@@ -1862,7 +2037,6 @@ const LandingPage: React.FC = () => {
             <div style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Product</div>
             {[
               { label: 'Features', onClick: () => scrollTo('features') },
-              { label: 'SDLC Guide', onClick: () => navigate('/sdlc-guide') },
               { label: 'How It Works', onClick: () => scrollTo('how-it-works') },
               { label: 'Pricing', onClick: () => scrollTo('pricing') },
             ].map(({ label, onClick }) => (
@@ -1879,8 +2053,6 @@ const LandingPage: React.FC = () => {
           <div>
             <div style={{ fontSize: '11px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Resources</div>
             {[
-              { label: 'Documentation', onClick: () => navigate('/sdlc-guide') },
-              { label: 'SDLC Guide', onClick: () => navigate('/sdlc-guide') },
               { label: 'Get Started', onClick: () => navigate('/register') },
             ].map(({ label, onClick }) => (
               <button key={label} onClick={onClick} style={{ display: 'block', background: 'none', border: 'none', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', cursor: 'pointer', padding: '4px 0', marginBottom: '4px', transition: 'color 0.2s', textAlign: 'left' }}

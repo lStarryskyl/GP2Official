@@ -1,4 +1,5 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -135,6 +136,30 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
   const [sections, setSections] = useState<FeasibilitySection[]>(() => createInitialSections());
   const [studies, setStudies] = useState<any[]>([]);
   const [userFindings, setUserFindings] = useState('');
+  const [tiltMap, setTiltMap] = useState<Record<string, { rotateX: number; rotateY: number }>>({});
+  const [sectionsRevealRef, sectionsVisible] = useReveal<HTMLDivElement>(0.05);
+
+  const handleCardMouseMove = useCallback((sectionId: string, e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTiltMap(prev => ({ ...prev, [sectionId]: { rotateX: -y * 4, rotateY: x * 4 } }));
+  }, []);
+
+  const handleCardMouseLeave = useCallback((sectionId: string) => {
+    setTiltMap(prev => ({ ...prev, [sectionId]: { rotateX: 0, rotateY: 0 } }));
+  }, []);
+
+  const resetAllTilts = useCallback(() => {
+    setTiltMap({});
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('scroll', resetAllTilts, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', resetAllTilts);
+    };
+  }, [resetAllTilts]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -359,15 +384,30 @@ export const FeasibilityStudyPhase: React.FC<FeasibilityStudyPhaseProps> = ({
       </div>
 
       {/* Feasibility Sections - Modern Accordion */}
-      <div className="space-y-4">
+      <div
+        ref={sectionsRevealRef}
+        className="space-y-4 stagger-container"
+        style={{ opacity: sectionsVisible ? undefined : 0 }}
+      >
         {sections.map((section) => {
           const colors = sectionColors[section.color];
           const isExpanded = expandedSections.has(section.id);
           const completedItems = section.items.filter((i) => i.status === 'complete').length;
           const progress = Math.round((completedItems / section.items.length) * 100);
 
+          const tilt = tiltMap[section.id] || { rotateX: 0, rotateY: 0 };
           return (
-            <div key={section.id} className="rounded-2xl bg-[var(--brand-900)] border border-[var(--brand-700)]/50 overflow-hidden transition-all hover:border-[var(--blue-400)]/30">
+            <div
+              key={section.id}
+              className="rounded-2xl bg-[var(--brand-900)] border border-[var(--brand-700)]/50 overflow-hidden"
+              style={{
+                transform: `perspective(700px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`,
+                transition: 'transform 0.2s ease, border-color 0.2s ease',
+                borderColor: tilt.rotateX !== 0 || tilt.rotateY !== 0 ? 'rgba(26,111,212,0.4)' : undefined,
+              }}
+              onMouseMove={(e) => handleCardMouseMove(section.id, e)}
+              onMouseLeave={() => handleCardMouseLeave(section.id)}
+            >
               <button
                 onClick={() => toggleSection(section.id)}
                 className="w-full p-5 flex items-center justify-between hover:bg-[#152238]/50 transition-colors"

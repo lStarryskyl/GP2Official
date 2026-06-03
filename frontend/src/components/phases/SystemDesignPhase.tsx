@@ -1,4 +1,5 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -60,6 +61,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
   const navigate = useNavigate();
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedDiagram, setSelectedDiagram] = useState<string | null>('architecture');
+  const [diagramGridRevealRef, diagramGridVisible] = useReveal<HTMLDivElement>(0.05);
   const [expandedApi, setExpandedApi] = useState<Set<string>>(new Set(['auth']));
   const diagramRef = useRef<HTMLDivElement>(null);
 
@@ -173,7 +175,7 @@ export const SystemDesignPhase: React.FC<SystemDesignPhaseProps> = ({
   return (
     <div className="space-y-6">
       {/* Diagram Selection */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div ref={diagramGridRevealRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 stagger-container" style={{ opacity: diagramGridVisible ? undefined : 0 }}>
         {diagrams.map((diagram) => {
           const colors = statusColors[diagram.status];
           const isSelected = selectedDiagram === diagram.id;

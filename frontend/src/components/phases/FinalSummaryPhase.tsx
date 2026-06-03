@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -54,6 +55,7 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
   const navigate = useNavigate();
 
   const [keyDecisions, setKeyDecisions] = useState<string[]>([]);
+  const [phasesRevealRef, phasesVisible] = useReveal<HTMLDivElement>(0.05);
   const [customNextSteps, setCustomNextSteps] = useState<{ text: string; owner: string }[]>([]);
   const [editingDecisions, setEditingDecisions] = useState(false);
   const [editingNextSteps, setEditingNextSteps] = useState(false);
@@ -218,7 +220,7 @@ export const FinalSummaryPhase: React.FC<FinalSummaryPhaseProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div ref={phasesRevealRef} className="space-y-3 stagger-container" style={{ opacity: phasesVisible ? undefined : 0 }}>
             {phaseConfigs.map((phase) => {
               const status = phaseStatus[phase.id] || 'locked';
               const isComplete = status === 'completed';

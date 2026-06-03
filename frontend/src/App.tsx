@@ -28,6 +28,7 @@ import SDLCGuidePage from './pages/SDLCGuidePage';
 import { PlanValidationPage } from './pages/PlanValidationPage';
 import { AgentDebatePage } from './pages/AgentDebatePage';
 import { UxFlowPage } from './pages/UxFlowPage';
+import { PageTransition } from './components/PageTransition';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -57,6 +58,7 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <PageTransition>
         <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -234,6 +236,7 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </PageTransition>
       </BrowserRouter>
       </ToastProvider>
     </ThemeProvider>

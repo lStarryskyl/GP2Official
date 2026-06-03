@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/Layout';
@@ -26,12 +26,25 @@ function getHealthColor(score: number) {
   return { color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', label: 'Starting' };
 }
 
-
-function getPhaseCompletionText(phaseStatus?: Record<string, string>): string {
-  if (!phaseStatus) return '0 / 10 phases';
-  const completed = PHASE_KEYS.filter(k => (phaseStatus[k] || '').toLowerCase() === 'completed').length;
-  return `${completed} / 10 phases`;
+function getCardAccentStyle(status: string): React.CSSProperties {
+  if (status === 'completed') return { '--card-accent-color': '#22c55e', '--card-accent-glow': 'rgba(34,197,94,0.45)' } as React.CSSProperties;
+  if (status === 'active' || status === 'planning') return { '--card-accent-color': '#3d8fe0', '--card-accent-glow': 'rgba(61,143,224,0.45)' } as React.CSSProperties;
+  if (status === 'archived') return { '--card-accent-color': '#F97316', '--card-accent-glow': 'rgba(249,115,22,0.4)' } as React.CSSProperties;
+  return { '--card-accent-color': '#8899AA', '--card-accent-glow': 'rgba(136,153,170,0.3)' } as React.CSSProperties;
 }
+
+const AnimatedProgressBar: React.FC<{ value: number; color: string }> = ({ value, color }) => {
+  const [width, setWidth] = React.useState(0);
+  React.useEffect(() => {
+    const id = requestAnimationFrame(() => setWidth(value));
+    return () => cancelAnimationFrame(id);
+  }, [value]);
+  return (
+    <div style={{ height: '6px', borderRadius: '999px', background: 'rgba(74,96,112,0.25)', overflow: 'hidden' }}>
+      <div className="progress-bar-fill" style={{ width: `${width}%`, height: '100%', borderRadius: '999px', background: color }} />
+    </div>
+  );
+};
 
 const quickActions = [
   { icon: Plus, label: 'New Project', description: 'Start from scratch', action: 'new', color: 'forest' },
@@ -65,10 +78,33 @@ export const ProjectsPage: React.FC = () => {
   const [usage, setUsage] = useState<PlanUsage | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+  const cardsContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     loadAll();
     setIsVisible(true);
   }, []);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const container = cardsContainerRef.current;
+    if (!container) return;
+    const cards = container.querySelectorAll<Element>('.card-reveal');
+    if (!cards.length) return;
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).classList.add('is-revealed');
+            obs.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
+    );
+    cards.forEach(card => observer.observe(card));
+    return () => observer.disconnect();
+  }, [projects, archived, tab, searchQuery, viewMode]);
 
   // Sync tab to URL
   useEffect(() => {
@@ -226,7 +262,7 @@ export const ProjectsPage: React.FC = () => {
                 Your AI-powered SDLC workspace
               </p>
             </div>
-            <button onClick={handleNewProject} className="btn-primary group" data-testid="new-project-btn">
+            <button onClick={handleNewProject} className="btn-primary btn-new-shimmer group" data-testid="new-project-btn">
               <Plus className="w-5 h-5" />
               New Project
               <ArrowRight className="w-4 h-4 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
@@ -515,7 +551,7 @@ export const ProjectsPage: React.FC = () => {
         ) : (
           <div className={`transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {viewMode === 'grid' ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div ref={cardsContainerRef} className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredProjects.map((project, index) => {
                   const projectId = project.id || project.project_id || '';
                   const statusConfig = getStatusConfig(project.status);
@@ -528,26 +564,31 @@ export const ProjectsPage: React.FC = () => {
                   return (
                     <div
                       key={projectId}
-                      className="group relative card p-5 cursor-pointer animate-reveal-up"
+                      className="group relative card card-accent-top p-5 cursor-pointer card-reveal"
                       onClick={() => navigate(`/projects/${projectId}`)}
-                      style={{ animationDelay: `${index * 60}ms`, opacity: isArchivedCard ? 0.85 : 1 }}
+                      style={{ '--card-i': index, opacity: isArchivedCard ? 0.85 : 1, ...getCardAccentStyle(project.status) } as React.CSSProperties}
                       data-testid={`project-card-${projectId}`}
                     >
                       {/* Header row */}
                       <div className="flex items-center justify-between mb-3">
                         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor}`}>
-                          <StatusIcon className="w-3 h-3" />
+                          {(project.status === 'active' || project.status === 'planning') ? (
+                            <span className="status-pulse-dot" />
+                          ) : (
+                            <StatusIcon className="w-3 h-3" />
+                          )}
                           {statusConfig.label}
                         </div>
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: '5px',
-                          padding: '3px 9px', borderRadius: '999px',
-                          background: healthColor.bg, border: `1px solid ${healthColor.color}44`,
-                          fontSize: '11px', fontWeight: 700, color: healthColor.color,
-                          fontFamily: 'Syne, sans-serif',
-                        }}>
-                          <Zap size={10} /> {healthScore}%
-                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenu(activeMenu === projectId ? null : projectId);
+                          }}
+                          className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-[var(--brand-700)]/60 hover:bg-[var(--brand-700)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                          aria-label="More actions"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
                       </div>
 
                       <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1.5 group-hover:text-[var(--blue-400)] transition-colors line-clamp-1">
@@ -557,33 +598,20 @@ export const ProjectsPage: React.FC = () => {
                         {project.description || 'No description provided'}
                       </p>
 
-                      {/* Phase journey strip */}
+                      {/* Progress bar */}
                       <div style={{ marginBottom: '14px' }}>
-                        <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center justify-between mb-2">
                           <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontWeight: 600 }}>
-                            <Layers size={10} style={{ display: 'inline', marginRight: '4px' }} />
-                            {completedCount} / {PHASE_KEYS.length} phases
+                            {completedCount} / {PHASE_KEYS.length} phases complete
                           </span>
-                          <span style={{ fontSize: '11px', color: healthColor.color, fontWeight: 600 }}>
+                          <span style={{ fontSize: '11px', color: healthColor.color, fontWeight: 700 }}>
                             {healthScore}%
                           </span>
                         </div>
-                        <div style={{ display: 'flex', gap: '3px' }}>
-                          {phaseConfigs.map(ph => {
-                            const st = (project.phase_status?.[ph.id] || '').toLowerCase();
-                            let bg = 'rgba(74,96,112,0.3)';
-                            if (st === 'completed') bg = '#22c55e';
-                            else if (st === 'in_progress') bg = '#F97316';
-                            else if (st === 'ready') bg = '#1A6FD4';
-                            return (
-                              <div
-                                key={ph.id}
-                                title={`${ph.title}: ${st || 'locked'}`}
-                                style={{ flex: 1, height: '5px', borderRadius: '999px', background: bg, opacity: st ? 1 : 0.5 }}
-                              />
-                            );
-                          })}
-                        </div>
+                        <AnimatedProgressBar
+                          value={healthScore}
+                          color={healthScore >= 70 ? '#22c55e' : healthScore >= 40 ? '#F97316' : '#1A6FD4'}
+                        />
                       </div>
 
                       {/* Meta row */}
@@ -598,61 +626,49 @@ export const ProjectsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Hover actions */}
-                      <div className="absolute top-12 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenu(activeMenu === projectId ? null : projectId);
-                          }}
-                          className="p-1.5 rounded-lg bg-[var(--brand-700)]/60 hover:bg-[var(--brand-700)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-                          aria-label="More actions"
+                      {/* Dropdown menu */}
+                      {activeMenu === projectId && (
+                        <div
+                          className="absolute top-12 right-3 w-44 bg-[var(--brand-800)] border border-[var(--brand-700)]/60 rounded-xl shadow-xl overflow-hidden z-10 menu-spring"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                        {activeMenu === projectId && (
-                          <div
-                            className="absolute top-full right-0 mt-2 w-44 bg-[var(--brand-800)] border border-[var(--brand-700)]/60 rounded-xl shadow-xl overflow-hidden z-10 animate-reveal-down"
-                            onClick={(e) => e.stopPropagation()}
+                          <button
+                            onClick={() => navigate(`/projects/${projectId}`)}
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-muted)] hover:bg-[var(--brand-700)]/30 hover:text-[var(--text-primary)] transition-colors"
                           >
+                            <ExternalLink className="w-4 h-4" /> Open
+                          </button>
+                          {!isArchivedCard ? (
                             <button
-                              onClick={() => navigate(`/projects/${projectId}`)}
-                              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-muted)] hover:bg-[var(--brand-700)]/30 hover:text-[var(--text-primary)] transition-colors"
+                              onClick={() => archiveProject(projectId)}
+                              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-amber-400 hover:bg-amber-500/10 transition-colors"
                             >
-                              <ExternalLink className="w-4 h-4" /> Open
+                              <Archive className="w-4 h-4" /> Archive
                             </button>
-                            {!isArchivedCard ? (
+                          ) : (
+                            <>
                               <button
-                                onClick={() => archiveProject(projectId)}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-amber-400 hover:bg-amber-500/10 transition-colors"
+                                onClick={() => restoreProject(projectId)}
+                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--blue-300)] hover:bg-[var(--blue-400)]/10 transition-colors"
                               >
-                                <Archive className="w-4 h-4" /> Archive
+                                <RotateCcw className="w-4 h-4" /> Restore
                               </button>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => restoreProject(projectId)}
-                                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--blue-300)] hover:bg-[var(--blue-400)]/10 transition-colors"
-                                >
-                                  <RotateCcw className="w-4 h-4" /> Restore
-                                </button>
-                                <button
-                                  onClick={() => permanentlyDelete(projectId)}
-                                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" /> Delete forever
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                              <button
+                                onClick={() => permanentlyDelete(projectId)}
+                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" /> Delete forever
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div ref={cardsContainerRef} className="space-y-2">
                 {filteredProjects.map((project, index) => {
                   const projectId = project.id || project.project_id || '';
                   const statusConfig = getStatusConfig(project.status);
@@ -662,9 +678,9 @@ export const ProjectsPage: React.FC = () => {
                   return (
                     <div
                       key={projectId}
-                      className="group flex items-center gap-5 p-4 rounded-xl bg-[var(--brand-850)] border border-[var(--brand-700)]/50 hover:border-[var(--blue-400)]/30 cursor-pointer transition-all duration-300 animate-reveal-up"
+                      className="group flex items-center gap-5 p-4 rounded-xl bg-[var(--brand-850)] border border-[var(--brand-700)]/50 hover:border-[var(--blue-400)]/30 cursor-pointer transition-all duration-300 card-reveal"
                       onClick={() => navigate(`/projects/${projectId}`)}
-                      style={{ animationDelay: `${index * 40}ms`, opacity: isArchivedCard ? 0.85 : 1 }}
+                      style={{ '--card-i': index, opacity: isArchivedCard ? 0.85 : 1 } as React.CSSProperties}
                     >
                       <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--blue-400)]/20 to-[var(--blue-600)]/20 flex items-center justify-center flex-shrink-0 border border-[var(--blue-400)]/30">
                         <FolderOpen className="w-5 h-5 text-[var(--blue-400)]" />

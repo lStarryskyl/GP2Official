@@ -19,7 +19,6 @@ interface LayoutProps { children: React.ReactNode; }
 const getNavItems = (activeProjectId: string | null) => [
   { id: 'projects', icon: FolderKanban, label: 'Projects', path: '/projects' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics', path: activeProjectId ? `/projects/${activeProjectId}/analytics` : '/analytics' },
-  { id: 'docs', icon: BookOpen, label: 'Docs', path: '/docs' },
   { id: 'profile', icon: UserIcon, label: 'Profile', path: '/profile' },
 ];
 
@@ -51,6 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const switcherRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
@@ -192,7 +192,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px', borderRadius: '8px' }}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {sidebarCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+            <ChevronLeft size={15} style={{ transform: sidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
           </button>
         </div>
 
@@ -253,7 +253,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <ChevronsUpDown size={13} color="var(--text-muted)" />
             </button>
             {switcherOpen && (
-              <div style={{
+              <div className="switcher-dropdown-animated" style={{
                 position: 'absolute', top: 'calc(100% + 4px)', left: '12px', right: '12px',
                 background: 'var(--brand-850)',
                 border: '1px solid rgba(26,111,212,0.25)',
@@ -423,7 +423,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               Workspace
             </p>
           )}
-          {getNavItems(activeProjectId).map(item => {
+          {getNavItems(activeProjectId).map((item, index) => {
             const Icon = item.icon;
             const active = isActive(item.path);
             return (
@@ -431,21 +431,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 title={sidebarCollapsed ? item.label : undefined}
+                className={`sidebar-nav-item btn-micro sidebar-nav-glow${active ? ' nav-active' : ''}`}
+                data-active={active ? 'true' : undefined}
                 style={{
+                  '--i': index,
                   width: '100%', display: 'flex', alignItems: 'center',
                   gap: '12px', padding: '9px 12px',
                   justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                   borderRadius: '10px', border: 'none', cursor: 'pointer',
-                  background: active ? 'rgba(26,111,212,0.15)' : 'transparent',
-                  borderLeft: active ? '3px solid #1A6FD4' : '3px solid transparent',
+                  background: active ? 'rgba(26,111,212,0.18)' : 'transparent',
                   color: active ? 'var(--blue-300)' : 'var(--text-muted)',
                   fontFamily: active ? "'Syne', sans-serif" : "'DM Sans', sans-serif",
                   fontWeight: active ? 600 : 400, fontSize: '13.5px',
                   marginBottom: '2px',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(26,111,212,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; } }}
+                  boxShadow: active ? 'inset 3px 0 0 var(--blue-400)' : 'none',
+                } as React.CSSProperties}
               >
                 <Icon size={16} />
                 {!sidebarCollapsed && <span>{item.label}</span>}
@@ -652,12 +652,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* ── Main content ── */}
-      <main style={{
-        flex: 1,
-        position: 'relative', zIndex: 10,
-      }}
+      <main
+        className="app-main"
+        style={{ flex: 1, position: 'relative', zIndex: 10 }}
       >
-        <style>{`main { margin-left: 0; padding-top: 60px; } @media (min-width:1024px) { main { margin-left: ${sidebarW}; padding-top: 0; } }`}</style>
+        <style>{`@media (min-width:1024px){main{margin-left:${sidebarW};}}`}</style>
         <div style={{ padding: '24px 32px' }}>
           {children}
         </div>
@@ -674,6 +673,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClose={() => setPaletteOpen(false)}
         activeProjectId={activeProjectId}
       />
+
     </div>
   );
 };

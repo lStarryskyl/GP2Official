@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { Requirement } from '@/types';
@@ -130,8 +131,20 @@ const coverageStatusBadge = (status: string) => {
 
 const expectedBadge = (val: string) => {
   const v = (val || '').toLowerCase();
-  if (v === 'pass' || v === 'success') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"><CheckCircle2 className="h-3 w-3" /> PASS</span>;
-  if (v === 'fail' || v === 'rejected' || v === 'error') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30"><XCircle className="h-3 w-3" /> FAIL</span>;
+  if (v === 'pass' || v === 'success') return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+      <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="2,7 5,10 10,3" style={{ strokeDasharray: 16, strokeDashoffset: 16, animation: 'drawCheckmark 0.45s ease forwards' }} />
+      </svg>
+      PASS
+    </span>
+  );
+  if (v === 'fail' || v === 'rejected' || v === 'error') return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+      <XCircle className="h-3 w-3" style={{ animation: 'shake 0.4s ease' }} />
+      FAIL
+    </span>
+  );
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30"><AlertTriangle className="h-3 w-3" /> {val}</span>;
 };
 
@@ -139,11 +152,28 @@ const expectedBadge = (val: string) => {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
+function useCountUp(target: number, duration = 900): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setValue(0); return; }
+    const start = Date.now();
+    const step = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      setValue(Math.round(progress * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return value;
+}
+
 export const TestingPhase: React.FC<TestingPhaseProps> = ({
   projectId,
   requirements,
 }) => {
   const [activeTab, setActiveTab] = useState<'scenarios' | 'data' | 'coverage'>('scenarios');
+  const [scenariosRevealRef, scenariosVisible] = useReveal<HTMLDivElement>(0.05);
   const [testData, setTestData] = useState<TestDataResult | null>(null);
   const [coverageData, setCoverageData] = useState<CoverageResult | null>(null);
   const [loadingTests, setLoadingTests] = useState(false);
@@ -152,6 +182,8 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { error: toastError } = useToast();
+  const coveragePct = coverageData?.summary?.coverage_percentage ?? 0;
+  const animatedCoverage = useCountUp(coveragePct);
 
   const funcReqs = (requirements || []).filter(
     r => r.type === 'functional' || (r.type || '').toLowerCase().includes('functional')
@@ -290,7 +322,6 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
   /* ---------- Stats ---------- */
   const totalScenarios = testData?.scenarios?.length ?? 0;
   const totalEdgeCases = testData?.summary?.total_edge_cases ?? 0;
-  const coveragePct = coverageData?.summary?.coverage_percentage ?? 0;
   const orphanedCount = coverageData?.summary?.orphaned ?? 0;
 
   /* ================================================================== */
@@ -406,7 +437,8 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
                 <p>No test scenarios yet. Click <strong>Generate Test Data</strong> to create them.</p>
               </div>
             ) : (
-              testData.scenarios.map(sc => {
+              <div ref={scenariosRevealRef} className="stagger-container" style={{ opacity: scenariosVisible ? undefined : 0 }}>
+              {testData.scenarios.map(sc => {
                 const isExpanded = expandedScenarios.has(sc.scenario_id);
                 // Extract input/expected from test_data
                 const inputField = sc.test_data?.[0] || {};
@@ -415,9 +447,11 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
                 const inputValue = String(inputField[inputLabel] ?? '');
                 const expectedValue = String(inputField['expected'] ?? '');
                 const reasonValue = String(inputField['reason'] ?? '');
+                const isFail = ['fail', 'rejected', 'error'].includes((expectedValue || '').toLowerCase());
+                const isPass = ['pass', 'success'].includes((expectedValue || '').toLowerCase());
 
                 return (
-                  <div key={sc.scenario_id} className="hover:bg-[#152238]/30 transition-colors">
+                  <div key={sc.scenario_id} className="hover:bg-[#152238]/30 transition-colors phase-card-hover">
                     {/* Header row — always visible */}
                     <button className="w-full text-left p-4 flex items-center gap-3" onClick={() => toggleScenario(sc.scenario_id)}>
                       <div className="flex-1 min-w-0">
@@ -489,7 +523,8 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
                     )}
                   </div>
                 );
-              })
+              })}
+              </div>
             )}
           </div>
         </div>
@@ -594,11 +629,11 @@ export const TestingPhase: React.FC<TestingPhaseProps> = ({
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-blue-400" /> Coverage Summary
                 </h3>
-                <span className={`text-2xl font-bold ${
-                  coverageData.summary.coverage_percentage >= 80 ? 'text-emerald-400' :
-                  coverageData.summary.coverage_percentage >= 50 ? 'text-amber-400' :
+                <span className={`text-2xl font-bold tabular-nums ${
+                  coveragePct >= 80 ? 'text-emerald-400' :
+                  coveragePct >= 50 ? 'text-amber-400' :
                   'text-red-400'
-                }`}>{coverageData.summary.coverage_percentage}%</span>
+                }`}>{animatedCoverage}%</span>
               </div>
               <div className="h-3 bg-[var(--brand-700)]/50 rounded-full overflow-hidden mb-4">
                 <div

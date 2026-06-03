@@ -155,10 +155,13 @@ export const PhaseDetailPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [pipelineStep, setPipelineStep] = useState(0);
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phaseBottomTab, setPhaseBottomTab] = useState<'history' | 'traceability' | 'discussion'>('history');
+  const bottomTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [bottomTabUnderline, setBottomTabUnderline] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
   const [versionEntries, setVersionEntries] = useState<VersionHistoryEntry[]>([]);
   const [traceabilityMatrix, setTraceabilityMatrix] = useState<TraceabilityMatrixData | null>(null);
   const [discussionThread, setDiscussionThread] = useState<NegotiationThreadData | null>(null);
@@ -218,6 +221,8 @@ export const PhaseDetailPage: React.FC = () => {
     status: 'proposed',
   });
   const [editingRequirementId, setEditingRequirementId] = useState<string | null>(null);
+  const [savedReqId, setSavedReqId] = useState<string | null>(null);
+  const [phaseContentKey, setPhaseContentKey] = useState(0);
   const [editingRequirementDraft, setEditingRequirementDraft] = useState({
     title: '',
     description: '',
@@ -558,6 +563,7 @@ export const PhaseDetailPage: React.FC = () => {
   // Copy-to-clipboard helper
   const [copied, setCopied] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
   const [editNoteDialogOpen, setEditNoteDialogOpen] = useState(false);
   const [editNoteValue, setEditNoteValue] = useState('');
   const [isSavingEditedNote, setIsSavingEditedNote] = useState(false);
@@ -625,6 +631,8 @@ export const PhaseDetailPage: React.FC = () => {
       toastSuccess(`${phaseConfig?.title || 'Phase'} marked as complete`);
       setCompletionDialogOpen(false);
       setCompletionNotes('');
+      setJustCompleted(true);
+      setTimeout(() => setJustCompleted(false), 1200);
     } catch (err) {
       console.error('Failed to mark phase complete', err);
       toastError('Failed to mark phase as complete');
@@ -663,18 +671,119 @@ export const PhaseDetailPage: React.FC = () => {
     );
   };
 
+  const PIPELINE_STEPS = ['Analyzing', 'Structuring', 'Writing', 'Finalising'];
+
+  useEffect(() => {
+    if (!isGenerating) { setPipelineStep(0); return; }
+    const id = setInterval(() => {
+      setPipelineStep(prev => Math.min(prev + 1, PIPELINE_STEPS.length - 1));
+    }, 1800);
+    return () => clearInterval(id);
+  }, [isGenerating]);
+
+  // Measure active bottom tab for DOM-driven sliding underline
+  useEffect(() => {
+    const allTabs = ['history', 'traceability', 'discussion'];
+    const visibleTabs = allTabs.filter(t => t !== 'traceability' || phaseId === 'requirements_gathering');
+    const idx = visibleTabs.indexOf(phaseBottomTab as string);
+    const el = bottomTabRefs.current[idx];
+    if (el) {
+      setBottomTabUnderline({ left: el.offsetLeft, width: el.offsetWidth });
+    }
+  }, [phaseBottomTab, phaseId]);
+
+  const renderPipelineIndicator = () => {
+    if (!isGenerating) return null;
+    return (
+      <div className="rounded-xl p-5 mt-4 animate-slide-in-up" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(26,111,212,0.2)' }}>
+        <div className="flex items-center gap-3 mb-4">
+          {PIPELINE_STEPS.map((label, i) => {
+            const isActive = i === pipelineStep;
+            const isDone = i < pipelineStep;
+            return (
+              <React.Fragment key={label}>
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${isActive ? 'animate-pipeline-pulse' : ''}`}
+                    style={{
+                      background: isActive ? 'var(--blue-500)' : isDone ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.4)',
+                      border: isActive ? '2px solid var(--blue-400)' : isDone ? '2px solid rgba(26,111,212,0.4)' : '2px solid rgba(26,46,69,0.5)',
+                      transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                    }}
+                  >
+                    {isDone ? '✓' : <span style={{ color: isActive ? '#fff' : '#4a6580' }}>{i + 1}</span>}
+                  </div>
+                  <span className="text-[11px] font-semibold transition-all duration-300" style={{ color: isActive ? 'var(--blue-400)' : isDone ? 'rgba(26,111,212,0.6)' : '#4a6580' }}>
+                    {label}
+                  </span>
+                </div>
+                {i < PIPELINE_STEPS.length - 1 && (
+                  <div className="flex-1 h-px" style={{ background: i < pipelineStep ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.4)', transition: 'background 0.5s ease' }} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        <div className="space-y-2">
+          <div className="skeleton-shimmer h-3 w-3/4" />
+          <div className="skeleton-shimmer h-3 w-full" />
+          <div className="skeleton-shimmer h-3 w-5/6" />
+          <div className="skeleton-shimmer h-3 w-4/5" />
+        </div>
+      </div>
+    );
+  };
+
   const renderStreamingOverlay = () => {
     if (!isStreaming && !streamingText) return null;
     if (!isStreaming && phaseMarkdown) return null;
     return (
       <div className="rounded-xl p-5 mt-4" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(26,111,212,0.2)' }}>
-        <div className="flex items-center gap-2 mb-3">
-          <Loader2 className="w-4 h-4 animate-spin text-[var(--blue-400)]" />
-          <span className="text-xs font-semibold text-[var(--blue-400)]">AI is generating...</span>
+        {/* Pipeline steps indicator */}
+        <div className="flex items-center gap-3 mb-4">
+          {PIPELINE_STEPS.map((label, i) => {
+            const isActive = i === pipelineStep;
+            const isDone = i < pipelineStep;
+            return (
+              <React.Fragment key={label}>
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${isActive ? 'animate-pipeline-pulse' : ''}`}
+                    style={{
+                      background: isActive ? 'var(--blue-500)' : isDone ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.4)',
+                      border: isActive ? '2px solid var(--blue-400)' : isDone ? '2px solid rgba(26,111,212,0.4)' : '2px solid rgba(26,46,69,0.5)',
+                      transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                    }}
+                  >
+                    {isDone ? '✓' : <span style={{ color: isActive ? '#fff' : '#4a6580' }}>{i + 1}</span>}
+                  </div>
+                  <span className="text-[11px] font-semibold transition-all duration-300" style={{ color: isActive ? 'var(--blue-400)' : isDone ? 'rgba(26,111,212,0.6)' : '#4a6580' }}>
+                    {label}
+                  </span>
+                </div>
+                {i < PIPELINE_STEPS.length - 1 && (
+                  <div className="flex-1 h-px" style={{ background: i < pipelineStep ? 'rgba(26,111,212,0.4)' : 'rgba(26,46,69,0.4)', transition: 'background 0.5s ease' }} />
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
-        <div className="prose prose-sm max-w-none text-[var(--text-muted)]">
-          <ReactMarkdown>{streamingText + (isStreaming ? ' ▊' : '')}</ReactMarkdown>
-        </div>
+
+        {/* Shimmer skeleton while no content yet */}
+        {!streamingText && (
+          <div className="space-y-2">
+            <div className="skeleton-shimmer h-3 w-3/4" />
+            <div className="skeleton-shimmer h-3 w-full" />
+            <div className="skeleton-shimmer h-3 w-5/6" />
+            <div className="skeleton-shimmer h-3 w-4/5" />
+          </div>
+        )}
+
+        {streamingText && (
+          <div className="prose prose-sm max-w-none text-[var(--text-muted)]">
+            <ReactMarkdown>{streamingText + (isStreaming ? ' ▊' : '')}</ReactMarkdown>
+          </div>
+        )}
       </div>
     );
   };
@@ -1763,11 +1872,18 @@ export const PhaseDetailPage: React.FC = () => {
             <div className="space-y-5">
               {/* Phase Header */}
               <div className="rounded-2xl overflow-hidden shadow-lg no-print" style={{ background: 'var(--brand-850)', border: `1px solid ${phaseAccentColor}30` }}>
-                <div className="h-1" style={{ background: `linear-gradient(to right, ${phaseAccentColor}, ${phaseAccentColor}88)` }} />
+                <div
+                  className={justCompleted ? 'animate-accent-bar-shimmer' : ''}
+                  style={
+                    justCompleted
+                      ? { height: '4px', '--shimmer-from': phaseAccentColor, '--shimmer-to': `${phaseAccentColor}88` } as React.CSSProperties
+                      : { height: '4px', background: `linear-gradient(to right, ${phaseAccentColor}, ${phaseAccentColor}88)` }
+                  }
+                />
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-12 h-12 rounded-xl font-bold text-lg shadow-lg"
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl font-bold text-lg shadow-lg animate-icon-drop"
                         style={{ background: phaseAccentColor, color: 'var(--brand-900)' }}>
                         {phaseConfig.stepNumber}
                       </div>
@@ -1776,7 +1892,7 @@ export const PhaseDetailPage: React.FC = () => {
                           style={{ color: phaseAccentColor }}>
                           Phase {(phaseConfig.order || 0) + 1} of {phaseConfigs.length}
                         </p>
-                        <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
+                        <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] animate-slide-in-up" style={{ animationDelay: '60ms' }}>
                           {phaseConfig.title}
                         </h1>
                       </div>
@@ -1829,10 +1945,12 @@ export const PhaseDetailPage: React.FC = () => {
                           Mark Complete
                         </Button>
                       )}
-                      <span className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                      <span
+                        key={justCompleted ? 'completing' : 'stable'}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold${justCompleted && status === 'completed' ? ' animate-completion-pop' : ''}`}
                         style={
                           status === 'completed'
-                            ? { background: 'rgba(26,111,212,0.15)', color: 'var(--blue-400)', border: '1px solid rgba(26,111,212,0.3)' }
+                            ? { background: 'rgba(212,160,23,0.18)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.45)' }
                             : status === 'locked'
                               ? { background: 'rgba(26,46,69,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(26,46,69,0.3)' }
                               : { background: `${phaseAccentColor}22`, color: phaseAccentColor, border: `1px solid ${phaseAccentColor}44` }
@@ -2005,13 +2123,9 @@ export const PhaseDetailPage: React.FC = () => {
 
                 return (
                   <div className="bg-[var(--brand-900)] rounded-xl border border-[var(--brand-700)] overflow-hidden">
+                    {isGenerating && renderPipelineIndicator()}
                     <div className="p-3 sm:p-4">
-                      {isGenerating ? (
-                        <div className="flex items-center justify-center gap-3 py-2">
-                          <Loader2 className="h-5 w-5 animate-spin text-[var(--blue-400)]" />
-                          <span className="text-sm font-medium text-gray-300">Generating content with AI...</span>
-                        </div>
-                      ) : (
+                      {isGenerating ? null : (
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <Sparkles className="h-4 w-4 text-[var(--blue-400)]" />
@@ -2267,7 +2381,8 @@ export const PhaseDetailPage: React.FC = () => {
                           status: requirementDraft.status,
                         } as any;
                         const created = await api.createRequirement(id, payload);
-                        setRequirements((prev) => [created, ...prev]);
+                        const withNew = { ...created, _isNew: true };
+                        setRequirements((prev) => [withNew as any, ...prev]);
                         setRequirementDraft({
                           type: 'functional',
                           title: '',
@@ -2292,9 +2407,23 @@ export const PhaseDetailPage: React.FC = () => {
                   <p className="text-sm mt-1 text-gray-500">Use the AI assistant to generate requirements.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {requirements.map((req) => (
-                    <div key={req.requirement_id} className="p-4 border border-[var(--brand-700)]/50 rounded-lg bg-[#152238]/30 hover:bg-[#152238] transition-colors">
+                <div className="stagger-container space-y-3">
+                  {requirements.map((req) => {
+                    const isEditing = editingRequirementId === req.requirement_id;
+                    const isSaved = savedReqId === req.requirement_id;
+                    return (
+                    <div key={req.requirement_id} className={`border rounded-lg phase-card-hover transition-all duration-300 overflow-hidden ${isSaved ? 'border-green-500/60 bg-green-500/5' : 'border-[var(--brand-700)]/50 bg-[#152238]/30 hover:bg-[#152238]'}`}
+                      style={{ maxHeight: isEditing ? '500px' : '120px', transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1), border-color 0.3s ease, background 0.3s ease', animation: (req as any)._isNew ? 'slideInUp 0.4s ease forwards' : undefined }}
+                    >
+                      <div className="p-4">
+                      {isSaved && (
+                        <div className="flex items-center gap-2 mb-2 text-green-400 text-xs font-semibold animate-slide-in-up">
+                          <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="2,7 5,10 10,3" style={{ strokeDasharray: 16, strokeDashoffset: 16, animation: 'drawCheckmark 0.4s ease forwards' }} />
+                          </svg>
+                          Saved
+                        </div>
+                      )}
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -2309,7 +2438,7 @@ export const PhaseDetailPage: React.FC = () => {
                             </Badge>
                           </div>
 
-                          {editingRequirementId === req.requirement_id ? (
+                          {isEditing ? (
                             <div className="space-y-2 mt-1">
                               <input
                                 className="w-full border border-[var(--brand-700)] rounded-lg px-3 py-1.5 text-sm"
@@ -2373,6 +2502,8 @@ export const PhaseDetailPage: React.FC = () => {
                                         } as any;
                                         await api.updateRequirement(req.requirement_id, patch);
                                         setEditingRequirementId(null);
+                                        setSavedReqId(req.requirement_id);
+                                        setTimeout(() => setSavedReqId(null), 1800);
                                         await handleSyncRequirements();
                                       } catch (err) {
                                         console.error('Update requirement failed', err);
@@ -2387,31 +2518,35 @@ export const PhaseDetailPage: React.FC = () => {
                           ) : (
                             <>
                               <h4 className="font-medium text-white">{req.title}</h4>
-                              <p className="text-sm text-gray-400 mt-1">{req.description}</p>
+                              <p className="text-sm text-gray-400 mt-1 line-clamp-2">{req.description}</p>
                             </>
                           )}
                         </div>
 
-                        <div className="flex flex-col items-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingRequirementId(req.requirement_id);
-                              setEditingRequirementDraft({
-                                title: req.title,
-                                description: req.description,
-                                priority: req.priority,
-                                status: req.status,
-                              });
-                            }}
-                          >
-                            Edit
-                          </Button>
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          {!isEditing && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingRequirementId(req.requirement_id);
+                                setEditingRequirementDraft({
+                                  title: req.title,
+                                  description: req.description,
+                                  priority: req.priority,
+                                  status: req.status,
+                                });
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          )}
                         </div>
                       </div>
+                      </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -2868,7 +3003,7 @@ export const PhaseDetailPage: React.FC = () => {
                             <th className="px-2 py-2 text-left font-semibold text-gray-300 border-b border-[var(--brand-700)]">Owner</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="stagger-container">
                           {parsedRisks.riskRows.map((row, idx) => {
                             const impact = row.impact.toLowerCase();
                             const likelihood = row.likelihood.toLowerCase();
@@ -3795,8 +3930,8 @@ export const PhaseDetailPage: React.FC = () => {
             </Card>
 
             {/* Cost Overview Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
+            <div className="stagger-container grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="phase-card-hover" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
@@ -3809,7 +3944,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
+              <Card className="phase-card-hover" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
@@ -3822,7 +3957,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(249,115,22,0.25)' }}>
+              <Card className="phase-card-hover" style={{ background: 'var(--brand-800)', border: '1px solid rgba(249,115,22,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg" style={{ background: 'rgba(249,115,22,0.12)' }}>
@@ -3835,7 +3970,7 @@ export const PhaseDetailPage: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
+              <Card className="phase-card-hover" style={{ background: 'var(--brand-800)', border: '1px solid rgba(26,111,212,0.25)' }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg" style={{ background: 'rgba(26,111,212,0.15)' }}>
@@ -4682,26 +4817,47 @@ export const PhaseDetailPage: React.FC = () => {
       </div>
       {/* Phase Bottom Tabs: History | Traceability | Discussion */}
       <div className="mt-6 rounded-2xl overflow-hidden" style={{ background: 'var(--brand-850)', border: '1px solid rgba(26,46,69,0.5)' }}>
-        <div className="flex border-b" style={{ borderColor: 'rgba(26,46,69,0.5)' }}>
-          {(['history', 'traceability', 'discussion'] as const).map((tab) => {
-            const labels: Record<string, string> = { history: 'History', traceability: 'Traceability', discussion: 'Discussion' };
-            const isActive = phaseBottomTab === tab;
-            if (tab === 'traceability' && phaseId !== 'requirements_gathering') return null;
-            return (
-              <button
-                key={tab}
-                onClick={() => setPhaseBottomTab(tab)}
-                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${isActive
-                    ? 'text-[var(--blue-400)] border-b-2 border-[var(--blue-400)] bg-[var(--brand-800)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] hover:bg-[var(--brand-800)]/50'
-                  }`}
-              >
-                {labels[tab]}
-              </button>
-            );
-          })}
-        </div>
-        <div className="p-4">
+        {(() => {
+          const allTabs = (['history', 'traceability', 'discussion'] as const);
+          const visibleTabs = allTabs.filter(t => t !== 'traceability' || phaseId === 'requirements_gathering');
+          const labels: Record<string, string> = { history: 'History', traceability: 'Traceability', discussion: 'Discussion' };
+          return (
+            <div className="relative flex border-b" style={{ borderColor: 'rgba(26,46,69,0.5)' }}>
+              {/* DOM-measured sliding underline */}
+              <div
+                className="absolute bottom-0 h-0.5 rounded-full"
+                style={{
+                  background: 'var(--blue-400)',
+                  width: `${bottomTabUnderline.width}px`,
+                  left: `${bottomTabUnderline.left}px`,
+                  transition: 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)',
+                }}
+              />
+              {visibleTabs.map((tab, tabIdx) => {
+                const isActive = phaseBottomTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    ref={el => { bottomTabRefs.current[tabIdx] = el; }}
+                    onClick={() => setPhaseBottomTab(tab)}
+                    className={`flex-1 px-4 py-3 text-sm font-semibold transition-all ${isActive
+                        ? 'text-[var(--blue-400)] bg-[var(--brand-800)]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--brand-800)]/50'
+                      }`}
+                  >
+                    {labels[tab]}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        <div
+          key={phaseBottomTab}
+          className="p-4"
+          style={{ animation: 'slideInUp 0.25s ease forwards', opacity: 0 }}
+        >
           {phaseBottomTab === 'history' && (
             <VersionHistory
               versions={versionEntries}

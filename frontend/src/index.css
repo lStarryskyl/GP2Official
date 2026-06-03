@@ -4,6 +4,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Silky smooth scrolling ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── App layout — mobile nav clearance ── */
+.app-main {
+  padding-top: 60px;   /* clear the 60px fixed mobile header */
+}
+@media (min-width: 1024px) {
+  .app-main {
+    padding-top: 0;    /* desktop uses sidebar, no top bar */
+  }
+}
+
 /* ============================================================
    ACORN — Brand Token System
    Primary: #1A6FD4 (blue)  Accent: #F97316 (orange)
@@ -103,7 +119,7 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; font-size: 16px; }
+html { font-size: 16px; }
 
 body {
   font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -163,6 +179,38 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 /* ============================================================
    Animations
    ============================================================ */
+
+/* ── Page transitions ── */
+@keyframes pageEnter {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pageExit {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+.page-idle {
+  opacity: 1;
+}
+
+.page-enter {
+  animation: pageEnter 260ms var(--ease-out-expo) both;
+  will-change: opacity, transform;
+}
+
+.page-exit {
+  animation: pageExit 200ms var(--ease-smooth) both;
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-exit {
+    animation: none;
+  }
+}
 
 @keyframes revealUp {
   0%   { opacity:0; transform:translateY(60px) scale(0.95); filter:blur(10px); }
@@ -484,12 +532,6 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 }
 
 @media (prefers-reduced-motion:reduce) {
-  *, *::before, *::after {
-    animation-duration:0.01ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:0.01ms !important;
-  }
-
   /* heading-reveal: skip the opacity-0 initial state so content is
      always visible, even before the IntersectionObserver fires */
   .heading-reveal,
@@ -533,6 +575,8 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 
 .splash-stars {
   position: absolute; inset: 0; pointer-events: none;
+  will-change: background-position;
+  transform: translateZ(0);
   background-image:
     radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.55) 50%, transparent 51%),
     radial-gradient(1.5px 1.5px at 78% 32%, rgba(255,255,255,0.45) 50%, transparent 51%),
@@ -556,19 +600,191 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 }
 .splash-aurora-orange {
   width: 60vmax; height: 60vmax; bottom: -25%; right: -20%;
-  background: radial-gradient(circle, rgba(249,115,22,0.4), transparent 65%);
+  background: radial-gradient(circle, rgba(249,115,22,0.35), transparent 65%);
   animation: splashAuroraB 16s ease-in-out infinite;
 }
+.splash-aurora-purple {
+  width: 55vmax; height: 55vmax; top: 10%; right: -10%;
+  background: radial-gradient(circle, rgba(120,60,220,0.22), transparent 65%);
+  animation: splashAuroraA 20s ease-in-out 4s infinite reverse;
+}
+
+/* Extra dense star layers */
+.splash-stars-2 {
+  will-change: background-position;
+  transform: translateZ(0);
+  background-image:
+    radial-gradient(1px 1px at 8% 44%, rgba(255,255,255,0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 45% 22%, rgba(200,220,255,0.5) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 92% 14%, rgba(255,255,255,0.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 88%, rgba(255,255,255,0.4) 50%, transparent 51%),
+    radial-gradient(1px 1px at 17% 66%, rgba(180,200,255,0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 74% 48%, rgba(255,255,255,0.35) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 95%, rgba(255,255,255,0.45) 50%, transparent 51%);
+  background-size: 800px 800px;
+  animation: splashFadeIn 1.2s ease forwards, splashStarsDrift 90s linear 2s infinite reverse;
+}
+.splash-stars-3 {
+  will-change: background-position;
+  transform: translateZ(0);
+  background-image:
+    radial-gradient(1px 1px at 55% 5%, rgba(255,255,255,0.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 3% 30%, rgba(200,215,255,0.55) 50%, transparent 51%),
+    radial-gradient(2px 2px at 82% 70%, rgba(255,255,255,0.3) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 48%, rgba(255,255,255,0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 96% 55%, rgba(180,200,255,0.4) 50%, transparent 51%),
+    radial-gradient(1px 1px at 49% 78%, rgba(255,255,255,0.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 11% 82%, rgba(255,255,255,0.35) 50%, transparent 51%);
+  background-size: 500px 500px;
+  animation: splashFadeIn 1.8s ease forwards, splashStarsDrift 45s linear 1s infinite;
+}
+
+/* Shooting stars — transform+opacity only (GPU composited, no layout thrash) */
+@keyframes shootingStarMove {
+  0%   { transform: translate(-5vw, 0) rotate(-30deg) scaleX(0.05); opacity: 0; }
+  6%   { opacity: 1; transform: translate(-4vw, 0) rotate(-30deg) scaleX(1); }
+  88%  { opacity: 0.85; }
+  100% { transform: translate(130vw, 55vh) rotate(-30deg) scaleX(1); opacity: 0; }
+}
+.splash-shoot-wrap {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  will-change: transform;
+}
+.splash-shoot {
+  position: absolute;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(to right, rgba(255,255,255,0), rgba(200,225,255,0.9) 60%, rgba(255,255,255,1));
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.splash-shoot-0 { top: 12%; left: 0; width: 120px; animation: shootingStarMove 3s ease-in 1.5s infinite; }
+.splash-shoot-1 { top: 28%; left: 0; width: 90px;  animation: shootingStarMove 3.5s ease-in 4.2s infinite; }
+.splash-shoot-2 { top: 7%;  left: 0; width: 150px; animation: shootingStarMove 2.8s ease-in 7.8s infinite; }
+.splash-shoot-3 { top: 45%; left: 0; width: 100px; animation: shootingStarMove 4s ease-in 11s infinite; }
+.splash-shoot-4 { top: 18%; left: 0; width: 130px; animation: shootingStarMove 3.2s ease-in 15s infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-stars  { animation: none !important; opacity: 1 !important; }
+  .splash-stars, .splash-stars-2, .splash-stars-3 { animation: none !important; opacity: 1 !important; }
   .splash-aurora { animation: none !important; opacity: 0.5 !important; }
+  .splash-shoot  { display: none !important; }
+}
+
+/* ── Phase workspace animations ── */
+@keyframes iconDropIn {
+  0% { opacity: 0; transform: translateY(-18px) scale(0.7); }
+  60% { transform: translateY(4px) scale(1.1); }
+  80% { transform: translateY(-2px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-icon-drop { animation: iconDropIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+@keyframes tooltipSpring {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.75) translateY(6px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes todayPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; box-shadow: 0 0 8px rgba(26,111,212,0.5); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+@keyframes ganttBarGrow {
+  from { width: 0 !important; }
+  to   { width: var(--bar-target-width, 0%); }
+}
+@keyframes drawCheckmark {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes pipelinePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,111,212,0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(26,111,212,0); }
+}
+@keyframes skeletonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-slide-in-up { animation: slideInUp 0.5s var(--ease-out-expo) forwards; opacity: 0; }
+.animate-shake { animation: shake 0.4s ease forwards; }
+.animate-draw-checkmark { stroke-dasharray: 40; stroke-dashoffset: 40; animation: drawCheckmark 0.4s ease forwards; }
+.animate-today-pulse { animation: todayPulse 2s ease-in-out infinite; }
+.animate-pipeline-pulse { animation: pipelinePulse 1.5s ease-in-out infinite; }
+
+/* Stagger card reveals */
+.stagger-container > * {
+  opacity: 0;
+  animation: slideInUp 0.45s var(--ease-out-expo) forwards;
+}
+.stagger-container > *:nth-child(1)  { animation-delay: 0ms; }
+.stagger-container > *:nth-child(2)  { animation-delay: 60ms; }
+.stagger-container > *:nth-child(3)  { animation-delay: 120ms; }
+.stagger-container > *:nth-child(4)  { animation-delay: 180ms; }
+.stagger-container > *:nth-child(5)  { animation-delay: 240ms; }
+.stagger-container > *:nth-child(6)  { animation-delay: 300ms; }
+.stagger-container > *:nth-child(7)  { animation-delay: 360ms; }
+.stagger-container > *:nth-child(n+8){ animation-delay: 420ms; }
+
+/* Skeleton shimmer for generation loading */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--brand-800) 25%, var(--brand-700) 50%, var(--brand-800) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Hover lift for phase content cards */
+.phase-card-hover {
+  transition: transform 0.2s var(--ease-out-expo), box-shadow 0.2s var(--ease-out-expo);
+}
+.phase-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
 /* ── Wave-reveal section animation ── */
 @keyframes waveCardIn {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Phase completion celebration animations ── */
+@keyframes completionPop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.35); box-shadow: 0 0 0 0 rgba(212,160,23,0.7); }
+  55%  { transform: scale(0.92); }
+  75%  { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(212,160,23,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 14px rgba(212,160,23,0); }
+}
+@keyframes accentBarShimmer {
+  0%   { opacity: 1; background-position: -200% center; }
+  100% { opacity: 1; background-position: 200% center; }
+}
+.animate-completion-pop {
+  animation: completionPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.animate-accent-bar-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--shimmer-from, #D4A017) 0%,
+    #f5d97a 30%,
+    #ffe9a0 50%,
+    #f5d97a 70%,
+    var(--shimmer-to, #D4A017) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: accentBarShimmer 0.9s ease-in-out forwards;
 }
 
 /* Section heading reveal — whole block fades up as one unit */
@@ -591,3 +807,312 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 .wave-revealed > *:nth-child(5)  { animation-delay: calc(var(--wave-delay, 0ms) + 240ms); }
 .wave-revealed > *:nth-child(6)  { animation-delay: calc(var(--wave-delay, 0ms) + 300ms); }
 .wave-revealed > *:nth-child(n+7){ animation-delay: calc(var(--wave-delay, 0ms) + 360ms); }
+
+/* ============================================================
+   UI OVERHAUL — Task 106 micro-interaction layer
+   ============================================================ */
+
+/* ── Sidebar nav stagger mount ── */
+@keyframes navItemSlideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.sidebar-nav-item {
+  animation: navItemSlideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms + 200ms);
+  position: relative;
+}
+/* Active left-border drawn in from offscreen */
+.sidebar-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  transform-origin: center;
+  width: 3px; height: 60%;
+  background: #3d8fe0;
+  border-radius: 0 2px 2px 0;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sidebar-nav-item.nav-active::before { transform: translateY(-50%) scaleY(1); }
+
+/* ── Switcher dropdown scale from top ── */
+@keyframes switcherDropIn {
+  from { opacity: 0; transform: scaleY(0.82) translateY(-6px); }
+  to   { opacity: 1; transform: scaleY(1) translateY(0); }
+}
+.switcher-dropdown-animated {
+  transform-origin: top center;
+  animation: switcherDropIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Project card top accent line ── */
+.card-accent-top { position: relative; overflow: hidden; }
+.card-accent-top::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--card-accent-color, #3d8fe0);
+  box-shadow: 0 0 14px 2px var(--card-accent-glow, rgba(61,143,224,0.45));
+  border-radius: 14px 14px 0 0;
+}
+
+/* ── Progress bar animated from 0 on mount ── */
+.progress-bar-fill {
+  transition: width 750ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── ⋮ menu spring scale ── */
+@keyframes menuSpringIn {
+  0%   { opacity: 0; transform: scale(0.82) translateY(-4px); }
+  65%  { transform: scale(1.04) translateY(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.menu-spring {
+  transform-origin: top right;
+  animation: menuSpringIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── New Project button shimmer ── */
+.btn-new-shimmer { overflow: hidden; position: relative; }
+.btn-new-shimmer::after {
+  content: '';
+  position: absolute; top: 0; left: -120%; width: 80%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+.btn-new-shimmer:hover::after { left: 140%; }
+
+/* ── Phase card stagger ── */
+@keyframes phaseCardReveal {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.phase-stagger {
+  animation: phaseCardReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--phase-i, 0) * 55ms + 80ms);
+}
+
+/* ── SVG checkmark stroke-dashoffset draw ── */
+@keyframes checkmarkDraw {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+.svg-checkmark-path {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: checkmarkDraw 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards;
+}
+@keyframes checkCircleIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.svg-checkmark-circle {
+  animation: checkCircleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── In-progress pulsing dot ── */
+@keyframes phasePulseDot {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249,115,22,0.6); }
+  50%       { transform: scale(1.2); box-shadow: 0 0 0 5px rgba(249,115,22,0); }
+}
+.phase-pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #F97316;
+  animation: phasePulseDot 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ── Ripple on phase card click ── */
+@keyframes rippleExpand {
+  from { transform: scale(0); opacity: 0.45; }
+  to   { transform: scale(5); opacity: 0; }
+}
+.ripple-host { position: relative; overflow: hidden; }
+.ripple-wave {
+  position: absolute; border-radius: 50%;
+  width: 60px; height: 60px;
+  margin-left: -30px; margin-top: -30px;
+  background: rgba(61,143,224,0.3);
+  pointer-events: none;
+  animation: rippleExpand 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Step slide transitions (legacy — kept for any one-off uses) ── */
+@keyframes stepSlideInFromRight {
+  from { opacity: 0; transform: translateX(56px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes stepSlideInFromLeft {
+  from { opacity: 0; transform: translateX(-56px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.step-slide-forward  { animation: stepSlideInFromRight 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.step-slide-backward { animation: stepSlideInFromLeft  0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* ── Step carousel — true enter+exit (the strip slides both panels simultaneously) ── */
+.step-strip {
+  display: flex;
+  width: 400%;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.step-panel {
+  width: 25%;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* ── Active-status badge pulse dot ── */
+@keyframes statusPing {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+.status-pulse-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  position: relative;
+}
+.status-pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: statusPing 1.6s ease-out infinite;
+  opacity: 0;
+}
+
+/* ── Creation success checkmark ── */
+@keyframes successCirclePop {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes successPathDraw {
+  from { stroke-dashoffset: 60; }
+  to   { stroke-dashoffset: 0; }
+}
+.success-circle { animation: successCirclePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.success-path {
+  stroke-dasharray: 60; stroke-dashoffset: 60;
+  animation: successPathDraw 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
+}
+
+/* ── Floating-label inputs ── */
+.fl-field {
+  position: relative;
+}
+.fl-input {
+  height: 52px;
+  padding: 1.375rem 0.875rem 0.375rem;
+  background: var(--brand-750);
+  border: 1px solid var(--brand-700);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.fl-input:focus {
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(61, 143, 224, 0.15);
+}
+.fl-label {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  pointer-events: none;
+  transition: top 0.18s ease, transform 0.18s ease, font-size 0.18s ease, color 0.18s ease, font-weight 0.18s ease;
+  white-space: nowrap;
+}
+.fl-input:focus ~ .fl-label,
+.fl-input:not(:placeholder-shown) ~ .fl-label {
+  top: 0.55rem;
+  transform: translateY(0);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--blue-400);
+  letter-spacing: 0.02em;
+}
+
+/* ── Sidebar nav-item hover glow + padding expansion ── */
+.sidebar-nav-glow {
+  transition: background 0.2s ease, color 0.2s ease,
+              box-shadow 0.2s ease, padding-left 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sidebar-nav-glow:not([data-active="true"]):hover {
+  padding-left: 18px !important;
+  background: rgba(61, 143, 224, 0.1) !important;
+  color: var(--blue-300) !important;
+  box-shadow: inset 3px 0 0 var(--blue-400), 0 0 14px rgba(61, 143, 224, 0.14);
+}
+
+/* ── Universal button micro-interactions ── */
+.btn-micro {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-micro:hover  { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+.btn-micro:active { transform: scale(0.97); }
+
+/* ── Sticky header scroll state ── */
+.project-header-sticky {
+  position: sticky; top: 0; z-index: 20;
+  transition: background 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+}
+.project-header-sticky.scrolled {
+  background: rgba(17,31,48,0.92) !important;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ── IntersectionObserver card reveal ── */
+.card-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--card-i, 0) * 55ms);
+}
+.card-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Progress bar pulse glow when any phase in-progress ── */
+@keyframes progressPulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.0); }
+  50%       { box-shadow: 0 0 0 6px rgba(249,115,22,0.18); }
+}
+.progress-pulse-active {
+  animation: progressPulseGlow 2.2s ease-in-out infinite;
+  border-radius: 14px;
+}
+
+/* ── Header gradient parallax line ── */
+.project-header-gradient-line {
+  height: 3px;
+  transition: background 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav-item, .switcher-dropdown-animated, .menu-spring,
+  .phase-stagger, .svg-checkmark-path, .svg-checkmark-circle,
+  .phase-pulse-dot, .ripple-wave, .step-slide-forward, .step-slide-backward,
+  .success-circle, .success-path, .card-accent-top::before,
+  .btn-new-shimmer::after { animation: none !important; transition: none !important; }
+  .sidebar-nav-item::before { transform: translateY(-50%) scaleY(1) !important; }
+  .svg-checkmark-path { stroke-dashoffset: 0 !important; }
+  .success-path { stroke-dashoffset: 0 !important; }
+  .card-reveal { opacity: 1 !important; transform: none !important; }
+  .progress-pulse-active { animation: none !important; }
+  .fl-label { transition: none !important; }
+  .sidebar-nav-glow { transition: none !important; }
+}

@@ -44,50 +44,77 @@ const PhaseKanban: React.FC<{
   const row2 = phases.slice(6);
 
   const PhaseCard = ({ phase, idx }: { phase: typeof phases[0]; idx: number }) => {
-    const info    = getStatusInfo(phase.id);
-    const isHov   = hovered === phase.id;
-    const hasOut  = Boolean(phaseOutputs[phase.id]);
-    const isDone  = (phaseStatus[phase.id] || '').toLowerCase() === 'completed';
+    const [ripple, setRipple] = useState<{ x: number; y: number; key: number } | null>(null);
+    const info        = getStatusInfo(phase.id);
+    const isHov       = hovered === phase.id;
+    const hasOut      = Boolean(phaseOutputs[phase.id]);
+    const rawStatus   = (phaseStatus[phase.id] || '').toLowerCase();
+    const isDone      = rawStatus === 'completed';
+    const isInProgress = rawStatus === 'in_progress' || rawStatus === 'active';
+
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const key  = Date.now();
+      setRipple({ x: e.clientX - rect.left, y: e.clientY - rect.top, key });
+      setTimeout(() => setRipple(null), 700);
+      onPhaseClick(phase.id);
+    };
 
     return (
       <div
-        onClick={() => onPhaseClick(phase.id)}
+        onClick={handleClick}
         onMouseEnter={() => setHovered(phase.id)}
         onMouseLeave={() => setHovered(null)}
+        className="phase-stagger ripple-host"
         style={{
+          '--phase-i': idx,
           background: isHov ? info.bg : 'var(--brand-800)',
           border: `1px solid ${isHov ? info.border : 'rgba(30,53,82,0.6)'}`,
           borderRadius: '14px',
           padding: '16px',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          transform: isHov ? 'translateY(-2px)' : 'none',
-          boxShadow: isHov ? `0 8px 24px ${info.color}20` : '0 2px 8px rgba(0,0,0,0.2)',
+          transition: 'all 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+          transform: isHov ? 'translateY(-3px)' : 'none',
+          boxShadow: isHov ? `0 10px 28px ${info.color}25` : '0 2px 8px rgba(0,0,0,0.2)',
           position: 'relative',
           flex: '1 1 0',
           minWidth: 0,
-        }}
+          overflow: 'hidden',
+        } as React.CSSProperties}
       >
-        {/* Step badge */}
-        <div style={{
-          position: 'absolute', top: '12px', right: '12px',
-          width: '22px', height: '22px', borderRadius: '50%',
-          background: isDone ? '#1A6FD4' : 'var(--brand-700)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {isDone
-            ? <CheckCircle2 size={12} color="#fff" />
-            : <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-faint)' }}>{phase.stepNumber}</span>
-          }
+        {/* Ripple wave */}
+        {ripple && (
+          <span
+            key={ripple.key}
+            className="ripple-wave"
+            style={{ left: ripple.x, top: ripple.y }}
+          />
+        )}
+
+        {/* Step badge — animated checkmark when done */}
+        <div style={{ position: 'absolute', top: '12px', right: '12px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {isDone ? (
+            <svg className="svg-checkmark-circle" viewBox="0 0 22 22" fill="none" width="22" height="22">
+              <circle cx="11" cy="11" r="10" fill="#1A6FD4" />
+              <path className="svg-checkmark-path" d="M6.5 11.5l3 3 5.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+          ) : (
+            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-faint)' }}>{phase.stepNumber}</span>
+            </div>
+          )}
         </div>
 
-        {/* Output dot */}
-        {hasOut && !isDone && (
-          <div style={{
-            position: 'absolute', top: '10px', right: '38px',
-            width: '8px', height: '8px', borderRadius: '50%',
-            background: '#F97316',
-          }} />
+        {/* In-progress pulse dot */}
+        {isInProgress && !isDone && (
+          <div style={{ position: 'absolute', top: '14px', right: '38px' }}>
+            <div className="phase-pulse-dot" />
+          </div>
+        )}
+
+        {/* Output ready dot (only when not in-progress and not done) */}
+        {hasOut && !isDone && !isInProgress && (
+          <div style={{ position: 'absolute', top: '10px', right: '38px', width: '8px', height: '8px', borderRadius: '50%', background: '#F97316' }} />
         )}
 
         <p style={{ fontSize: '11px', color: info.color, fontWeight: 700, marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
@@ -104,10 +131,12 @@ const PhaseKanban: React.FC<{
           <span style={{
             padding: '3px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
             background: info.bg, color: info.color, border: `1px solid ${info.border}`,
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
           }}>
+            {isInProgress && !isDone && <span className="phase-pulse-dot" style={{ width: '5px', height: '5px', flexShrink: 0 }} />}
             {info.label}
           </span>
-          <ChevronRight size={14} color="var(--text-faint)" />
+          <ChevronRight size={14} color="var(--text-faint)" style={{ transition: 'transform 0.2s', transform: isHov ? 'translateX(2px)' : 'none' }} />
         </div>
       </div>
     );
@@ -191,7 +220,8 @@ export const ProjectDetailPage: React.FC = () => {
   const [isLoading, setIsLoading]     = useState(true);
   const [error, setError]             = useState<string | null>(null);
   const [updatingPreset, setUpdatingPreset] = useState(false);
-  const [treeView, setTreeView]       = useState(true); // Toggle between tree and list view
+  const [treeView, setTreeView]       = useState(true);
+  const [headerScrollY, setHeaderScrollY] = useState(0);
 
   // Scaffolding state
   const [scaffoldingTarget, setScaffoldingTarget] = useState<string | null>(null);
@@ -224,6 +254,15 @@ export const ProjectDetailPage: React.FC = () => {
   useEffect(() => {
     const seenTour = localStorage.getItem('acorn_phase_tour');
     if (!seenTour) setTourRun(true);
+  }, []);
+
+  useEffect(() => {
+    let rafId: number;
+    const onScroll = () => {
+      rafId = requestAnimationFrame(() => setHeaderScrollY(window.scrollY));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
   const loadProjectData = async () => {
@@ -469,8 +508,12 @@ export const ProjectDetailPage: React.FC = () => {
         )}
 
         {/* ── Header Card ── */}
-        <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-[var(--blue-400)] to-[var(--blue-500)]" />
+        {(() => {
+          const scrollProgress = Math.min(headerScrollY / 200, 1);
+          const parallaxGradient = `linear-gradient(90deg, #3d8fe0 ${Math.round((1 - scrollProgress * 0.4) * 100)}%, #F97316 ${Math.round(60 + scrollProgress * 40)}%)`;
+          return (
+        <div className={`bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden project-header-sticky${headerScrollY > 40 ? ' scrolled' : ''}`}>
+          <div className="project-header-gradient-line" style={{ background: parallaxGradient }} />
           <div className="p-4 sm:p-6 space-y-4">
 
             {/* Top row: back + actions */}
@@ -572,13 +615,25 @@ export const ProjectDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Progress bar */}
-            <ProjectProgressBar
-              projectId={project.project_id || project.id || ''}
-              phaseStatus={phaseStatus}
-            />
+            {/* Progress bar — pulse ring when any phase is in-progress */}
+            {(() => {
+              const anyInProgress = Object.values(phaseStatus).some(s => {
+                const sl = s.toLowerCase();
+                return sl === 'in_progress' || sl === 'active';
+              });
+              return (
+                <div className={anyInProgress ? 'progress-pulse-active' : ''}>
+                  <ProjectProgressBar
+                    projectId={project.project_id || project.id || ''}
+                    phaseStatus={phaseStatus}
+                  />
+                </div>
+              );
+            })()}
           </div>
         </div>
+        );
+        })()}
 
         {/* ── Phase Board ── */}
         <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl p-4 sm:p-6 shadow-lg phase-board">

@@ -3,8 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import {
   LogOut, FolderKanban, Search,
-  Menu, X, ChevronRight, ChevronLeft, Plus, User as UserIcon,
-  BarChart3, BookOpen,
+  ChevronRight, ChevronLeft, Plus, User as UserIcon,
+  BarChart3,
   ChevronsUpDown, CheckCircle2, Circle, Loader2, Lock,
 } from 'lucide-react';
 import { AIDebatePanel } from '@/components/AIDebatePanel';
@@ -45,7 +45,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -109,39 +108,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => document.removeEventListener('mousedown', onClick);
   }, [switcherOpen]);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  // Lock body scroll when mobile menu is open — use scrollbar-gutter to
-  // prevent the viewport width from changing (which would trigger the lg:
-  // breakpoint and hide the overlay on borderline viewport widths).
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.documentElement.style.overflow = 'hidden';
-      document.documentElement.style.scrollbarGutter = 'stable';
-    } else {
-      document.documentElement.style.overflow = '';
-      document.documentElement.style.scrollbarGutter = '';
-    }
-    return () => {
-      document.documentElement.style.overflow = '';
-      document.documentElement.style.scrollbarGutter = '';
-    };
-  }, [mobileMenuOpen]);
-
-  // Auto-close mobile menu when the viewport genuinely moves past lg
-  // (1024px). Uses matchMedia which, unlike window.innerWidth, is
-  // unaffected by scrollbar width changes.
-  useEffect(() => {
-    const mql = window.matchMedia('(min-width: 1024px)');
-    const handler = (e: MediaQueryListEvent) => {
-      if (e.matches) setMobileMenuOpen(false);
-    };
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
 
   const isActive = (path: string) => {
     if (path === '/projects') return location.pathname === path || location.pathname.startsWith('/projects/');
@@ -502,154 +468,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </aside>
 
-      {/* ── Mobile Header ── */}
-      <header style={{
-        position: 'fixed', top: 0, left: 0, right: 0, height: '60px',
-        background: 'rgba(17,31,48,0.95)', backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(26,111,212,0.2)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 16px', zIndex: 50,
-      }} className="lg:hidden">
-        <Link to="/projects" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <AcornLogo height={34} white />
-        </Link>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={() => setPaletteOpen(true)}
-            style={{ background: 'rgba(26,111,212,0.15)', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}
-            aria-label="Search"
-          >
-            <Search size={18} />
-          </button>
-          <button
-            onClick={() => setMobileMenuOpen(prev => !prev)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px', display: 'flex', alignItems: 'center' }}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-      </header>
-
-      {/* ── Mobile Menu Overlay ── */}
-      {mobileMenuOpen && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 45, paddingTop: '60px',
-            background: 'rgba(13,27,42,0.97)', backdropFilter: 'blur(16px)',
-            overflowY: 'auto',
-          }}
-        /* visibility controlled by mobileMenuOpen state — no CSS breakpoint override */
-        >
-          {/* Scoped hover styles for mobile menu items */}
-          <style>{`
-            .mobile-nav-item {
-              transition: background 0.15s, color 0.15s;
-            }
-            .mobile-nav-item:hover {
-              background: rgba(26,111,212,0.12) !important;
-              color: var(--text-primary) !important;
-            }
-            .mobile-nav-item:active {
-              background: rgba(26,111,212,0.22) !important;
-            }
-            .mobile-nav-item.active-route {
-              background: rgba(26,111,212,0.15) !important;
-              color: var(--blue-300) !important;
-            }
-            .mobile-nav-item.active-route:hover {
-              background: rgba(26,111,212,0.22) !important;
-            }
-            .mobile-nav-logout:hover {
-              background: rgba(239,68,68,0.12) !important;
-              color: #fca5a5 !important;
-            }
-            .mobile-nav-logout:active {
-              background: rgba(239,68,68,0.2) !important;
-            }
-          `}</style>
-          <nav style={{ padding: '16px' }}>
-            {/* Main nav items */}
-            {getNavItems(activeProjectId).map(item => {
-              const NavIcon = item.icon;
-              const active = isActive(item.path);
-              return (
-                <button key={item.id}
-                  className={`mobile-nav-item${active ? ' active-route' : ''}`}
-                  onClick={() => { navigate(item.path); setMobileMenuOpen(false); }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '16px',
-                    padding: '14px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                    background: active ? 'rgba(26,111,212,0.15)' : 'transparent',
-                    color: active ? 'var(--blue-300)' : 'var(--text-muted)',
-                    fontSize: '15px', fontFamily: "'DM Sans', sans-serif", marginBottom: '4px',
-                    textAlign: 'left',
-                  }}
-                >
-                  <NavIcon size={20} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-
-            {/* Phase shortcuts when inside a project */}
-            {activeProjectId && (
-              <>
-                <div style={{ marginTop: '12px', padding: '10px 16px 6px', fontSize: '11px', color: 'var(--text-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Phases
-                </div>
-                {phaseConfigs.map(ph => {
-                  const status = activeProject?.phase_status?.[ph.id];
-                  const isLocked = status === 'locked';
-                  const isActiveP = activePhaseId === ph.id;
-                  return (
-                    <button key={ph.id}
-                      className={`mobile-nav-item${isActiveP ? ' active-route' : ''}`}
-                      onClick={() => { if (!isLocked) { navigate(`/projects/${activeProjectId}/phases/${ph.id}`); setMobileMenuOpen(false); } }}
-                      disabled={isLocked}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '11px 16px', borderRadius: '10px', border: 'none',
-                        cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1,
-                        background: isActiveP ? 'rgba(26,111,212,0.15)' : 'transparent',
-                        color: isActiveP ? 'var(--blue-300)' : 'var(--text-muted)',
-                        fontSize: '14px', textAlign: 'left',
-                      }}
-                    >
-                      <span style={{
-                        width: '22px', height: '22px', borderRadius: '50%',
-                        background: 'rgba(26,46,69,0.5)', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        fontSize: '11px', fontWeight: 700, flexShrink: 0,
-                      }}>
-                        {ph.stepNumber}
-                      </span>
-                      <span>{ph.title}</span>
-                    </button>
-                  );
-                })}
-              </>
-            )}
-
-            {/* Logout */}
-            <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(26,111,212,0.15)', marginTop: '8px' }}>
-              <button
-                className="mobile-nav-item mobile-nav-logout"
-                onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '16px',
-                  padding: '14px 16px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                  background: 'transparent', color: '#f87171', fontSize: '15px',
-                  textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                <LogOut size={20} />
-                <span>Logout</span>
-              </button>
-            </div>
-          </nav>
-        </div>
-      )}
 
       {/* ── Main content ── */}
       <main

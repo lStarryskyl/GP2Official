@@ -1,17 +1,19 @@
 /**
  * Acorn Design System — Design Tokens
- * Brand: Blue (#1A6FD4) + Orange (#F97316) + Navy (#0D1B2A)
+ * Brand: Blue #1A6FD4 · Orange #F97316 · Navy #050D1A / #0D1B2A
+ * Fonts: Syne (headings) · DM Sans (body) · DM Mono (code/labels)
  */
 
+// ─── Raw color palettes ────────────────────────────────────────────────────
+
 export const colors = {
-  // Brand Navy Palette (primary backgrounds)
   brand: {
-    950: '#050d16',
-    900: '#0D1B2A',
-    850: '#111f30',
-    800: '#152538',
-    750: '#1A2E45',
-    700: '#1e3552',
+    950: '#020810',
+    900: '#050D1A',
+    850: '#0a1525',
+    800: '#0f1e33',
+    750: '#152538',
+    700: '#1A2E45',
     600: '#243B55',
     500: '#2d4d6e',
     400: '#4a7a9b',
@@ -20,7 +22,6 @@ export const colors = {
     100: '#e0eef8',
   },
 
-  // Blue Palette (primary interactive / accent)
   blue: {
     950: '#020d1f',
     900: '#0a1f3d',
@@ -34,7 +35,6 @@ export const colors = {
     100: '#daeeff',
   },
 
-  // Orange Palette (CTA / warning / accent)
   orange: {
     950: '#1a0800',
     900: '#3d1200',
@@ -48,20 +48,19 @@ export const colors = {
     100: '#fff0e6',
   },
 
-  // Text colors
   text: {
     primary: '#E8EDF5',
     muted: '#8899AA',
     faint: '#4a6070',
   },
 
-  // Semantic Colors
-  success: '#1A6FD4',
-  warning: '#F97316',
-  error: '#ef4444',
-  info: '#1A6FD4',
+  semantic: {
+    success: '#22c55e',
+    warning: '#F97316',
+    error: '#ef4444',
+    info: '#1A6FD4',
+  },
 
-  // Neutrals
   gray: {
     50: '#f0f5f9',
     100: '#E8EDF5',
@@ -75,23 +74,70 @@ export const colors = {
     900: '#0D1B2A',
   },
 
-  white: '#E8EDF5',
-  black: '#050d16',
+  white: '#FFFFFF',
+  black: '#020810',
 };
 
+// ─── CSS custom property declarations (inject at :root) ───────────────────
+
+export const cssVars = `
+  :root {
+    /* Navy / surface */
+    --color-navy:        ${colors.brand[900]};
+    --color-navy-dark:   ${colors.brand[950]};
+    --color-navy-850:    ${colors.brand[850]};
+    --color-navy-800:    ${colors.brand[800]};
+    --color-navy-750:    ${colors.brand[750]};
+    --color-navy-700:    ${colors.brand[700]};
+    --color-navy-600:    ${colors.brand[600]};
+
+    /* Blue */
+    --color-blue:        ${colors.blue[500]};
+    --color-blue-dark:   ${colors.blue[700]};
+    --color-blue-light:  ${colors.blue[300]};
+    --color-blue-muted:  ${colors.blue[400]};
+
+    /* Orange */
+    --color-orange:      ${colors.orange[500]};
+    --color-orange-dark: ${colors.orange[600]};
+    --color-orange-light:${colors.orange[300]};
+
+    /* Semantic surface tokens */
+    --color-surface:     ${colors.brand[850]};
+    --color-surface-alt: ${colors.brand[800]};
+    --color-border:      rgba(26,111,212,0.18);
+    --color-border-muted:rgba(26,46,69,0.5);
+    --color-muted:       ${colors.text.muted};
+    --color-faint:       ${colors.text.faint};
+
+    /* Motion easing */
+    --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-expo:cubic-bezier(0.87, 0, 0.13, 1);
+    --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth:     cubic-bezier(0.22, 1, 0.36, 1);
+  }
+`;
+
+// ─── Gradients ────────────────────────────────────────────────────────────
+
 export const gradients = {
-  primary: 'linear-gradient(135deg, #1A6FD4 0%, #0a1f3d 100%)',
-  blue: 'linear-gradient(135deg, #3d8fe0 0%, #1A6FD4 100%)',
-  orange: 'linear-gradient(135deg, #F97316 0%, #cc4900 100%)',
-  navy: 'linear-gradient(135deg, #1A2E45 0%, #0D1B2A 100%)',
-  hero: 'linear-gradient(135deg, #0D1B2A 0%, #1A2E45 50%, #0D1B2A 100%)',
+  primary: `linear-gradient(135deg, ${colors.blue[500]} 0%, ${colors.brand[800]} 100%)`,
+  blue: `linear-gradient(135deg, ${colors.blue[400]} 0%, ${colors.blue[500]} 100%)`,
+  orange: `linear-gradient(135deg, ${colors.orange[500]} 0%, ${colors.orange[600]} 100%)`,
+  brand: `linear-gradient(135deg, ${colors.blue[500]} 0%, ${colors.orange[500]} 100%)`,
+  navy: `linear-gradient(135deg, ${colors.brand[700]} 0%, ${colors.brand[900]} 100%)`,
+  hero: `linear-gradient(135deg, ${colors.brand[900]} 0%, ${colors.brand[750]} 50%, ${colors.brand[900]} 100%)`,
+  ctaHover: `linear-gradient(135deg, ${colors.orange[600]} 0%, ${colors.orange[500]} 100%)`,
 };
+
+// ─── Typography ───────────────────────────────────────────────────────────
 
 export const typography = {
   fontFamily: {
-    sans: ['Syne', 'DM Sans', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-    body: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
-    mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+    display: ['Syne', 'system-ui', 'sans-serif'],
+    sans: ['Syne', 'DM Sans', 'system-ui', 'sans-serif'],
+    body: ['DM Sans', 'system-ui', 'sans-serif'],
+    mono: ['DM Mono', 'JetBrains Mono', 'Menlo', 'monospace'],
   },
   fontSize: {
     xs: '0.75rem',
@@ -122,6 +168,8 @@ export const typography = {
   },
 };
 
+// ─── Spacing ──────────────────────────────────────────────────────────────
+
 export const spacing = {
   0: '0',
   1: '0.25rem',
@@ -143,6 +191,8 @@ export const spacing = {
   64: '16rem',
 };
 
+// ─── Border radius ────────────────────────────────────────────────────────
+
 export const borderRadius = {
   none: '0',
   sm: '0.125rem',
@@ -155,18 +205,24 @@ export const borderRadius = {
   full: '9999px',
 };
 
+// ─── Shadows ──────────────────────────────────────────────────────────────
+
 export const shadows = {
-  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.15)',
-  base: '0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.12)',
-  md: '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12)',
-  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
-  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08)',
-  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
-  inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.1)',
-  blue: '0 10px 30px rgba(26, 111, 212, 0.3)',
-  orange: '0 10px 30px rgba(249, 115, 22, 0.3)',
+  sm: '0 1px 2px 0 rgba(0,0,0,0.2)',
+  base: '0 1px 3px 0 rgba(0,0,0,0.25)',
+  md: '0 4px 6px -1px rgba(0,0,0,0.25)',
+  lg: '0 10px 15px -3px rgba(0,0,0,0.3)',
+  xl: '0 20px 25px -5px rgba(0,0,0,0.3)',
+  '2xl': '0 25px 50px -12px rgba(0,0,0,0.5)',
+  inner: 'inset 0 2px 4px 0 rgba(0,0,0,0.12)',
+  blue: '0 8px 24px rgba(26,111,212,0.35)',
+  blueLg: '0 16px 48px rgba(26,111,212,0.4)',
+  orange: '0 8px 24px rgba(249,115,22,0.35)',
+  orangeLg: '0 16px 48px rgba(249,115,22,0.4)',
   none: 'none',
 };
+
+// ─── Breakpoints ──────────────────────────────────────────────────────────
 
 export const breakpoints = {
   sm: '640px',
@@ -175,6 +231,8 @@ export const breakpoints = {
   xl: '1280px',
   '2xl': '1536px',
 };
+
+// ─── Z-index ──────────────────────────────────────────────────────────────
 
 export const zIndex = {
   0: 0,
@@ -192,10 +250,38 @@ export const zIndex = {
   tooltip: 1070,
 };
 
+// ─── Transitions ──────────────────────────────────────────────────────────
+
 export const transitions = {
-  fast: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
-  base: '200ms cubic-bezier(0.4, 0, 0.2, 1)',
-  slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
-  slower: '500ms cubic-bezier(0.4, 0, 0.2, 1)',
-  spring: '400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+  fast: '150ms var(--ease-smooth)',
+  base: '200ms var(--ease-smooth)',
+  slow: '300ms var(--ease-out-expo)',
+  slower: '500ms var(--ease-out-expo)',
+  spring: '400ms var(--ease-spring)',
+};
+
+// ─── Motion presets (for framer-motion) ──────────────────────────────────
+
+export const motion = {
+  pageEnter: {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+  },
+  staggerContainer: {
+    animate: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+  },
+  staggerItem: {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  },
+  hoverLift: {
+    whileHover: { y: -3, transition: { type: 'spring', stiffness: 400, damping: 25 } },
+    whileTap: { scale: 0.97 },
+  },
+  springPop: {
+    initial: { scale: 0.9, opacity: 0 },
+    animate: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } },
+  },
 };

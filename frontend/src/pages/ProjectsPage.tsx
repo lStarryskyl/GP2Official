@@ -89,8 +89,6 @@ export const ProjectsPage: React.FC = () => {
     if (typeof IntersectionObserver === 'undefined') return;
     const container = cardsContainerRef.current;
     if (!container) return;
-    const cards = container.querySelectorAll<Element>('.card-reveal');
-    if (!cards.length) return;
     const observer = new IntersectionObserver(
       (entries, obs) => {
         entries.forEach(e => {
@@ -102,9 +100,17 @@ export const ProjectsPage: React.FC = () => {
       },
       { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
+    // Use a MutationObserver to pick up newly added cards without re-running the effect
+    const mutationObs = new MutationObserver(() => {
+      const cards = container.querySelectorAll<Element>('.card-reveal:not(.is-revealed)');
+      cards.forEach(card => observer.observe(card));
+    });
+    mutationObs.observe(container, { childList: true, subtree: true });
+    // Observe already-present cards
+    const cards = container.querySelectorAll<Element>('.card-reveal:not(.is-revealed)');
     cards.forEach(card => observer.observe(card));
-    return () => observer.disconnect();
-  }, [projects, archived, tab, searchQuery, viewMode]);
+    return () => { observer.disconnect(); mutationObs.disconnect(); };
+  }, []);
 
   // Sync tab to URL
   useEffect(() => {

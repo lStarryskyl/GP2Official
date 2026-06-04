@@ -294,7 +294,7 @@ const LandingPage: React.FC = () => {
           borderBottom: '1px solid rgba(26,111,212,0.1)',
         }}
       >
-        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/landing')}>
           <AcornLogo height={30} white />
         </div>
 

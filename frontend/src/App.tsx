@@ -33,6 +33,9 @@ import { UxFlowPage } from './pages/UxFlowPage';
 import { PageTransition } from './components/PageTransition';
 import DemoMode from './components/DemoMode';
 
+// Always show splash on fresh load — SplashScreen navigates to /landing when done
+const RootRoute: React.FC = () => <SplashScreen />;
+
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
   const [isChecking, setIsChecking] = React.useState(true);
@@ -65,7 +68,8 @@ function App() {
         <PageTransition>
         <Routes>
         <Route path="/splash" element={<SplashScreen />} />
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
@@ -239,7 +243,7 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/landing" replace />} />
         </Routes>
         </PageTransition>
         <DemoMode />

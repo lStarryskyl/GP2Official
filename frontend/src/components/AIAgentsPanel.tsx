@@ -278,7 +278,7 @@ export const AIAgentsPanel: React.FC<Props> = ({
           ref={toggleBtnRef}
           onClick={() => setIsOpen(true)}
           aria-label="Open AI Agents panel"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-xl transition-all hover:scale-105"
+          className="fixed bottom-6 right-44 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-xl transition-all hover:scale-105"
           style={{
             background: 'linear-gradient(135deg, var(--brand-600), var(--blue-400))',
             color: 'var(--brand-900)',

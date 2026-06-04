@@ -1,9 +1,12 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { m, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { AcornLogo } from '@/components/AcornLogo';
 import { AlertCircle, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft, User, Building2, Mail, Lock } from 'lucide-react';
 import { ROLE_OPTIONS } from '@/constants/roles';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getPasswordStrength(pw: string): number {
   if (!pw) return 0;
@@ -17,6 +20,94 @@ function getPasswordStrength(pw: string): number {
 
 const STRENGTH_COLORS = ['#ef4444', '#F97316', '#1A6FD4', '#22c55e'];
 const STRENGTH_LABELS = ['Weak', 'Fair', 'Good', 'Strong'];
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
+// ─── Orbital canvas (same as LoginPage) ──────────────────────────────────────
+
+const ORBIT_LABELS = [
+  'Brief', 'Feasibility', 'Requirements', 'Validation',
+  'Tech Stack', 'Architecture', 'Design', 'Planning',
+  'Tasks', 'Costs', 'Risk', 'Testing', 'Deployment',
+];
+
+const OrbitalCanvas: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const N = ORBIT_LABELS.length;
+    const baseColors = ['#1A6FD4', '#F97316'];
+
+    let t = 0;
+    const draw = () => {
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      t += 0.006;
+
+      const cx = W / 2;
+      const cy = H / 2;
+      const R1 = Math.min(W, H) * 0.28;
+      const R2 = Math.min(W, H) * 0.42;
+
+      const nodes = ORBIT_LABELS.map((label, i) => {
+        const ring = i % 2 === 0 ? R1 : R2;
+        const speed = i % 2 === 0 ? 1 : -0.7;
+        const offset = (i / N) * Math.PI * 2;
+        const angle = t * speed + offset;
+        return { x: cx + Math.cos(angle) * ring, y: cy + Math.sin(angle) * ring, label, color: baseColors[i % 2] };
+      });
+
+      [R1, R2].forEach(r => {
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(26,111,212,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+      });
+
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i]; const b = nodes[(i + 2) % nodes.length];
+        const dx = b.x - a.x; const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = R2 * 1.1;
+        if (dist < maxDist) {
+          const alpha = (1 - dist / maxDist) * 0.14;
+          ctx.strokeStyle = `rgba(26,111,212,${alpha})`; ctx.lineWidth = 1;
+          ctx.setLineDash([3, 5]);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R1 * 0.4);
+      grad.addColorStop(0, 'rgba(26,111,212,0.1)'); grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(cx, cy, R1 * 0.4, 0, Math.PI * 2); ctx.fill();
+
+      nodes.forEach(n => {
+        ctx.beginPath(); ctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + '99'; ctx.fill();
+        ctx.strokeStyle = n.color + 'cc'; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.font = "10px 'DM Sans', sans-serif"; ctx.fillStyle = 'rgba(232,237,245,0.5)';
+        ctx.textAlign = 'center'; ctx.fillText(n.label, n.x, n.y - 10);
+      });
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(rafRef.current); window.removeEventListener('resize', resize); };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />;
+};
+
+// ─── Animated checkbox ────────────────────────────────────────────────────────
 
 const AnimatedCheckbox: React.FC<{ checked: boolean; onChange: () => void; id: string }> = ({ checked, onChange, id }) => (
   <label htmlFor={id} className="anim-checkbox-label">
@@ -26,16 +117,57 @@ const AnimatedCheckbox: React.FC<{ checked: boolean; onChange: () => void; id: s
         <polyline
           className="anim-check-mark"
           points="2.5,8 6.5,12 13.5,4"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          fill="none" stroke="#fff" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
         />
       </svg>
     </span>
   </label>
 );
+
+// ─── Step indicator ───────────────────────────────────────────────────────────
+
+const StepPips: React.FC<{ step: number }> = ({ step }) => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
+    {[1, 2].map(s => (
+      <React.Fragment key={s}>
+        <m.div
+          animate={{
+            background: step >= s
+              ? 'linear-gradient(135deg, #1A6FD4, #3d8fe0)'
+              : 'rgba(26,46,69,0.6)',
+            boxShadow: step >= s ? '0 4px 14px rgba(26,111,212,0.35)' : 'none',
+          }}
+          transition={{ duration: 0.4, ease: EASE_OUT }}
+          style={{
+            width: 28, height: 28, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
+            color: step >= s ? '#fff' : '#8899AA',
+            border: step >= s ? 'none' : '1px solid rgba(26,111,212,0.22)',
+          }}
+        >
+          {step > s ? '✓' : s}
+        </m.div>
+        {s < 2 && (
+          <m.div
+            animate={{ background: step >= 2 ? '#1A6FD4' : 'rgba(26,111,212,0.2)' }}
+            transition={{ duration: 0.4 }}
+            style={{ width: 40, height: 2, borderRadius: 999 }}
+          />
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
+// ─── Register page ────────────────────────────────────────────────────────────
+
+const fieldVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
+  exit: { opacity: 0, y: -12, transition: { duration: 0.22, ease: EASE_OUT } },
+};
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,16 +176,11 @@ export const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: '',
-    organization: '',
-    role: 'program_manager',
-    email: '',
-    password: '',
+    full_name: '', organization: '', role: 'program_manager', email: '', password: '',
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
-
   const passwordChecks = useMemo(() => ({
     length:    formData.password.length >= 8,
     uppercase: /[A-Z]/.test(formData.password),
@@ -79,511 +206,346 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#070C14', position: 'relative', overflow: 'hidden', padding: '24px',
-    }}>
-      <div className="splash-stars" aria-hidden style={{ position: 'fixed', zIndex: 0, inset: 0 }} />
-      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#050D1A', overflow: 'hidden' }}>
 
-      <div className="reg-card" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '460px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
-          <Link to="/">
-            <AcornLogo height={38} white />
-          </Link>
-        </div>
-
-        {/* Step pips */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '28px' }}>
-          {[1, 2].map((s) => (
-            <React.Fragment key={s}>
-              <div style={{
-                width: s === step ? '32px' : '28px',
-                height: '28px',
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '13px',
-                background: step >= s
-                  ? 'linear-gradient(135deg, #1A6FD4, #3d8fe0)'
-                  : 'rgba(26,46,69,0.6)',
-                color: step >= s ? '#fff' : '#8899AA',
-                border: step >= s ? 'none' : '1px solid rgba(26,111,212,0.22)',
-                boxShadow: step >= s ? '0 4px 14px rgba(26,111,212,0.35)' : 'none',
-                transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
-              }}>
-                {step > s ? '✓' : s}
-              </div>
-              {s < 2 && (
-                <div style={{
-                  width: '40px', height: '2px', borderRadius: '999px',
-                  background: step >= 2 ? '#1A6FD4' : 'rgba(26,111,212,0.2)',
-                  transition: 'background 0.4s',
-                }} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-
-        <h1 style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '24px',
-          color: '#E8EDF5', marginBottom: '6px', textAlign: 'center', letterSpacing: '-0.02em',
-        }}>
-          {step === 1 ? 'Create your profile' : 'Secure your account'}
-        </h1>
-        <p style={{
-          color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-          marginBottom: '28px', textAlign: 'center',
-        }}>
-          {step === 1 ? 'Tell us about yourself' : 'Set up your login credentials'}
-        </p>
-
-        {error && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '12px 16px', borderRadius: '10px',
-            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-            marginBottom: '20px',
-          }}>
-            <AlertCircle size={16} color="#ef4444" />
-            <span style={{ color: '#fca5a5', fontSize: '14px', fontFamily: "'DM Sans', sans-serif" }}>{error as string}</span>
+      {/* ── Left panel — canvas ── */}
+      <div className="auth-left-panel" style={{
+        flex: '0 0 60%', position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(135deg, #050D1A 0%, #0a1525 100%)',
+        borderRight: '1px solid rgba(26,111,212,0.12)',
+      }}>
+        <OrbitalCanvas />
+        <div style={{ position: 'absolute', bottom: 48, left: 48, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <AcornLogo height={28} white />
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: '#4a6070', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+            SDLC Intelligence Platform
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {step === 1 && (
-            <>
-              <div className="fl-group">
-                <User size={15} className="fl-icon" />
-                <input
-                  type="text"
-                  id="reg-name"
-                  value={formData.full_name}
-                  onChange={e => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder=" "
-                  className="fl-input fl-input-icon"
-                  data-testid="register-fullname-input"
-                />
-                <label htmlFor="reg-name" className="fl-label fl-label-icon">Full name</label>
-              </div>
-
-              <div className="fl-group">
-                <Building2 size={15} className="fl-icon" />
-                <input
-                  type="text"
-                  id="reg-org"
-                  value={formData.organization}
-                  onChange={e => setFormData({ ...formData, organization: e.target.value })}
-                  placeholder=" "
-                  className="fl-input fl-input-icon"
-                  data-testid="register-org-input"
-                />
-                <label htmlFor="reg-org" className="fl-label fl-label-icon">Organization</label>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, marginBottom: '8px', letterSpacing: '0.04em' }}>
-                  Your role
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={e => setFormData({ ...formData, role: e.target.value })}
-                  data-testid="register-role-select"
-                  style={{
-                    width: '100%', padding: '14px 16px',
-                    background: 'rgba(26,46,69,0.5)',
-                    border: '1px solid rgba(26,111,212,0.22)',
-                    borderRadius: '12px', color: '#E8EDF5',
-                    fontFamily: "'DM Sans', sans-serif", fontSize: '15px',
-                    outline: 'none', cursor: 'pointer',
-                    transition: 'border-color 0.25s, box-shadow 0.25s',
-                  }}
-                  onFocus={e => { e.currentTarget.style.borderColor = '#1A6FD4'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,111,212,0.18)'; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = 'rgba(26,111,212,0.22)'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  {ROLE_OPTIONS.map((role) => (
-                    <option key={role.id} value={role.id} style={{ background: '#0D1B2A' }}>{role.label}</option>
-                  ))}
-                </select>
-                <p style={{ marginTop: '6px', fontSize: '12px', color: '#4a6070', fontFamily: "'DM Sans', sans-serif" }}>
-                  {ROLE_OPTIONS.find((r) => r.id === formData.role)?.description}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => step1Valid && setStep(2)}
-                disabled={!step1Valid}
-                data-testid="register-continue-btn"
-                className="reg-submit-btn"
-                style={{ marginTop: '4px' }}
-              >
-                <span className="reg-shimmer" aria-hidden />
-                Continue <ArrowRight size={16} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </button>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <div className="fl-group">
-                <Mail size={15} className="fl-icon" />
-                <input
-                  type="email"
-                  id="reg-email"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  onBlur={() => setTouched({ ...touched, email: true })}
-                  placeholder=" "
-                  className="fl-input fl-input-icon"
-                  data-testid="register-email-input"
-                  style={{
-                    borderColor: touched.email && !validateEmail(formData.email) && formData.email
-                      ? 'rgba(239,68,68,0.5)' : undefined,
-                  }}
-                />
-                <label htmlFor="reg-email" className="fl-label fl-label-icon">Email address</label>
-              </div>
-
-              <div>
-                <div className="fl-group">
-                  <Lock size={15} className="fl-icon" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="reg-password"
-                    value={formData.password}
-                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                    placeholder=" "
-                    className="fl-input fl-input-icon fl-input-pw"
-                    data-testid="register-password-input"
-                  />
-                  <label htmlFor="reg-password" className="fl-label fl-label-icon">Password</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(v => !v)}
-                    className="fl-eye-btn"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-
-                {formData.password && (
-                  <div style={{ marginTop: '10px' }}>
-                    <div style={{ display: 'flex', gap: '5px', marginBottom: '6px' }}>
-                      {[0, 1, 2, 3].map(seg => (
-                        <div
-                          key={seg}
-                          style={{
-                            flex: 1, height: '4px', borderRadius: '999px',
-                            background: seg < passwordStrength
-                              ? STRENGTH_COLORS[passwordStrength - 1]
-                              : 'rgba(26,46,69,0.8)',
-                            transition: 'background 0.4s',
-                            boxShadow: seg < passwordStrength
-                              ? `0 0 6px ${STRENGTH_COLORS[passwordStrength - 1]}88`
-                              : 'none',
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <p style={{
-                      fontSize: '12px', fontFamily: "'DM Sans', sans-serif",
-                      color: passwordStrength > 0 ? STRENGTH_COLORS[passwordStrength - 1] : '#8899AA',
-                      transition: 'color 0.3s',
-                    }}>
-                      {passwordStrength > 0 ? STRENGTH_LABELS[passwordStrength - 1] : 'Enter a password'}
-                      {' — '}
-                      <span style={{ color: '#8899AA' }}>
-                        8+ chars, uppercase, number required
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <label style={{
-                display: 'flex', alignItems: 'flex-start', gap: '12px',
-                cursor: 'pointer', paddingTop: '4px',
-              }}>
-                <AnimatedCheckbox
-                  id="terms-check"
-                  checked={termsAccepted}
-                  onChange={() => setTermsAccepted(v => !v)}
-                />
-                <span style={{ fontSize: '13px', color: '#8899AA', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.55, marginTop: '1px' }}>
-                  I agree to the{' '}
-                  <a href="/terms" style={{ color: '#3d8fe0', textDecoration: 'none' }}>Terms of Service</a>
-                  {' '}and{' '}
-                  <a href="/privacy" style={{ color: '#3d8fe0', textDecoration: 'none' }}>Privacy Policy</a>
-                </span>
-              </label>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  style={{
-                    flex: '0 0 auto', padding: '14px 20px',
-                    background: 'rgba(26,46,69,0.4)',
-                    border: '1px solid rgba(26,111,212,0.22)',
-                    borderRadius: '12px', color: '#8899AA',
-                    fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
-                    fontSize: '14px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,46,69,0.7)'; (e.currentTarget as HTMLElement).style.color = '#E8EDF5'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,46,69,0.4)'; (e.currentTarget as HTMLElement).style.color = '#8899AA'; }}
-                >
-                  <ArrowLeft size={15} /> Back
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isLoading || !step2Valid}
-                  data-testid="register-submit-btn"
-                  className="reg-submit-btn"
-                  style={{ flex: 1 }}
-                >
-                  <span className="reg-shimmer" aria-hidden />
-                  {isLoading
-                    ? <><Loader2 size={17} style={{ animation: 'rotate-slow 1s linear infinite' }} /> Creating...</>
-                    : 'Create Account'}
-                </button>
-              </div>
-            </>
-          )}
-        </form>
-
-        <p style={{
-          textAlign: 'center', marginTop: '28px',
-          color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-        }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: '#3d8fe0', fontWeight: 600, textDecoration: 'none' }}>
-            Sign In
-          </Link>
-        </p>
-
-        <div style={{ textAlign: 'center', marginTop: '14px' }}>
-          <Link to="/" style={{
-            color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
-            textDecoration: 'none', transition: 'color 0.2s',
-          }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#8899AA'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#4a6070'; }}
-          >
-            ← Back to Home
-          </Link>
         </div>
       </div>
 
+      {/* ── Right panel — form ── */}
+      <div style={{
+        flex: '0 0 40%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(32px, 4vw, 56px)', overflowY: 'auto',
+      }}>
+        <m.div
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.55, ease: EASE_OUT }}
+          style={{ width: '100%', maxWidth: 400 }}
+        >
+          <div className="auth-mobile-logo" style={{ display: 'none', marginBottom: 32 }}>
+            <AcornLogo height={32} white />
+          </div>
+
+          <StepPips step={step} />
+
+          <h1 style={{
+            fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 26,
+            color: '#E8EDF5', marginBottom: 6, textAlign: 'center', letterSpacing: '-0.02em',
+          }}>
+            {step === 1 ? 'Create your profile' : 'Secure your account'}
+          </h1>
+          <p style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#8899AA',
+            marginBottom: 28, textAlign: 'center',
+          }}>
+            {step === 1 ? 'Tell us about yourself' : 'Set up your login credentials'}
+          </p>
+
+          {/* Global error */}
+          <AnimatePresence>
+            {error && (
+              <m.div
+                key="reg-error"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: EASE_OUT }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 16px', borderRadius: 10, marginBottom: 20,
+                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)',
+                  overflow: 'hidden',
+                }}
+              >
+                <AlertCircle size={15} color="#ef4444" />
+                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#fca5a5' }}>
+                  {error as string}
+                </span>
+              </m.div>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleSubmit}>
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <m.div
+                  key="step1"
+                  variants={{ animate: { transition: { staggerChildren: 0.07 } } }}
+                  initial="initial" animate="animate" exit="exit"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+                >
+                  <m.div variants={fieldVariants} className="fl-group">
+                    <User size={15} className="fl-icon" />
+                    <input
+                      type="text" id="reg-name" value={formData.full_name}
+                      onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                      placeholder=" " className="fl-input fl-input-icon"
+                      data-testid="register-fullname-input"
+                    />
+                    <label htmlFor="reg-name" className="fl-label fl-label-icon">Full name</label>
+                  </m.div>
+
+                  <m.div variants={fieldVariants} className="fl-group">
+                    <Building2 size={15} className="fl-icon" />
+                    <input
+                      type="text" id="reg-org" value={formData.organization}
+                      onChange={e => setFormData({ ...formData, organization: e.target.value })}
+                      placeholder=" " className="fl-input fl-input-icon"
+                      data-testid="register-org-input"
+                    />
+                    <label htmlFor="reg-org" className="fl-label fl-label-icon">Organization</label>
+                  </m.div>
+
+                  <m.div variants={fieldVariants}>
+                    <label style={{
+                      display: 'block', fontSize: 12, color: '#8899AA',
+                      fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
+                      marginBottom: 8, letterSpacing: '0.04em',
+                    }}>
+                      Your role
+                    </label>
+                    <select
+                      value={formData.role}
+                      onChange={e => setFormData({ ...formData, role: e.target.value })}
+                      data-testid="register-role-select"
+                      style={{
+                        width: '100%', padding: '14px 16px', boxSizing: 'border-box',
+                        background: 'rgba(26,46,69,0.5)', border: '1px solid rgba(26,111,212,0.22)',
+                        borderRadius: 12, color: '#E8EDF5',
+                        fontFamily: "'DM Sans', sans-serif", fontSize: 15, outline: 'none', cursor: 'pointer',
+                        transition: 'border-color 0.25s, box-shadow 0.25s',
+                      }}
+                      onFocus={e => { e.currentTarget.style.borderColor = '#1A6FD4'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,111,212,0.18)'; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'rgba(26,111,212,0.22)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    >
+                      {ROLE_OPTIONS.map(role => (
+                        <option key={role.id} value={role.id} style={{ background: '#0D1B2A' }}>{role.label}</option>
+                      ))}
+                    </select>
+                    <p style={{ marginTop: 6, fontSize: 12, color: '#4a6070', fontFamily: "'DM Sans', sans-serif" }}>
+                      {ROLE_OPTIONS.find(r => r.id === formData.role)?.description}
+                    </p>
+                  </m.div>
+
+                  <m.div variants={fieldVariants}>
+                    <m.button
+                      type="button"
+                      onClick={() => step1Valid && setStep(2)}
+                      disabled={!step1Valid}
+                      whileTap={{ scale: 0.97 }}
+                      data-testid="register-continue-btn"
+                      style={{
+                        width: '100%', padding: 15, borderRadius: 12,
+                        background: step1Valid ? 'linear-gradient(135deg, #1A6FD4, #3d8fe0)' : 'rgba(26,46,69,0.5)',
+                        border: 'none', cursor: step1Valid ? 'pointer' : 'not-allowed',
+                        fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15,
+                        color: step1Valid ? '#fff' : '#8899AA',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        boxShadow: step1Valid ? '0 4px 20px rgba(26,111,212,0.4)' : 'none',
+                        transition: 'box-shadow 0.25s',
+                      }}
+                    >
+                      Continue <ArrowRight size={16} />
+                    </m.button>
+                  </m.div>
+                </m.div>
+              )}
+
+              {step === 2 && (
+                <m.div
+                  key="step2"
+                  variants={{ animate: { transition: { staggerChildren: 0.07 } } }}
+                  initial="initial" animate="animate" exit="exit"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+                >
+                  <m.div variants={fieldVariants} className="fl-group">
+                    <Mail size={15} className="fl-icon" />
+                    <input
+                      type="email" id="reg-email" value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      onBlur={() => setTouched({ ...touched, email: true })}
+                      placeholder=" " className="fl-input fl-input-icon"
+                      data-testid="register-email-input"
+                      style={{ borderColor: touched.email && !validateEmail(formData.email) && formData.email ? 'rgba(239,68,68,0.5)' : undefined }}
+                    />
+                    <label htmlFor="reg-email" className="fl-label fl-label-icon">Email address</label>
+                  </m.div>
+
+                  <m.div variants={fieldVariants}>
+                    <div className="fl-group">
+                      <Lock size={15} className="fl-icon" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id="reg-password" value={formData.password}
+                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                        placeholder=" " className="fl-input fl-input-icon fl-input-pw"
+                        data-testid="register-password-input"
+                      />
+                      <label htmlFor="reg-password" className="fl-label fl-label-icon">Password</label>
+                      <button type="button" onClick={() => setShowPassword(v => !v)} className="fl-eye-btn" aria-label={showPassword ? 'Hide' : 'Show'}>
+                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                    {formData.password && (
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ display: 'flex', gap: 5, marginBottom: 6 }}>
+                          {[0, 1, 2, 3].map(seg => (
+                            <div key={seg} style={{
+                              flex: 1, height: 4, borderRadius: 999,
+                              background: seg < passwordStrength ? STRENGTH_COLORS[passwordStrength - 1] : 'rgba(26,46,69,0.8)',
+                              transition: 'background 0.4s',
+                              boxShadow: seg < passwordStrength ? `0 0 6px ${STRENGTH_COLORS[passwordStrength - 1]}88` : 'none',
+                            }} />
+                          ))}
+                        </div>
+                        <p style={{
+                          fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+                          color: passwordStrength > 0 ? STRENGTH_COLORS[passwordStrength - 1] : '#8899AA',
+                          transition: 'color 0.3s',
+                        }}>
+                          {passwordStrength > 0 ? STRENGTH_LABELS[passwordStrength - 1] : 'Enter a password'}
+                          {' — '}<span style={{ color: '#8899AA' }}>8+ chars, uppercase, number required</span>
+                        </p>
+                      </div>
+                    )}
+                  </m.div>
+
+                  <m.label
+                    variants={fieldVariants}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', paddingTop: 4 }}
+                  >
+                    <AnimatedCheckbox id="terms-check" checked={termsAccepted} onChange={() => setTermsAccepted(v => !v)} />
+                    <span style={{ fontSize: 13, color: '#8899AA', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.55, marginTop: 1 }}>
+                      I agree to the{' '}
+                      <a href="/terms" style={{ color: '#3d8fe0', textDecoration: 'none' }}>Terms of Service</a>
+                      {' '}and{' '}
+                      <a href="/privacy" style={{ color: '#3d8fe0', textDecoration: 'none' }}>Privacy Policy</a>
+                    </span>
+                  </m.label>
+
+                  <m.div variants={fieldVariants} style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                    <button
+                      type="button" onClick={() => setStep(1)}
+                      style={{
+                        flex: '0 0 auto', padding: '14px 20px', background: 'rgba(26,46,69,0.4)',
+                        border: '1px solid rgba(26,111,212,0.22)', borderRadius: 12, color: '#8899AA',
+                        fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,46,69,0.7)'; (e.currentTarget as HTMLElement).style.color = '#E8EDF5'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(26,46,69,0.4)'; (e.currentTarget as HTMLElement).style.color = '#8899AA'; }}
+                    >
+                      <ArrowLeft size={15} /> Back
+                    </button>
+                    <m.button
+                      type="submit"
+                      disabled={isLoading || !step2Valid}
+                      whileTap={{ scale: 0.97 }}
+                      data-testid="register-submit-btn"
+                      style={{
+                        flex: 1, padding: 15, borderRadius: 12,
+                        background: step2Valid ? 'linear-gradient(135deg, #1A6FD4, #3d8fe0)' : 'rgba(26,46,69,0.5)',
+                        border: 'none', cursor: (isLoading || !step2Valid) ? 'not-allowed' : 'pointer',
+                        fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15,
+                        color: step2Valid ? '#fff' : '#8899AA',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        opacity: (isLoading || !step2Valid) ? 0.65 : 1,
+                        boxShadow: step2Valid ? '0 4px 20px rgba(26,111,212,0.4)' : 'none',
+                        transition: 'box-shadow 0.25s',
+                      }}
+                    >
+                      {isLoading ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Creating…</> : 'Create Account'}
+                    </m.button>
+                  </m.div>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </form>
+
+          <p style={{
+            textAlign: 'center', marginTop: 28,
+            fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#8899AA',
+          }}>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#3d8fe0', fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>
+          </p>
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <Link to="/" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070', textDecoration: 'none' }}>
+              ← Back to Home
+            </Link>
+          </div>
+        </m.div>
+      </div>
+
       <style>{`
-        @keyframes cardUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .reg-card {
-          padding: 40px 36px;
-          background: rgba(13,27,42,0.78);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(26,111,212,0.25);
-          border-radius: 24px;
-          box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-          animation: cardUp 700ms cubic-bezier(0.22,1,0.36,1) both;
-        }
-
-        .fl-group {
-          position: relative;
-        }
-
+        .fl-group { position: relative; }
         .fl-icon {
-          position: absolute;
-          left: 15px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #8899AA;
-          pointer-events: none;
-          z-index: 1;
-          transition: color 0.2s;
+          position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+          color: #8899AA; pointer-events: none; z-index: 1; transition: color 0.2s;
         }
-
-        .fl-group:focus-within .fl-icon {
-          color: #1A6FD4;
-        }
+        .fl-group:focus-within .fl-icon { color: #1A6FD4; }
 
         .fl-input {
-          width: 100%;
-          padding: 20px 16px 8px;
-          background: rgba(26,46,69,0.5);
-          border: 1px solid rgba(26,111,212,0.22);
-          border-radius: 12px;
-          color: #E8EDF5;
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          outline: none;
-          transition: border-color 0.25s, box-shadow 0.25s;
-          box-sizing: border-box;
-          caret-color: #3d8fe0;
+          width: 100%; padding: 20px 16px 8px; box-sizing: border-box;
+          background: rgba(26,46,69,0.45); border: 1px solid rgba(26,111,212,0.2);
+          border-radius: 12px; color: #E8EDF5; font-size: 15px;
+          font-family: 'DM Sans', sans-serif; outline: none;
+          transition: border-color 0.25s, box-shadow 0.25s; caret-color: #3d8fe0;
         }
-
-        .fl-input-icon {
-          padding-left: 42px;
-        }
-
-        .fl-input-pw {
-          padding-right: 46px;
-        }
-
-        .fl-input:focus {
-          border-color: #1A6FD4;
-          box-shadow: 0 0 0 3px rgba(26,111,212,0.18);
-        }
-
+        .fl-input:focus { border-color: #1A6FD4; box-shadow: 0 0 0 3px rgba(26,111,212,0.16); }
         .fl-input::placeholder { color: transparent; }
+        .fl-input-icon { padding-left: 42px; }
+        .fl-input-pw { padding-right: 46px; }
 
         .fl-label {
-          position: absolute;
-          left: 16px;
-          top: 14px;
-          color: #8899AA;
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          pointer-events: none;
-          transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
-          transform-origin: left top;
+          position: absolute; left: 16px; top: 14px; color: #8899AA;
+          font-size: 15px; font-family: 'DM Sans', sans-serif;
+          pointer-events: none; transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
         }
-
-        .fl-label-icon {
-          left: 42px;
-        }
-
-        .fl-input:focus ~ .fl-label,
-        .fl-input:not(:placeholder-shown) ~ .fl-label {
-          top: 7px;
-          font-size: 11px;
-          color: #1A6FD4;
-          letter-spacing: 0.04em;
-          font-weight: 600;
-          left: 16px;
+        .fl-label-icon { left: 42px; }
+        .fl-input:focus ~ .fl-label, .fl-input:not(:placeholder-shown) ~ .fl-label {
+          top: 7px; font-size: 11px; color: #1A6FD4; letter-spacing: 0.04em; font-weight: 600; left: 16px;
         }
 
         .fl-eye-btn {
-          position: absolute;
-          right: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: #8899AA;
-          cursor: pointer;
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          transition: color 0.2s;
+          position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+          background: none; border: none; color: #8899AA; cursor: pointer; padding: 4px;
+          display: flex; align-items: center; transition: color 0.2s;
         }
         .fl-eye-btn:hover { color: #E8EDF5; }
 
-        .reg-submit-btn {
-          position: relative;
-          width: 100%;
-          padding: 15px;
-          background: linear-gradient(135deg, #1A6FD4 0%, #3d8fe0 100%);
-          border: none;
-          border-radius: 12px;
-          color: #fff;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 15px;
-          cursor: pointer;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: box-shadow 0.25s, transform 0.15s;
-          box-shadow: 0 4px 20px rgba(26,111,212,0.4);
-        }
-
-        .reg-submit-btn:hover:not(:disabled) {
-          box-shadow: 0 10px 36px rgba(26,111,212,0.55);
-          transform: translateY(-2px);
-        }
-
-        .reg-submit-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .reg-shimmer {
-          position: absolute;
-          top: 0; left: -100%;
-          width: 100%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-          transition: left 0.55s ease;
-          pointer-events: none;
-        }
-
-        .reg-submit-btn:hover:not(:disabled) .reg-shimmer {
-          left: 100%;
-        }
-
-        /* Animated checkbox */
-        .anim-checkbox-label {
-          display: inline-flex;
-          align-items: center;
-          cursor: pointer;
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .anim-checkbox-input {
-          position: absolute;
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
+        .anim-checkbox-label { display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+        .anim-checkbox-input { position: absolute; opacity: 0; width: 0; height: 0; }
         .anim-checkbox-box {
-          width: 20px;
-          height: 20px;
-          border-radius: 6px;
-          border: 2px solid rgba(26,111,212,0.4);
-          background: rgba(26,46,69,0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
-          flex-shrink: 0;
+          width: 20px; height: 20px; border-radius: 6px; border: 2px solid rgba(26,111,212,0.4);
+          background: rgba(26,46,69,0.5); display: flex; align-items: center; justify-content: center;
+          transition: background 0.25s, border-color 0.25s, box-shadow 0.25s; flex-shrink: 0;
         }
+        .anim-checkbox-box.checked { background: #1A6FD4; border-color: #1A6FD4; box-shadow: 0 0 10px rgba(26,111,212,0.45); }
+        .anim-check-mark { stroke-dasharray: 18; stroke-dashoffset: 18; transition: stroke-dashoffset 0.3s cubic-bezier(0.22,1,0.36,1) 0.05s; }
+        .anim-checkbox-box.checked .anim-check-mark { stroke-dashoffset: 0; }
 
-        .anim-checkbox-box.checked {
-          background: #1A6FD4;
-          border-color: #1A6FD4;
-          box-shadow: 0 0 10px rgba(26,111,212,0.45);
+        @media (max-width: 768px) {
+          .auth-left-panel { display: none !important; }
+          .auth-mobile-logo { display: block !important; }
         }
-
-        .anim-check-mark {
-          stroke-dasharray: 18;
-          stroke-dashoffset: 18;
-          transition: stroke-dashoffset 0.3s cubic-bezier(0.22,1,0.36,1) 0.05s;
-        }
-
-        .anim-checkbox-box.checked .anim-check-mark {
-          stroke-dashoffset: 0;
-        }
-
-        @media (max-width: 480px) {
-          .reg-card { padding: 28px 18px; border-radius: 18px; }
-        }
-
         @media (prefers-reduced-motion: reduce) {
-          .reg-card { animation: none !important; opacity: 1 !important; }
           .anim-check-mark { transition: none !important; stroke-dashoffset: 0 !important; }
-          .reg-shimmer { display: none !important; }
         }
       `}</style>
     </div>

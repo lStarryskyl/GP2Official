@@ -210,6 +210,11 @@ const ProjectActivityTimeline: React.FC<{
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  // Cache this project ID so DemoMode can navigate to real phase pages
+  useEffect(() => {
+    if (id) localStorage.setItem('acorn_demo_project_id', id);
+  }, [id]);
   const [project, setProject]         = useState<Project | null>(null);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [tasks, setTasks]             = useState<Task[]>([]);

@@ -1,8 +1,150 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { m, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { AcornLogo } from '../components/AcornLogo';
+
+// ─── Orbital canvas ────────────────────────────────────────────────────────────
+
+const ORBIT_LABELS = [
+  'Brief', 'Feasibility', 'Requirements', 'Validation',
+  'Tech Stack', 'Architecture', 'Design', 'Planning',
+  'Tasks', 'Costs', 'Risk', 'Testing', 'Deployment',
+];
+
+const BLUE = '#1A6FD4';
+const ORANGE = '#F97316';
+
+const OrbitalCanvas: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const N = ORBIT_LABELS.length;
+    const baseColors = [BLUE, ORANGE];
+
+    let t = 0;
+    const draw = () => {
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      t += 0.006;
+
+      const cx = W / 2;
+      const cy = H / 2;
+      const R1 = Math.min(W, H) * 0.28;
+      const R2 = Math.min(W, H) * 0.42;
+
+      const nodes = ORBIT_LABELS.map((label, i) => {
+        const ring = i % 2 === 0 ? R1 : R2;
+        const speed = i % 2 === 0 ? 1 : -0.7;
+        const offset = (i / N) * Math.PI * 2;
+        const angle = t * speed + offset;
+        return {
+          x: cx + Math.cos(angle) * ring,
+          y: cy + Math.sin(angle) * ring,
+          label,
+          color: baseColors[i % 2],
+        };
+      });
+
+      // Orbit rings
+      [R1, R2].forEach(r => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(26,111,212,0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Connections between adjacent nodes of same ring
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        const b = nodes[(i + 2) % nodes.length];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = R2 * 1.1;
+        if (dist < maxDist) {
+          const alpha = (1 - dist / maxDist) * 0.15;
+          ctx.strokeStyle = `rgba(26,111,212,${alpha})`;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 5]);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      // Center glow
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R1 * 0.4);
+      grad.addColorStop(0, 'rgba(26,111,212,0.12)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R1 * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Nodes
+      nodes.forEach(n => {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + '99';
+        ctx.fill();
+        ctx.strokeStyle = n.color + 'cc';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Label
+        ctx.font = "10px 'DM Sans', sans-serif";
+        ctx.fillStyle = 'rgba(232,237,245,0.55)';
+        ctx.textAlign = 'center';
+        ctx.fillText(n.label, n.x, n.y - 10);
+      });
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: '100%', height: '100%', display: 'block' }}
+    />
+  );
+};
+
+// ─── Form field ────────────────────────────────────────────────────────────────
+
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
+const fieldVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT } },
+};
+
+// ─── Login page ────────────────────────────────────────────────────────────────
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +153,7 @@ const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => { if (isAuthenticated) navigate('/projects'); }, [isAuthenticated, navigate]);
 
@@ -19,259 +162,214 @@ const LoginPage: React.FC = () => {
     setError(null);
     if (!formData.email || !formData.password) { setError('Please fill in all fields'); return; }
     try {
+      setSubmitted(true);
       await login(formData.email, formData.password);
       navigate('/projects');
     } catch (err: any) {
+      setSubmitted(false);
       setError(err.message || 'Invalid email or password');
     }
   };
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#070C14', position: 'relative', overflow: 'hidden', padding: '24px',
+      minHeight: '100vh', display: 'flex', background: '#050D1A', overflow: 'hidden',
     }}>
-      <div className="splash-stars" aria-hidden style={{ position: 'fixed', zIndex: 0, inset: 0 }} />
-      <div className="splash-aurora splash-aurora-blue" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-      <div className="splash-aurora splash-aurora-orange" aria-hidden style={{ position: 'fixed', zIndex: 0 }} />
-
-      <div className="login-card" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '420px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
-          <AcornLogo height={40} white />
-        </div>
-
-        <h1 style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '26px',
-          color: '#E8EDF5', marginBottom: '6px', textAlign: 'center', letterSpacing: '-0.02em',
+      {/* ── Left panel — canvas ── */}
+      <div className="auth-left-panel" style={{
+        flex: '0 0 60%', position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(135deg, #050D1A 0%, #0a1525 100%)',
+        borderRight: '1px solid rgba(26,111,212,0.12)',
+      }}>
+        <OrbitalCanvas />
+        {/* Brand overlay */}
+        <div style={{
+          position: 'absolute', bottom: 48, left: 48,
+          display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          Welcome back
-        </h1>
-        <p style={{
-          color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-          marginBottom: '32px', textAlign: 'center',
-        }}>
-          Sign in to your workspace
-        </p>
-
-        {error && (
+          <AcornLogo height={28} white />
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '12px 16px', borderRadius: '10px',
-            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-            marginBottom: '20px',
+            fontFamily: "'DM Mono', monospace", fontSize: 10,
+            color: '#4a6070', letterSpacing: '0.18em', textTransform: 'uppercase',
           }}>
-            <AlertCircle size={16} color="#ef4444" />
-            <span style={{ color: '#fca5a5', fontSize: '14px', fontFamily: "'DM Sans', sans-serif" }}>{error}</span>
+            SDLC Intelligence Platform
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="fl-group">
-            <input
-              type="email"
-              id="login-email"
-              value={formData.email}
-              onChange={e => { setFormData(p => ({ ...p, email: e.target.value })); setError(null); }}
-              autoComplete="email"
-              className="fl-input"
-              placeholder=" "
-            />
-            <label htmlFor="login-email" className="fl-label">Email address</label>
-          </div>
-
-          <div className="fl-group">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="login-password"
-              value={formData.password}
-              onChange={e => { setFormData(p => ({ ...p, password: e.target.value })); setError(null); }}
-              autoComplete="current-password"
-              className="fl-input fl-input-pw"
-              placeholder=" "
-            />
-            <label htmlFor="login-password" className="fl-label">Password</label>
-            <button
-              type="button"
-              onClick={() => setShowPassword(v => !v)}
-              className="fl-eye-btn"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-
-          <button type="submit" disabled={isLoading} className="login-submit-btn">
-            <span className="login-shimmer" aria-hidden />
-            {isLoading
-              ? <Loader2 size={18} style={{ animation: 'rotate-slow 1s linear infinite' }} />
-              : 'Sign In'}
-          </button>
-        </form>
-
-        <p style={{
-          textAlign: 'center', marginTop: '28px',
-          color: '#8899AA', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-        }}>
-          Don't have an account?{' '}
-          <Link to="/register" style={{ color: '#3d8fe0', fontWeight: 600, textDecoration: 'none' }}>
-            Create one free
-          </Link>
-        </p>
-
-        <div style={{ textAlign: 'center', marginTop: '16px' }}>
-          <Link to="/" style={{
-            color: '#4a6070', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
-            textDecoration: 'none', transition: 'color 0.2s',
-          }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#8899AA'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#4a6070'; }}
-          >
-            ← Back to Home
-          </Link>
         </div>
       </div>
 
+      {/* ── Right panel — form ── */}
+      <div style={{
+        flex: '0 0 40%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(32px, 5vw, 64px)',
+      }}>
+        <m.div
+          initial={{ opacity: 0, x: 40 }}
+          animate={submitted ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
+          transition={{ duration: submitted ? 0.3 : 0.55, ease: EASE_OUT }}
+          style={{ width: '100%', maxWidth: 380 }}
+        >
+          {/* Mobile logo — hidden on desktop */}
+          <div className="auth-mobile-logo" style={{ display: 'none', marginBottom: 32 }}>
+            <AcornLogo height={32} white />
+          </div>
+
+          <m.div
+            variants={{ animate: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }}
+            initial="initial"
+            animate="animate"
+          >
+            <m.div variants={fieldVariants}>
+              <h1 style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 28,
+                color: '#E8EDF5', marginBottom: 6, letterSpacing: '-0.02em',
+              }}>
+                Welcome back
+              </h1>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#8899AA', marginBottom: 36,
+              }}>
+                Sign in to your workspace
+              </p>
+            </m.div>
+
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <m.div
+                  key="error"
+                  initial={{ opacity: 0, y: -8, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -8, height: 0 }}
+                  transition={{ duration: 0.25, ease: EASE_OUT }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '12px 16px', borderRadius: 10, marginBottom: 20,
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <AlertCircle size={15} color="#ef4444" />
+                  <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#fca5a5' }}>
+                    {error}
+                  </span>
+                </m.div>
+              )}
+            </AnimatePresence>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <m.div variants={fieldVariants} className="fl-group">
+                <input
+                  type="email"
+                  id="login-email"
+                  value={formData.email}
+                  onChange={e => { setFormData(p => ({ ...p, email: e.target.value })); setError(null); }}
+                  autoComplete="email"
+                  className="fl-input"
+                  placeholder=" "
+                />
+                <label htmlFor="login-email" className="fl-label">Email address</label>
+              </m.div>
+
+              <m.div variants={fieldVariants} className="fl-group">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="login-password"
+                  value={formData.password}
+                  onChange={e => { setFormData(p => ({ ...p, password: e.target.value })); setError(null); }}
+                  autoComplete="current-password"
+                  className="fl-input fl-input-pw"
+                  placeholder=" "
+                />
+                <label htmlFor="login-password" className="fl-label">Password</label>
+                <button type="button" onClick={() => setShowPassword(v => !v)} className="fl-eye-btn">
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </m.div>
+
+              <m.div variants={fieldVariants}>
+                <m.button
+                  type="submit"
+                  disabled={isLoading}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 12,
+                    background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
+                    border: '1px solid rgba(26,111,212,0.4)',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700,
+                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 8, opacity: isLoading ? 0.65 : 1,
+                    boxShadow: '0 4px 20px rgba(26,111,212,0.35)',
+                  }}
+                >
+                  {isLoading
+                    ? <Loader2 size={17} style={{ animation: 'spin 1s linear infinite' }} />
+                    : 'Sign In'}
+                </m.button>
+              </m.div>
+            </form>
+
+            <m.p
+              variants={fieldVariants}
+              style={{
+                textAlign: 'center', marginTop: 28,
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#8899AA',
+              }}
+            >
+              No account?{' '}
+              <Link to="/register" style={{ color: '#3d8fe0', fontWeight: 600, textDecoration: 'none' }}>
+                Create one free
+              </Link>
+            </m.p>
+
+            <m.div variants={fieldVariants} style={{ textAlign: 'center', marginTop: 12 }}>
+              <Link
+                to="/"
+                style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070', textDecoration: 'none' }}
+              >
+                ← Back to Home
+              </Link>
+            </m.div>
+          </m.div>
+        </m.div>
+      </div>
+
       <style>{`
-        @keyframes cardUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .login-card {
-          padding: 40px 36px;
-          background: rgba(13,27,42,0.78);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(26,111,212,0.25);
-          border-radius: 24px;
-          box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-          animation: cardUp 700ms cubic-bezier(0.22,1,0.36,1) both;
-        }
-
-        .fl-group {
-          position: relative;
-        }
+        .fl-group { position: relative; }
 
         .fl-input {
-          width: 100%;
-          padding: 20px 16px 8px;
-          background: rgba(26,46,69,0.5);
-          border: 1px solid rgba(26,111,212,0.22);
-          border-radius: 12px;
-          color: #E8EDF5;
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          outline: none;
-          transition: border-color 0.25s, box-shadow 0.25s;
-          box-sizing: border-box;
-          caret-color: #3d8fe0;
+          width: 100%; padding: 20px 16px 8px; box-sizing: border-box;
+          background: rgba(26,46,69,0.45); border: 1px solid rgba(26,111,212,0.2);
+          border-radius: 12px; color: #E8EDF5; font-size: 15px;
+          font-family: 'DM Sans', sans-serif; outline: none;
+          transition: border-color 0.25s, box-shadow 0.25s; caret-color: #3d8fe0;
         }
-
-        .fl-input-pw {
-          padding-right: 46px;
-        }
-
-        .fl-input:focus {
-          border-color: #1A6FD4;
-          box-shadow: 0 0 0 3px rgba(26,111,212,0.18);
-        }
-
+        .fl-input:focus { border-color: #1A6FD4; box-shadow: 0 0 0 3px rgba(26,111,212,0.16); }
         .fl-input::placeholder { color: transparent; }
+        .fl-input-pw { padding-right: 46px; }
 
         .fl-label {
-          position: absolute;
-          left: 16px;
-          top: 14px;
-          color: #8899AA;
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          pointer-events: none;
-          transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
-          transform-origin: left top;
+          position: absolute; left: 16px; top: 14px; color: #8899AA;
+          font-size: 15px; font-family: 'DM Sans', sans-serif;
+          pointer-events: none; transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
         }
-
-        .fl-input:focus ~ .fl-label,
-        .fl-input:not(:placeholder-shown) ~ .fl-label {
-          top: 7px;
-          font-size: 11px;
-          color: #1A6FD4;
-          letter-spacing: 0.04em;
-          font-weight: 600;
+        .fl-input:focus ~ .fl-label, .fl-input:not(:placeholder-shown) ~ .fl-label {
+          top: 7px; font-size: 11px; color: #1A6FD4; letter-spacing: 0.04em; font-weight: 600;
         }
 
         .fl-eye-btn {
-          position: absolute;
-          right: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: #8899AA;
-          cursor: pointer;
-          padding: 4px;
-          display: flex;
-          align-items: center;
+          position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+          background: none; border: none; color: #8899AA; cursor: pointer;
+          padding: 4px; display: flex; align-items: center;
           transition: color 0.2s;
         }
         .fl-eye-btn:hover { color: #E8EDF5; }
 
-        .login-submit-btn {
-          position: relative;
-          width: 100%;
-          padding: 15px;
-          background: linear-gradient(135deg, #1A6FD4 0%, #3d8fe0 100%);
-          border: none;
-          border-radius: 12px;
-          color: #fff;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 16px;
-          cursor: pointer;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: box-shadow 0.25s, transform 0.15s;
-          box-shadow: 0 4px 20px rgba(26,111,212,0.4);
-          margin-top: 4px;
-        }
-
-        .login-submit-btn:hover:not(:disabled) {
-          box-shadow: 0 10px 36px rgba(26,111,212,0.55);
-          transform: translateY(-2px);
-        }
-
-        .login-submit-btn:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .login-submit-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .login-shimmer {
-          position: absolute;
-          top: 0; left: -100%;
-          width: 100%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-          transition: left 0.55s ease;
-          pointer-events: none;
-        }
-
-        .login-submit-btn:hover:not(:disabled) .login-shimmer {
-          left: 100%;
-        }
-
-        @media (max-width: 480px) {
-          .login-card { padding: 28px 20px; border-radius: 18px; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .login-card { animation: none !important; opacity: 1 !important; }
-          .fl-label, .fl-input, .login-submit-btn { transition: none !important; }
-          .login-shimmer { display: none !important; }
+        @media (max-width: 768px) {
+          .auth-left-panel { display: none !important; }
+          .auth-mobile-logo { display: block !important; }
         }
       `}</style>
     </div>

@@ -1,9 +1,11 @@
 ﻿import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import { useAuthStore } from './store/authStore';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
 import LandingPage from './pages/LandingPage';
+import SplashScreen from './pages/SplashScreen';
 import LoginPage from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProjectsPage } from './pages/ProjectsPage';
@@ -29,6 +31,7 @@ import { PlanValidationPage } from './pages/PlanValidationPage';
 import { AgentDebatePage } from './pages/AgentDebatePage';
 import { UxFlowPage } from './pages/UxFlowPage';
 import { PageTransition } from './components/PageTransition';
+import DemoMode from './components/DemoMode';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -55,11 +58,13 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 function App() {
   return (
+    <LazyMotion features={domAnimation}>
     <ThemeProvider>
       <ToastProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <PageTransition>
         <Routes>
+        <Route path="/splash" element={<SplashScreen />} />
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -237,9 +242,11 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </PageTransition>
+        <DemoMode />
       </BrowserRouter>
       </ToastProvider>
     </ThemeProvider>
+    </LazyMotion>
   );
 }
 

@@ -256,20 +256,24 @@ const LandingPage: React.FC = () => {
         .lp-page {
           --lp-navy: #0D1B2A;
           --lp-navy-deep: #111f30;
+          --lp-navy-darkest: #050D16;
+          --lp-surface: rgba(17,31,48,0.88);
+          --lp-surface-2: rgba(21,37,56,0.92);
+          --lp-border: rgba(26,111,212,0.18);
           --lp-blue: #1A6FD4;
           --lp-blue-soft: #3d8fe0;
           --lp-orange: #F97316;
           --lp-orange-soft: #fb9042;
-          --lp-text: #10213f;
-          --lp-muted: #576785;
-          --lp-faint: #6d77a1;
+          --lp-text: #E8EDF5;
+          --lp-muted: #8899AA;
+          --lp-faint: #4a6070;
           min-height: 100vh;
           color: var(--lp-text);
           background:
-            radial-gradient(circle at 8% 10%, rgba(249,115,22,0.18), transparent 24%),
-            radial-gradient(circle at 84% 14%, rgba(26,111,212,0.16), transparent 28%),
-            radial-gradient(circle at 68% 62%, rgba(61,143,224,0.12), transparent 30%),
-            linear-gradient(180deg, #fffdf8 0%, #f8fbff 26%, #edf6ff 62%, #fff6ef 100%);
+            radial-gradient(circle at 8% 10%, rgba(249,115,22,0.16), transparent 24%),
+            radial-gradient(circle at 84% 14%, rgba(26,111,212,0.14), transparent 28%),
+            radial-gradient(circle at 68% 62%, rgba(61,143,224,0.08), transparent 30%),
+            linear-gradient(180deg, var(--lp-navy-darkest) 0%, var(--lp-navy) 38%, #101f31 100%);
           position: relative;
           overflow-x: hidden;
         }
@@ -307,10 +311,10 @@ const LandingPage: React.FC = () => {
           justify-content: space-between;
           gap: 16px;
           border-radius: 999px;
-          border: 1px solid rgba(26,111,212,0.12);
-          background: rgba(255,255,255,0.74);
+          border: 1px solid var(--lp-border);
+          background: rgba(13,27,42,0.82);
           backdrop-filter: blur(18px) saturate(180%);
-          box-shadow: 0 18px 50px rgba(13,27,42,0.08);
+          box-shadow: 0 18px 50px rgba(0,0,0,0.24);
         }
         .lp-nav-links {
           display: flex;
@@ -399,8 +403,8 @@ const LandingPage: React.FC = () => {
           gap: 8px;
           padding: 12px 20px;
           border-radius: 999px;
-          border: 1px solid rgba(26,111,212,0.14);
-          background: rgba(255,255,255,0.72);
+          border: 1px solid var(--lp-border);
+          background: rgba(17,31,48,0.84);
           color: var(--lp-text);
           cursor: pointer;
           font-family: 'DM Sans', sans-serif;
@@ -439,7 +443,7 @@ const LandingPage: React.FC = () => {
           position: absolute;
           inset: 18px;
           border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.3);
+          border: 1px solid rgba(255,255,255,0.14);
           pointer-events: none;
         }
         .lp-demo-chrome {
@@ -573,14 +577,14 @@ const LandingPage: React.FC = () => {
           grid-template-columns: repeat(12, minmax(0, 1fr));
           gap: 1px;
           background: linear-gradient(180deg, rgba(26,111,212,0.18), rgba(249,115,22,0.18));
-          border: 1px solid rgba(26,111,212,0.1);
+          border: 1px solid var(--lp-border);
           border-radius: 28px;
           padding: 1px;
           overflow: hidden;
         }
         .lp-bento-card {
           background:
-            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.96));
+            linear-gradient(180deg, rgba(17,31,48,0.96), rgba(21,37,56,0.96));
           padding: 26px;
           min-height: 170px;
         }
@@ -606,9 +610,9 @@ const LandingPage: React.FC = () => {
         .lp-mini-pill {
           padding: 7px 12px;
           border-radius: 999px;
-          background: rgba(26,111,212,0.1);
-          border: 1px solid rgba(26,111,212,0.14);
-          color: var(--lp-blue);
+          background: rgba(26,111,212,0.14);
+          border: 1px solid rgba(26,111,212,0.22);
+          color: var(--lp-blue-soft);
           font-family: 'DM Mono', monospace;
           font-size: 12px;
         }
@@ -640,8 +644,8 @@ const LandingPage: React.FC = () => {
           display: none;
         }
         .lp-pill {
-          border: 1px solid rgba(26,111,212,0.12);
-          background: rgba(255,255,255,0.72);
+          border: 1px solid var(--lp-border);
+          background: rgba(17,31,48,0.84);
           padding: 11px 16px;
           border-radius: 999px;
           cursor: pointer;
@@ -661,9 +665,9 @@ const LandingPage: React.FC = () => {
           margin-top: 18px;
           border-radius: 26px;
           padding: 24px;
-          background: rgba(255,255,255,0.82);
-          border: 1px solid rgba(26,111,212,0.1);
-          box-shadow: 0 24px 56px rgba(13,27,42,0.08);
+          background: rgba(17,31,48,0.88);
+          border: 1px solid var(--lp-border);
+          box-shadow: 0 24px 56px rgba(0,0,0,0.22);
         }
         .lp-phase-grid {
           display: grid;
@@ -673,14 +677,14 @@ const LandingPage: React.FC = () => {
         .lp-phase-stream {
           min-height: 178px;
           border-radius: 20px;
-          background: linear-gradient(180deg, rgba(240,247,255,0.98), rgba(255,248,244,0.98));
-          border: 1px solid rgba(26,111,212,0.1);
+          background: linear-gradient(180deg, rgba(13,27,42,0.96), rgba(17,31,48,0.96));
+          border: 1px solid var(--lp-border);
           padding: 20px;
         }
         .lp-phase-meta {
           border-radius: 20px;
-          background: linear-gradient(180deg, rgba(255,250,248,0.95), rgba(241,247,255,0.95));
-          border: 1px solid rgba(26,111,212,0.1);
+          background: linear-gradient(180deg, rgba(17,31,48,0.95), rgba(21,37,56,0.95));
+          border: 1px solid var(--lp-border);
           padding: 20px;
           display: flex;
           flex-direction: column;
@@ -704,8 +708,8 @@ const LandingPage: React.FC = () => {
           gap: 8px;
           padding: 7px 12px;
           border-radius: 999px;
-          background: rgba(255,255,255,0.84);
-          border: 1px solid rgba(26,111,212,0.12);
+          background: rgba(13,27,42,0.84);
+          border: 1px solid var(--lp-border);
           color: var(--lp-muted);
           font-family: 'DM Mono', monospace;
           font-size: 11px;
@@ -767,11 +771,11 @@ const LandingPage: React.FC = () => {
           text-align: center;
           padding: 72px 24px;
           border-radius: 36px;
-          border: 1px solid rgba(26,111,212,0.1);
+          border: 1px solid var(--lp-border);
           background:
             radial-gradient(circle at 50% 0%, rgba(26,111,212,0.22), transparent 46%),
-            linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,246,239,0.94));
-          box-shadow: 0 28px 64px rgba(13,27,42,0.08);
+            linear-gradient(180deg, rgba(13,27,42,0.96), rgba(17,31,48,0.96));
+          box-shadow: 0 28px 64px rgba(0,0,0,0.24);
         }
         .lp-footer {
           padding: 0 0 56px;
@@ -888,7 +892,7 @@ const LandingPage: React.FC = () => {
       <div className="lp-nav">
         <div
           className="lp-nav-inner"
-          style={navSolid ? { background: 'rgba(255,255,255,0.88)', borderColor: 'rgba(26,111,212,0.16)', boxShadow: '0 18px 56px rgba(13,27,42,0.12)' } : undefined}
+          style={navSolid ? { background: 'rgba(13,27,42,0.92)', borderColor: 'rgba(26,111,212,0.22)', boxShadow: '0 18px 56px rgba(0,0,0,0.3)' } : undefined}
         >
           <button
             onClick={() => scrollToId('top')}
@@ -1085,7 +1089,7 @@ const LandingPage: React.FC = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
                     {['Discovery', 'Scope', 'Build', 'QA'].map((bar, idx) => (
                       <div key={bar} style={{ display: 'grid', gridTemplateColumns: '76px 1fr', gap: 12, alignItems: 'center' }}>
-                        <span className="lp-label" style={{ color: '#596987' }}>{bar}</span>
+                        <span className="lp-label" style={{ color: 'var(--lp-faint)' }}>{bar}</span>
                         <div style={{ height: 10, borderRadius: 999, background: 'rgba(26,111,212,0.12)', overflow: 'hidden' }}>
                           <div
                             style={{
@@ -1185,7 +1189,7 @@ const LandingPage: React.FC = () => {
                   >
                     <div className="lp-phase-stream">
                       <div className="lp-label" style={{ marginBottom: 12 }}>streaming output</div>
-                      <div className="lp-section-copy" style={{ color: '#405171' }}>
+                      <div className="lp-section-copy" style={{ color: 'var(--lp-muted)' }}>
                         {phasePreview}
                         <span className="lp-cursor" style={{ width: 8, height: 16 }} />
                       </div>
@@ -1233,13 +1237,13 @@ const LandingPage: React.FC = () => {
                     style={{
                       padding: 22,
                       borderRadius: 22,
-                      background: 'rgba(255,255,255,0.78)',
-                      border: '1px solid rgba(26,111,212,0.1)',
-                      boxShadow: '0 18px 40px rgba(13,27,42,0.06)',
+                      background: 'rgba(17,31,48,0.86)',
+                      border: '1px solid rgba(26,111,212,0.18)',
+                      boxShadow: '0 18px 40px rgba(0,0,0,0.22)',
                     }}
                   >
                     <div style={{ width: 42, height: 42, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(249,115,22,0.16), rgba(26,111,212,0.16))', marginBottom: 16 }}>
-                      <Icon size={18} color="#243B55" />
+                      <Icon size={18} color="#3d8fe0" />
                     </div>
                     <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, letterSpacing: '-0.03em', color: 'var(--lp-text)', marginBottom: 8 }}>{item.title}</div>
                     <div className="lp-section-copy" style={{ fontSize: 15 }}>{item.copy}</div>

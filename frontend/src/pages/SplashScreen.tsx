@@ -1,240 +1,228 @@
-import React, { useEffect } from 'react';
-import { m, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { m } from 'framer-motion';
 import { AcornLogo } from '../components/AcornLogo';
 
-const PIPELINE = [
+const PHASES = [
   'Brief', 'Feasibility', 'Requirements', 'Validation',
   'Tech Stack', 'Architecture', 'Design', 'Planning',
   'Tasks', 'Costs', 'Risk', 'Testing', 'Deployment',
 ];
 
-const STATUS_MESSAGES = [
-  'Initialising workspace…',
-  'Loading phase engine…',
-  'Connecting AI agents…',
-  'Preparing your canvas…',
-  'Almost ready…',
-];
-
-const easeOutExpo = [0.16, 1, 0.3, 1] as const;
-
-const nodeVariants = {
-  hidden: { opacity: 0, scale: 0.4, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1, scale: 1, y: 0,
-    transition: { type: 'spring' as const, stiffness: 280, damping: 22, delay: 0.6 + i * 0.28 },
-  }),
-  exit: (i: number) => ({
-    opacity: 0, y: -16,
-    transition: { duration: 0.2, delay: i * 0.03, ease: easeOutExpo },
-  }),
-};
-
-const lineVariants = {
-  hidden: { pathLength: 0, opacity: 0 },
-  visible: (i: number) => ({
-    pathLength: 1, opacity: 0.4,
-    transition: { duration: 0.5, delay: 0.6 + (i + 1) * 0.28 + 0.2, ease: easeOutExpo },
-  }),
-  exit: { opacity: 0, transition: { duration: 0.15 } },
-};
-
-const wordmarkVariants = {
-  hidden: { opacity: 0, y: -40 },
-  visible: {
-    opacity: 1, y: 0,
-    transition: { type: 'spring' as const, stiffness: 220, damping: 20, delay: 0.1 },
-  },
-};
-
-const containerVariants = {
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.4, ease: easeOutExpo },
-  },
-};
-
-const NODE_W = 88;
-const NODE_H = 34;
-const GAP = 36;
-const ROW_SIZE = 7;
-
-interface PipelineRowProps {
-  nodes: string[];
-  startIndex: number;
-  activeNode: number;
-}
-
-const PipelineRow: React.FC<PipelineRowProps> = ({ nodes, startIndex, activeNode }) => {
-  const totalW = nodes.length * NODE_W + (nodes.length - 1) * GAP;
-  const cy = NODE_H / 2;
-
-  return (
-    <div style={{ position: 'relative', width: totalW, height: NODE_H + 16 }}>
-      <svg
-        width={totalW}
-        height={NODE_H + 16}
-        style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
-      >
-        {nodes.map((_, i) => {
-          if (i === nodes.length - 1) return null;
-          const x1 = i * (NODE_W + GAP) + NODE_W;
-          const x2 = (i + 1) * (NODE_W + GAP);
-          const y = cy + 8;
-          return (
-            <m.line
-              key={i}
-              x1={x1} y1={y} x2={x2} y2={y}
-              stroke="#1A6FD4"
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
-              custom={startIndex + i}
-              variants={lineVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            />
-          );
-        })}
-      </svg>
-
-      {nodes.map((label, i) => {
-        const absIdx = startIndex + i;
-        const isActive = activeNode === absIdx;
-        return (
-          <m.div
-            key={label}
-            custom={absIdx}
-            variants={nodeVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            style={{
-              position: 'absolute',
-              left: i * (NODE_W + GAP),
-              top: 8,
-              width: NODE_W,
-              height: NODE_H,
-              borderRadius: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: isActive ? 'rgba(249,115,22,0.15)' : 'rgba(26,111,212,0.10)',
-              border: `1px solid ${isActive ? 'rgba(249,115,22,0.55)' : 'rgba(26,111,212,0.22)'}`,
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: 11, fontWeight: 600,
-              color: isActive ? '#F97316' : '#3d8fe0',
-              letterSpacing: '0.02em',
-              whiteSpace: 'nowrap' as const,
-              cursor: 'default',
-            }}
-          >
-            <m.span
-              animate={isActive ? { scale: [1, 1.06, 1] } : { scale: 1 }}
-              transition={isActive ? { duration: 0.75, repeat: Infinity, ease: 'easeInOut' } : {}}
-            >
-              {label}
-            </m.span>
-          </m.div>
-        );
-      })}
-    </div>
-  );
-};
+const TOTAL_MS = 3400;
 
 export const SplashScreen: React.FC = () => {
-  const navigate = useNavigate();
-  const [statusIdx, setStatusIdx] = React.useState(0);
-  const [exiting, setExiting] = React.useState(false);
-  const [activeNode, setActiveNode] = React.useState(0);
+  const navigate   = useNavigate();
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const rafRef     = useRef<number>(0);
+  const startRef   = useRef<number>(0);
 
+  // Navigate away after animation
   useEffect(() => {
-    const id = setInterval(() => setStatusIdx(i => (i + 1) % STATUS_MESSAGES.length), 900);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => setActiveNode(i => (i + 1) % PIPELINE.length), 650);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const totalDuration = PIPELINE.length * 280 + 1600;
-    const t = setTimeout(() => {
-      setExiting(true);
-      setTimeout(() => navigate('/landing'), 450);
-    }, totalDuration);
+    const t = setTimeout(() => navigate('/landing'), TOTAL_MS + 500);
     return () => clearTimeout(t);
   }, [navigate]);
 
-  const row1 = PIPELINE.slice(0, ROW_SIZE);
-  const row2 = PIPELINE.slice(ROW_SIZE);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Star field
+    const stars = Array.from({ length: 200 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 1.3 + 0.2,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.5 + 0.15,
+    }));
+
+    // Draw a pill node
+    function drawPill(x: number, y: number, label: string, color: string, alpha: number, glow: number) {
+      ctx.font = "600 12px 'DM Sans', sans-serif";
+      const tw = ctx.measureText(label).width;
+      const pw = tw + 24; const ph = 26; const r = 13;
+      const px = x - pw / 2; const py = y - ph / 2;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      if (glow > 0.1) { ctx.shadowColor = color; ctx.shadowBlur = 16 * glow; }
+
+      ctx.beginPath();
+      ctx.moveTo(px + r, py);
+      ctx.lineTo(px + pw - r, py);
+      ctx.arcTo(px + pw, py, px + pw, py + r, r);
+      ctx.lineTo(px + pw, py + ph - r);
+      ctx.arcTo(px + pw, py + ph, px + pw - r, py + ph, r);
+      ctx.lineTo(px + r, py + ph);
+      ctx.arcTo(px, py + ph, px, py + ph - r, r);
+      ctx.lineTo(px, py + r);
+      ctx.arcTo(px, py, px + r, py, r);
+      ctx.closePath();
+      ctx.fillStyle   = color + '30';
+      ctx.fill();
+      ctx.strokeStyle = color + 'dd';
+      ctx.lineWidth   = 1.2;
+      ctx.shadowBlur  = 0;
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(232,237,245,0.95)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x, y);
+      ctx.restore();
+    }
+
+    startRef.current = performance.now();
+
+    const draw = (now: number) => {
+      const W = canvas.width;
+      const H = canvas.height;
+      const elapsed  = now - startRef.current;
+      const progress = Math.min(elapsed / TOTAL_MS, 1);
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#050D1A';
+      ctx.fillRect(0, 0, W, H);
+
+      // Stars
+      stars.forEach(s => {
+        const twinkle = 0.25 + 0.75 * Math.abs(Math.sin((now / 1000) * s.speed + s.phase));
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,210,255,${twinkle * 0.55})`;
+        ctx.fill();
+      });
+
+      const cx = W / 2;
+      const cy = H / 2;
+
+      // Speed ramps — slow then fast
+      const speed = 0.25 + progress * 3.8;
+      const t = (now / 1000) * speed;
+
+      const R1 = Math.min(W, H) * 0.27;
+      const R2 = Math.min(W, H) * 0.42;
+      const N  = PHASES.length;
+
+      // Orbit rings
+      [R1, R2].forEach((r, ri) => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = ri === 0
+          ? 'rgba(26,111,212,0.14)'
+          : 'rgba(249,115,22,0.10)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Center glow behind logo
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R1 * 0.6);
+      grad.addColorStop(0, 'rgba(249,115,22,0.22)');
+      grad.addColorStop(0.5, 'rgba(26,111,212,0.10)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R1 * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Phase nodes
+      const nodes = PHASES.map((label, i) => {
+        const ring   = i % 2 === 0 ? R1 : R2;
+        const dir    = i % 2 === 0 ? 1 : -0.75;
+        const offset = (i / N) * Math.PI * 2;
+        const angle  = t * dir + offset;
+        const color  = i % 2 === 0 ? '#1A6FD4' : '#F97316';
+        const fadeIn = Math.min(Math.max((progress - (i / N) * 0.22) / 0.1, 0), 1);
+        const glow   = Math.max(0, Math.sin((now / 700) + i)) * 0.7;
+        return {
+          x: cx + Math.cos(angle) * ring,
+          y: cy + Math.sin(angle) * ring,
+          label, color, alpha: fadeIn, glow,
+        };
+      });
+
+      // Dashed connectors
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const a = nodes[i]; const b = nodes[i + 1];
+        if (a.alpha < 0.1 || b.alpha < 0.1) continue;
+        const dx = b.x - a.x; const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < R2 * 1.4) {
+          const al = Math.min(a.alpha, b.alpha) * (1 - dist / (R2 * 1.4)) * 0.28;
+          ctx.strokeStyle = `rgba(26,111,212,${al})`;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 7]);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      nodes.forEach(n => {
+        if (n.alpha < 0.02) return;
+        drawPill(n.x, n.y, n.label, n.color, n.alpha, n.glow);
+      });
+
+      // Exit fade overlay
+      if (progress >= 0.9) {
+        const fadeOut = (progress - 0.9) / 0.1;
+        ctx.fillStyle = `rgba(5,13,26,${fadeOut})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
 
   return (
-    <AnimatePresence>
-      {!exiting && (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#050D1A' }}>
+      {/* Canvas — space scene + orbiting phases */}
+      <canvas
+        ref={canvasRef}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
+      />
+
+      {/* Acorn logo — real SVG centered, sits above canvas */}
+      <m.div
+        initial={{ opacity: 0, scale: 0.7 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.1 }}
+        style={{
+          position: 'absolute',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          pointerEvents: 'none',
+        }}
+      >
+        <AcornLogo variant="mark" height={72} white />
         <m.div
-          key="splash"
-          variants={containerVariants}
-          initial={{ opacity: 1 }}
-          exit="exit"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
           style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: '#050D1A',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            gap: 48, overflow: 'hidden',
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 10, letterSpacing: '0.2em',
+            color: '#4a6070', textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
           }}
         >
-          {/* Grid background */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            backgroundImage: [
-              'linear-gradient(rgba(26,111,212,0.05) 1px, transparent 1px)',
-              'linear-gradient(90deg, rgba(26,111,212,0.05) 1px, transparent 1px)',
-            ].join(', '),
-            backgroundSize: '48px 48px',
-          }} />
-          {/* Glow orbs */}
-          <div style={{ position: 'absolute', top: '18%', left: '12%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,111,212,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: '18%', right: '12%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-          {/* Wordmark */}
-          <m.div
-            variants={wordmarkVariants}
-            initial="hidden"
-            animate="visible"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}
-          >
-            <AcornLogo height={44} white />
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: '#4a6070', letterSpacing: '0.2em', textTransform: 'uppercase' as const }}>
-              SDLC Intelligence Platform
-            </div>
-          </m.div>
-
-          {/* Pipeline rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center', maxWidth: '90vw', overflowX: 'hidden' }}>
-            <PipelineRow nodes={row1} startIndex={0} activeNode={activeNode} />
-            <PipelineRow nodes={row2} startIndex={ROW_SIZE} activeNode={activeNode} />
-          </div>
-
-          {/* Status text */}
-          <div style={{ height: 22, position: 'relative' }}>
-            <AnimatePresence mode="wait">
-              <m.p
-                key={statusIdx}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.28, ease: easeOutExpo }}
-                style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: '#4a6070', letterSpacing: '0.1em' }}
-              >
-                {STATUS_MESSAGES[statusIdx]}
-              </m.p>
-            </AnimatePresence>
-          </div>
+          SDLC Intelligence Platform
         </m.div>
-      )}
-    </AnimatePresence>
+      </m.div>
+    </div>
   );
 };
 

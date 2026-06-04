@@ -86,9 +86,11 @@ const OrbitalCanvas: React.FC = () => {
         }
       }
 
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R1 * 0.4);
-      grad.addColorStop(0, 'rgba(26,111,212,0.1)'); grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(cx, cy, R1 * 0.4, 0, Math.PI * 2); ctx.fill();
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R1 * 0.5);
+      grad.addColorStop(0, 'rgba(249,115,22,0.18)');
+      grad.addColorStop(0.5, 'rgba(26,111,212,0.08)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(cx, cy, R1 * 0.5, 0, Math.PI * 2); ctx.fill();
 
       nodes.forEach(n => {
         const label = n.label;
@@ -118,7 +120,19 @@ const OrbitalCanvas: React.FC = () => {
     return () => { cancelAnimationFrame(rafRef.current); window.removeEventListener('resize', resize); };
   }, []);
 
-  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />;
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <AcornLogo variant="mark" height={54} white />
+      </div>
+    </div>
+  );
 };
 
 // ─── Animated checkbox ────────────────────────────────────────────────────────

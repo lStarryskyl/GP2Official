@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { Layout } from '@/components/Layout';
@@ -475,6 +475,20 @@ export const PhaseDetailPage: React.FC = () => {
       hourlyRate,
     });
   }, [project, tasks, teamSizeMultiplier, roleMix]);
+
+  useEffect(() => {
+    if (phaseBottomTab === 'history') {
+      loadVersionHistory();
+      return;
+    }
+    if (phaseBottomTab === 'traceability') {
+      loadTraceability();
+      return;
+    }
+    if (phaseBottomTab === 'discussion') {
+      loadDiscussion();
+    }
+  }, [phaseBottomTab, loadVersionHistory, loadTraceability, loadDiscussion]);
 
   useEffect(() => {
     if (phaseBottomTab === 'history') {
@@ -2172,6 +2186,17 @@ export const PhaseDetailPage: React.FC = () => {
                 </div>
               )}
 
+              {/* AI Suggestions Panel */}
+              {phaseId && project && (
+                <AISuggestionsPanel
+                  projectId={id || ''}
+                  phase={phaseId}
+                  phaseContent={phaseMarkdown}
+                  projectName={project.name}
+                  projectDescription={project.description || ''}
+                />
+              )}
+
               {/* Phase Content */}
               {phaseChildren}
             </div>
@@ -3236,6 +3261,21 @@ export const PhaseDetailPage: React.FC = () => {
           requirements={requirements}
         />
       </>)
+    );
+  }
+
+  // ============================================
+  // TESTING PHASE
+  // ============================================
+  if (phaseId === 'testing') {
+    return renderPhaseWrapper(
+      <TestingPhase
+        projectId={id || ''}
+        onGenerate={handleGenerate}
+        isGenerating={isGenerating}
+        content={phaseMarkdown}
+        requirements={requirements}
+      />
     );
   }
 

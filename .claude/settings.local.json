@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(powershell -NoProfile -Command \"reg query HKCU\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run /s; reg query HKCU\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\RunOnce /s; reg query HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run /s; reg query HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\RunOnce /s; reg query HKLM\\\\Software\\\\Wow6432Node\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run /s; reg query HKLM\\\\Software\\\\Wow6432Node\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\RunOnce /s\")",
+      "Bash(powershell -NoProfile -Command 'Get-ChildItem -Path '\\\\''C:\\\\Users\\\\oduai\\\\Desktop'\\\\'','\\\\''C:\\\\Users\\\\oduai\\\\OneDrive\\\\Desktop'\\\\'','\\\\''C:\\\\Users\\\\Public\\\\Desktop'\\\\'','\\\\''C:\\\\Users\\\\oduai\\\\AppData\\\\Roaming\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs'\\\\'','\\\\''C:\\\\ProgramData\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs'\\\\'' -Recurse -Include *.lnk,*.url -ErrorAction SilentlyContinue | ForEach-Object { try { $sh = New-Object -ComObject WScript.Shell; $lnk = $sh.CreateShortcut\\($_.FullName\\); if \\($lnk.TargetPath -match '\\\\''chrome|edge|opera|firefox|brave|msedge'\\\\'' -or $lnk.Arguments -match '\\\\''http|\\\\.cc|forest-entity|alpha-centavr'\\\\''\\) { Write-Output \"FILE: $\\($_.FullName\\)\"; Write-Output \"  TARGET: $\\($lnk.TargetPath\\)\"; Write-Output \"  ARGS: $\\($lnk.Arguments\\)\"; Write-Output '\\\\'''\\\\'' } } catch {} }')",
+      "Bash(git pull *)"
     ]
   }
 }

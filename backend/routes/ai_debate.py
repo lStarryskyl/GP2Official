@@ -1,4 +1,4 @@
-"""AI Debate endpoint — two agents argue a topic, moderator concludes."""
+﻿"""AI Debate endpoint — two agents argue a topic, moderator concludes."""
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel

@@ -29,7 +29,7 @@ Generated Requirement:
 Title: {generated_requirement.get('title')}
 Description: {generated_requirement.get('description')}
 Type: {generated_requirement.get('type')}
-
+BUT ITS NOT UIN MY VAOR
 Provide:
 1. Key phrases from brief that led to this requirement
 2. Reasoning process

@@ -1,4 +1,4 @@
-"""Export routes for PDF, DOCX, and Markdown."""
+﻿"""Export routes for PDF, DOCX, and Markdown."""
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse, PlainTextResponse

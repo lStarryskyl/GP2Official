@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { phaseConfigs } from '@/constants/phases';
 import { ChevronLeft, ChevronRight, Home, Check } from 'lucide-react';

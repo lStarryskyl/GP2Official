@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AIAgentsPanel — Panel to run specialized AI agents on a project
  *
  * Shows buttons for:

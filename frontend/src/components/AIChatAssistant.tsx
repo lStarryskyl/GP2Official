@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AIChatAssistant — floating per-phase chat panel
  *
  * Usage:

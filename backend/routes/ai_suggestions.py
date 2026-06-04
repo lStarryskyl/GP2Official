@@ -1,4 +1,4 @@
-"""AI Suggestions endpoint — proactive phase improvement tips."""
+﻿"""AI Suggestions endpoint — proactive phase improvement tips."""
 
 import logging
 import json

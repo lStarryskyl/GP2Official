@@ -1,4 +1,4 @@
-"""Project routes."""
+﻿"""Project routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional, Dict, Any

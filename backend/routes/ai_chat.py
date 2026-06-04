@@ -1,4 +1,4 @@
-"""AI Chat Assistant routes — per-phase conversational AI."""
+﻿"""AI Chat Assistant routes — per-phase conversational AI."""
 
 import logging
 from typing import Any, Dict, List, Optional
@@ -14,6 +14,14 @@ from services.openai_client import call_openai
 from services.plan_limits import enforce_ai_run_quota, enforce_and_record_ai_run
 from repositories.artifact_repository import ArtifactRepository
 from repositories.ai_run_repository import AiRunRepository
+
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    limiter = Limiter(key_func=get_remote_address)
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
 
 try:
     from slowapi import Limiter

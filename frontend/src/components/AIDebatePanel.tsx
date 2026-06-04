@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Swords, X, Trophy, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { api } from '@/lib/api';
 

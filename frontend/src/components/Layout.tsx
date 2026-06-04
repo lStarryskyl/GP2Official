@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+﻿import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -70,6 +70,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => { if (activeProjectId) trackRecent(activeProjectId); }, [activeProjectId]);
 
+  // Ctrl+K opens AI chat on any project page
   useEffect(() => {
     if (!user) return;
     api.getProjects().then(setProjects).catch(() => { });

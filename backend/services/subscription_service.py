@@ -18,6 +18,10 @@ def _fmt_limit(value, suffix: str) -> str:
     return f"Unlimited {suffix}" if value is None else f"Up to {value} {suffix}"
 
 
+def _fmt_ai_runs_limit(value) -> str:
+    return "Unlimited AI runs" if value is None else f"{value} AI runs / month"
+
+
 def _build_plans():
     """Compose the public PLANS catalog from the central PLAN_LIMITS config.
 
@@ -33,7 +37,7 @@ def _build_plans():
             'price': 0,
             'features': [
                 _fmt_limit(free["max_projects"], "active projects"),
-                f"{free['max_ai_runs_per_month']} AI runs / month",
+                _fmt_ai_runs_limit(free["max_ai_runs_per_month"]),
                 _fmt_limit(free["max_team_members"], "team members per project"),
                 "Markdown export",
                 "Community support",
@@ -46,7 +50,7 @@ def _build_plans():
             'price': 29,
             'features': [
                 "Unlimited projects",
-                "Unlimited AI runs",
+                _fmt_ai_runs_limit(pro["max_ai_runs_per_month"]),
                 "Advanced AI models",
                 "Export PDF / DOCX / Markdown",
                 _fmt_limit(pro["max_team_members"], "team members per project"),

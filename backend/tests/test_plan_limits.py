@@ -60,29 +60,27 @@ def test_enterprise_team_size_unlimited():
     enforce_team_size(_user("enterprise"), 9999)
 
 
-# ── AI run quota gating ───────────────────────────────────────────────────
+# ── AI run quotas disabled ────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
-async def test_free_ai_run_quota_blocks_when_exceeded():
+async def test_free_ai_run_quota_is_disabled():
     repo = SimpleNamespace(
         count_user_runs_since=AsyncMock(return_value=PLAN_LIMITS["free"]["max_ai_runs_per_month"])
     )
-    with pytest.raises(HTTPException) as exc:
-        await enforce_ai_run_quota(_user("free"), repo)
-    assert exc.value.status_code == 402
-    assert "AI runs" in exc.value.detail
+    await enforce_ai_run_quota(_user("free"), repo)
+    repo.count_user_runs_since.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_free_ai_run_quota_allows_when_under_limit():
+async def test_free_ai_run_quota_skips_db_check():
     repo = SimpleNamespace(count_user_runs_since=AsyncMock(return_value=0))
     await enforce_ai_run_quota(_user("free"), repo)
-    repo.count_user_runs_since.assert_awaited_once()
+    repo.count_user_runs_since.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_pro_ai_run_quota_skips_db_check():
+async def test_pro_ai_run_quota_stays_disabled():
     repo = SimpleNamespace(count_user_runs_since=AsyncMock(return_value=10**9))
     await enforce_ai_run_quota(_user("pro"), repo)
     repo.count_user_runs_since.assert_not_awaited()
@@ -115,39 +113,26 @@ class _FakeAiRunRepo:
 
 
 @pytest.mark.asyncio
-async def test_free_user_blocked_after_quota_exhausted_via_record():
-    """A free user can record up to max_ai_runs_per_month; the next one is rejected."""
+async def test_record_ai_run_is_disabled_for_free_user():
     from services.plan_limits import enforce_and_record_ai_run
 
     repo = _FakeAiRunRepo()
     user = _user("free", uid="alice")
-    limit = PLAN_LIMITS["free"]["max_ai_runs_per_month"]
-
-    for i in range(limit):
-        run_id = await enforce_and_record_ai_run(
-            user, repo, project_id=f"p{i}", job_type="ai_chat"
-        )
-        assert run_id is not None
-
-    assert len(repo.runs) == limit
-
-    # The (limit+1)-th call must be rejected with 402 and must NOT create a row.
-    with pytest.raises(HTTPException) as exc:
-        await enforce_and_record_ai_run(
-            user, repo, project_id="px", job_type="ai_chat"
-        )
-    assert exc.value.status_code == 402
-    assert len(repo.runs) == limit
+    run_id = await enforce_and_record_ai_run(
+        user, repo, project_id="p1", job_type="ai_chat"
+    )
+    assert run_id is None
+    assert len(repo.runs) == 0
 
 
 @pytest.mark.asyncio
-async def test_pro_user_unlimited_via_record():
+async def test_record_ai_run_is_disabled_for_pro_user():
     from services.plan_limits import enforce_and_record_ai_run
 
     repo = _FakeAiRunRepo()
     user = _user("pro", uid="bob")
-    for i in range(PLAN_LIMITS["free"]["max_ai_runs_per_month"] + 5):
+    for i in range(5):
         await enforce_and_record_ai_run(
             user, repo, project_id="p", job_type="ai_chat"
         )
-    assert len(repo.runs) == PLAN_LIMITS["free"]["max_ai_runs_per_month"] + 5
+    assert len(repo.runs) == 0

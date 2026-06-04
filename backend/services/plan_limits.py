@@ -8,22 +8,17 @@ promises real instead of cosmetic.
 Limits use ``None`` to mean "unlimited".
 """
 
-import logging
-from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, status
 
 from models.user import User
 
-logger = logging.getLogger(__name__)
-
-
 PLAN_LIMITS: Dict[str, Dict[str, Any]] = {
     "free": {
         "max_projects": 3,
         "max_team_members": 3,
-        "max_ai_runs_per_month": 50,
+        "max_ai_runs_per_month": None,
         "advanced_ai": False,
         "exports_pdf_docx": False,
         "priority_support": False,
@@ -99,22 +94,8 @@ def enforce_team_size(user: User, current_member_count: int) -> None:
 
 
 async def enforce_ai_run_quota(user: Optional[User], ai_run_repo) -> None:
-    """Reject AI runs once the per-month quota for the user's tier is exhausted."""
-    if user is None:
-        return
-    tier = get_user_tier(user)
-    limit = get_limits(tier).get("max_ai_runs_per_month")
-    if limit is None:
-        return
-    used = await ai_run_repo.count_user_runs_since(user.id, _start_of_current_month())
-    if used >= limit:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail=_upgrade_message(
-                tier,
-                f"You've used all {limit} AI runs included with the {tier.title()} plan this month.",
-            ),
-        )
+    """AI run quotas are disabled; callers are always allowed to proceed."""
+    return None
 
 
 async def record_ai_run(
@@ -127,36 +108,8 @@ async def record_ai_run(
     model: Optional[str] = None,
     phase: Optional[str] = None,
 ) -> Optional[str]:
-    """Persist a minimal AI-run audit row so it counts against the user's quota.
-
-    Failures are swallowed: AI run accounting must never block the actual call.
-    Returns the run id when successfully created.
-    """
-    try:
-        run = await ai_run_repo.create_run(
-            project_id=project_id or "_global",
-            user_id=getattr(user, "id", None) if user else None,
-            job_type=job_type,
-            phase=phase,
-            provider=provider,
-            model=model,
-            prompt=None,
-            metadata=None,
-        )
-        return getattr(run, "id", None)
-    except Exception as e:
-        # Log loudly so silent quota bypass is observable in production logs.
-        # Quota check has already passed at this point; we do not fail-closed
-        # because that would deny service on transient DB hiccups, but we make
-        # the failure visible.
-        logger.error(
-            "AI run accounting failed (job_type=%s, user=%s, project=%s): %s",
-            job_type,
-            getattr(user, "id", None) if user else None,
-            project_id,
-            e,
-        )
-        return None
+    """AI run accounting is disabled."""
+    return None
 
 
 async def enforce_and_record_ai_run(
@@ -169,22 +122,8 @@ async def enforce_and_record_ai_run(
     model: Optional[str] = None,
     phase: Optional[str] = None,
 ) -> Optional[str]:
-    """Check quota then record an audit row in one call."""
-    await enforce_ai_run_quota(user, ai_run_repo)
-    return await record_ai_run(
-        ai_run_repo,
-        user=user,
-        project_id=project_id,
-        job_type=job_type,
-        provider=provider,
-        model=model,
-        phase=phase,
-    )
-
-
-def _start_of_current_month() -> datetime:
-    now = datetime.utcnow()
-    return datetime(now.year, now.month, 1)
+    """AI run quotas and accounting are disabled."""
+    return None
 
 
 async def build_usage_snapshot(
@@ -197,7 +136,7 @@ async def build_usage_snapshot(
     tier = get_user_tier(user)
     limits = get_limits(tier)
 
-    ai_used = await ai_run_repo.count_user_runs_since(user.id, _start_of_current_month())
+    ai_used = 0
 
     def _entry(used: int, limit: Optional[int]) -> Dict[str, Any]:
         return {

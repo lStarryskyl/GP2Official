@@ -3,9 +3,12 @@
 import json
 from datetime import datetime
 from typing import Dict, List, Optional
+from uuid import uuid4
 
 from database import get_db
 from models.ai_run import AiRun
+
+AI_RUN_TRACKING_ENABLED = False
 
 
 def _get_repository():
@@ -44,6 +47,22 @@ class AiRunRepository:
         prompt: Optional[str],
         metadata: Optional[Dict] = None,
     ) -> AiRun:
+        if not AI_RUN_TRACKING_ENABLED:
+            now = datetime.utcnow()
+            return AiRun(
+                _id=f"ai_run_disabled_{uuid4().hex}",
+                project_id=project_id,
+                user_id=user_id,
+                job_type=job_type,
+                phase=phase,
+                provider=provider,
+                model=model,
+                status="disabled",
+                prompt=prompt,
+                metadata=metadata or {},
+                created_at=now,
+                updated_at=now,
+            )
         return await self._repo.create_run(
             project_id=project_id,
             user_id=user_id,
@@ -65,6 +84,8 @@ class AiRunRepository:
         error_message: Optional[str] = None,
         metadata: Optional[Dict] = None,
     ) -> Optional[AiRun]:
+        if not AI_RUN_TRACKING_ENABLED:
+            return None
         return await self._repo.complete_run(
             run_id,
             status=status,
@@ -75,12 +96,18 @@ class AiRunRepository:
         )
 
     async def list_by_project(self, project_id: str, limit: int = 25) -> List[AiRun]:
+        if not AI_RUN_TRACKING_ENABLED:
+            return []
         return await self._repo.list_by_project(project_id, limit)
 
     async def list_by_projects(self, project_ids: List[str], limit: int = 200) -> List[AiRun]:
+        if not AI_RUN_TRACKING_ENABLED:
+            return []
         return await self._repo.list_by_projects(project_ids, limit)
 
     async def count_user_runs_since(self, user_id: str, since: datetime) -> int:
+        if not AI_RUN_TRACKING_ENABLED:
+            return 0
         return await self._repo.count_user_runs_since(user_id, since)
 
 
@@ -286,7 +313,6 @@ class _MongoAiRunRepository:
             updates["error_message"] = error_message[:500]
         if metadata:
             updates.setdefault("metadata", {}).update(metadata)
-
         result = await db[self.collection_name].find_one_and_update(
             {"_id": run_id},
             {"$set": updates},

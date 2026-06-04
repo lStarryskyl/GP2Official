@@ -4501,6 +4501,11 @@ export const PhaseDetailPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        {project && phaseId && (
+          <div className="no-print">
+            <AIChatAssistant projectId={id || ''} projectName={project.name} phase={phaseId} phaseName={phaseConfig?.title || phaseId} />
+          </div>
+        )}
       </Layout>
     );
   }
@@ -4671,6 +4676,11 @@ export const PhaseDetailPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        {project && phaseId && (
+          <div className="no-print">
+            <AIChatAssistant projectId={id || ''} projectName={project.name} phase={phaseId} phaseName={phaseConfig?.title || phaseId} />
+          </div>
+        )}
       </Layout>
     );
   }
@@ -5069,6 +5079,11 @@ export const PhaseDetailPage: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+      {project && phaseId && (
+        <div className="no-print">
+          <AIChatAssistant projectId={id || ''} projectName={project.name} phase={phaseId} phaseName={phaseConfig?.title || phaseId} />
         </div>
       )}
     </Layout>

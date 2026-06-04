@@ -133,10 +133,11 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Syne', 'DM Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['Syne', 'DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
         syne: ['Syne', 'sans-serif'],
-        body: ['DM Sans', 'Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        body: ['DM Sans', 'system-ui', 'sans-serif'],
+        mono: ['DM Mono', 'JetBrains Mono', 'Menlo', 'monospace'],
+        display: ['Syne', 'sans-serif'],
       },
       animation: {
         'reveal-up': 'revealUp 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards',

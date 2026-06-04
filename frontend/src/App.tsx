@@ -31,7 +31,6 @@ import { PlanValidationPage } from './pages/PlanValidationPage';
 import { AgentDebatePage } from './pages/AgentDebatePage';
 import { UxFlowPage } from './pages/UxFlowPage';
 import { PageTransition } from './components/PageTransition';
-import DemoMode from './components/DemoMode';
 
 // Always show splash on fresh load — SplashScreen navigates to /landing when done
 const RootRoute: React.FC = () => <SplashScreen />;
@@ -246,7 +245,6 @@ function App() {
         <Route path="*" element={<Navigate to="/landing" replace />} />
         </Routes>
         </PageTransition>
-        <DemoMode />
       </BrowserRouter>
       </ToastProvider>
     </ThemeProvider>

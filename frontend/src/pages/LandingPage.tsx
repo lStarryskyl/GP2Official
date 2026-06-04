@@ -34,7 +34,7 @@ const BENTO_CARDS = [
   { id: 'reqs', title: 'Feasibility + Requirements', label: 'Output', span: '6 / span 4', row: '1 / span 1' },
   { id: 'stack', title: 'Tech Stack', label: 'Stack', span: '10 / span 3', row: '1 / span 1' },
   { id: 'arch', title: 'Architecture', label: 'System', span: '1 / span 4', row: '3 / span 1' },
-  { id: 'design', title: 'Design Tokens', label: 'Brand', span: '5 / span 4', row: '3 / span 1' },
+  { id: 'validation', title: 'Validation', label: 'Review', span: '5 / span 4', row: '3 / span 1' },
   { id: 'plan', title: 'Planning', label: 'Timeline', span: '9 / span 4', row: '2 / span 2' },
   { id: 'cost', title: 'Cost Estimate', label: 'Budget', span: '1 / span 3', row: '4 / span 1' },
   { id: 'risk', title: 'Risk Matrix', label: 'Risk', span: '4 / span 4', row: '4 / span 1' },
@@ -899,7 +899,7 @@ const LandingPage: React.FC = () => {
             style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
             aria-label="Go to top"
           >
-            <AcornLogo height={34} />
+            <AcornLogo height={34} white />
           </button>
 
           <div className="lp-nav-links">
@@ -1076,12 +1076,20 @@ const LandingPage: React.FC = () => {
                   </div>
                 )}
 
-                {card.id === 'design' && (
-                  <div className="lp-mini-pill-row" style={{ marginTop: 16 }}>
-                    <span className="lp-mini-pill" style={{ background: '#0D1B2A', color: '#fff' }}>#0D1B2A</span>
-                    <span className="lp-mini-pill" style={{ background: '#1A6FD4', color: '#fff' }}>#1A6FD4</span>
-                    <span className="lp-mini-pill" style={{ background: '#F97316', color: '#fff' }}>#F97316</span>
-                    <span className="lp-mini-pill" style={{ background: '#3d8fe0', color: '#fff' }}>#3D8FE0</span>
+                {card.id === 'validation' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
+                    {[
+                      'Stakeholder review checkpoints mapped',
+                      'Requirement conflicts surfaced before build',
+                      'Export package ready for approval flow',
+                    ].map((item) => (
+                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--lp-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+                        <span style={{ width: 18, height: 18, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(26,111,212,0.16)', color: 'var(--lp-blue-soft)', flexShrink: 0 }}>
+                          <Check size={11} />
+                        </span>
+                        {item}
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -1325,7 +1333,7 @@ const LandingPage: React.FC = () => {
         <div className="lp-shell">
           <div className="lp-footer-shell">
             <div className="lp-footer-row">
-              <AcornLogo height={30} />
+              <AcornLogo height={30} white />
               <div className="lp-footer-links">
                 <button className="lp-footer-link" onClick={() => navigate('/docs')}>Docs</button>
                 <button className="lp-footer-link" onClick={() => window.open('https://github.com', '_blank', 'noopener,noreferrer')}>GitHub</button>

@@ -24,20 +24,6 @@ export const SplashScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!readyToContinue) return undefined;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        navigate('/landing');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, readyToContinue]);
-
-  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
@@ -168,13 +154,6 @@ export const SplashScreen: React.FC = () => {
         drawPill(x, y, label, color, fadeIn);
       });
 
-      // Exit fade
-      if (progress >= 0.88) {
-        const fo = (progress - 0.88) / 0.12;
-        ctx.fillStyle = `rgba(5,13,26,${fo})`;
-        ctx.fillRect(0, 0, W, H);
-      }
-
       rafRef.current = requestAnimationFrame(draw);
     };
 
@@ -187,13 +166,12 @@ export const SplashScreen: React.FC = () => {
 
   return (
     <div
-      onClick={() => readyToContinue && navigate('/landing')}
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
         background: '#050D1A',
-        cursor: readyToContinue ? 'pointer' : 'default',
+        cursor: 'default',
       }}
     >
       {/* Canvas — space + orbiting phases */}
@@ -239,47 +217,31 @@ export const SplashScreen: React.FC = () => {
         transition={{ duration: 0.35 }}
         style={{
           position: 'absolute',
-          left: '50%',
-          bottom: '54px',
-          transform: 'translateX(-50%)',
+          right: '24px',
+          bottom: '24px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: '10px',
           pointerEvents: readyToContinue ? 'auto' : 'none',
         }}
       >
         <button
-          onClick={(event) => {
-            event.stopPropagation();
-            navigate('/landing');
-          }}
+          onClick={() => navigate('/landing')}
           style={{
-            padding: '11px 22px',
+            padding: '8px 14px',
             borderRadius: '999px',
-            border: '1px solid rgba(249,115,22,0.45)',
-            background: 'linear-gradient(135deg, rgba(249,115,22,0.92), rgba(204,73,0,0.95))',
+            border: '1px solid rgba(26,111,212,0.4)',
+            background: 'rgba(13,27,42,0.78)',
             color: '#fff',
             fontFamily: "'DM Sans', sans-serif",
-            fontSize: '14px',
-            fontWeight: 700,
+            fontSize: '12px',
+            fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
+            boxShadow: '0 10px 24px rgba(0,0,0,0.28)',
+            backdropFilter: 'blur(10px)',
           }}
         >
-          Enter Acorn
+          Enter
         </button>
-        <span
-          style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: '10px',
-            letterSpacing: '0.16em',
-            textTransform: 'uppercase',
-            color: '#4a6070',
-          }}
-        >
-          Tap anywhere or press enter
-        </span>
       </m.div>
     </div>
   );

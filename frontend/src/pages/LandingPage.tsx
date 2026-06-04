@@ -254,13 +254,22 @@ const LandingPage: React.FC = () => {
     >
       <style>{`
         .lp-page {
+          --lp-navy: #0D1B2A;
+          --lp-navy-deep: #111f30;
+          --lp-blue: #1A6FD4;
+          --lp-blue-soft: #3d8fe0;
+          --lp-orange: #F97316;
+          --lp-orange-soft: #fb9042;
+          --lp-text: #10213f;
+          --lp-muted: #576785;
+          --lp-faint: #6d77a1;
           min-height: 100vh;
-          color: #10213f;
+          color: var(--lp-text);
           background:
             radial-gradient(circle at 8% 10%, rgba(249,115,22,0.18), transparent 24%),
-            radial-gradient(circle at 84% 14%, rgba(102,123,255,0.16), transparent 28%),
-            radial-gradient(circle at 68% 62%, rgba(80, 170, 255, 0.12), transparent 30%),
-            linear-gradient(180deg, #fffdf8 0%, #f7f2ff 26%, #edf6ff 62%, #fff6ef 100%);
+            radial-gradient(circle at 84% 14%, rgba(26,111,212,0.16), transparent 28%),
+            radial-gradient(circle at 68% 62%, rgba(61,143,224,0.12), transparent 30%),
+            linear-gradient(180deg, #fffdf8 0%, #f8fbff 26%, #edf6ff 62%, #fff6ef 100%);
           position: relative;
           overflow-x: hidden;
         }
@@ -298,10 +307,10 @@ const LandingPage: React.FC = () => {
           justify-content: space-between;
           gap: 16px;
           border-radius: 999px;
-          border: 1px solid rgba(17,33,67,0.08);
+          border: 1px solid rgba(26,111,212,0.12);
           background: rgba(255,255,255,0.74);
           backdrop-filter: blur(18px) saturate(180%);
-          box-shadow: 0 18px 50px rgba(17,33,67,0.08);
+          box-shadow: 0 18px 50px rgba(13,27,42,0.08);
         }
         .lp-nav-links {
           display: flex;
@@ -314,7 +323,7 @@ const LandingPage: React.FC = () => {
           cursor: pointer;
           font-family: 'DM Sans', sans-serif;
           font-size: 14px;
-          color: #4c5d80;
+          color: var(--lp-muted);
         }
         .lp-cta-pill {
           display: inline-flex;
@@ -329,8 +338,8 @@ const LandingPage: React.FC = () => {
           font-size: 14px;
           font-weight: 700;
           color: #fff;
-          background: linear-gradient(135deg, #ff8b4b, #ff5d74 52%, #7c74ff 100%);
-          box-shadow: 0 14px 32px rgba(125,116,255,0.2);
+          background: linear-gradient(135deg, var(--lp-orange), var(--lp-orange-soft) 42%, var(--lp-blue) 100%);
+          box-shadow: 0 14px 32px rgba(26,111,212,0.18);
         }
         .lp-section {
           padding: 100px 0;
@@ -353,7 +362,7 @@ const LandingPage: React.FC = () => {
           font-size: 11px;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #6d77a1;
+          color: var(--lp-faint);
         }
         .lp-display {
           font-family: 'Syne', sans-serif;
@@ -361,11 +370,11 @@ const LandingPage: React.FC = () => {
           line-height: 1.02;
           letter-spacing: -0.04em;
           font-weight: 700;
-          color: #10213f;
+          color: var(--lp-text);
           margin: 18px 0 20px;
         }
         .lp-gradient-word {
-          background: linear-gradient(135deg, #ff8b4b 0%, #ff5d74 40%, #7c74ff 100%);
+          background: linear-gradient(135deg, var(--lp-blue) 0%, var(--lp-blue-soft) 58%, var(--lp-orange) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -374,7 +383,7 @@ const LandingPage: React.FC = () => {
           font-family: 'DM Sans', sans-serif;
           font-size: 17px;
           line-height: 1.72;
-          color: #576785;
+          color: var(--lp-muted);
           max-width: 560px;
         }
         .lp-hero-actions {
@@ -390,9 +399,9 @@ const LandingPage: React.FC = () => {
           gap: 8px;
           padding: 12px 20px;
           border-radius: 999px;
-          border: 1px solid rgba(16,33,63,0.12);
+          border: 1px solid rgba(26,111,212,0.14);
           background: rgba(255,255,255,0.72);
-          color: #10213f;
+          color: var(--lp-text);
           cursor: pointer;
           font-family: 'DM Sans', sans-serif;
           font-size: 14px;
@@ -403,7 +412,7 @@ const LandingPage: React.FC = () => {
           flex-wrap: wrap;
           gap: 14px;
           margin-top: 24px;
-          color: #6d77a1;
+          color: var(--lp-faint);
           font-family: 'DM Mono', monospace;
           font-size: 12px;
         }
@@ -414,7 +423,7 @@ const LandingPage: React.FC = () => {
           content: '';
           position: absolute;
           inset: 10% -10% -8% 16%;
-          background: radial-gradient(circle, rgba(125,116,255,0.24), transparent 62%);
+          background: radial-gradient(circle, rgba(26,111,212,0.24), transparent 62%);
           filter: blur(30px);
           pointer-events: none;
         }
@@ -422,8 +431,8 @@ const LandingPage: React.FC = () => {
           position: relative;
           border-radius: 28px;
           padding: 1px;
-          background: linear-gradient(135deg, rgba(255,127,80,0.62), rgba(124,116,255,0.42), rgba(80,170,255,0.4));
-          box-shadow: 0 34px 80px rgba(17,33,67,0.14);
+          background: linear-gradient(135deg, rgba(249,115,22,0.58), rgba(26,111,212,0.42), rgba(61,143,224,0.4));
+          box-shadow: 0 34px 80px rgba(13,27,42,0.14);
         }
         .lp-demo-shell::after {
           content: '';
@@ -448,7 +457,7 @@ const LandingPage: React.FC = () => {
           margin: 12px;
           border-radius: 22px;
           background:
-            linear-gradient(180deg, rgba(16,33,63,0.94), rgba(22,41,78,0.92));
+            linear-gradient(180deg, rgba(13,27,42,0.96), rgba(17,31,48,0.94));
           padding: 22px;
           color: #edf3ff;
         }
@@ -473,7 +482,7 @@ const LandingPage: React.FC = () => {
           height: 18px;
           margin-left: 3px;
           border-radius: 2px;
-          background: linear-gradient(180deg, #ff8b4b, #7c74ff);
+          background: linear-gradient(180deg, var(--lp-orange), var(--lp-blue));
           animation: lpBlink 0.9s ease-in-out infinite;
           vertical-align: text-bottom;
         }
@@ -498,7 +507,7 @@ const LandingPage: React.FC = () => {
           font-size: 10px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #ffb288;
+          color: #fdb07a;
         }
         .lp-demo-stream {
           display: flex;
@@ -521,7 +530,7 @@ const LandingPage: React.FC = () => {
           margin-top: 7px;
           border-radius: 50%;
           flex-shrink: 0;
-          background: linear-gradient(135deg, #ff8b4b, #7c74ff);
+          background: linear-gradient(135deg, var(--lp-orange), var(--lp-blue));
         }
         .lp-marquee-wrap {
           overflow: hidden;
@@ -537,7 +546,7 @@ const LandingPage: React.FC = () => {
           font-size: 13px;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #7281a7;
+          color: var(--lp-faint);
           padding-right: 44px;
           white-space: nowrap;
         }
@@ -550,28 +559,28 @@ const LandingPage: React.FC = () => {
           font-size: clamp(30px, 3.6vw, 52px);
           line-height: 1.04;
           letter-spacing: -0.03em;
-          color: #10213f;
+          color: var(--lp-text);
           margin: 14px 0 14px;
         }
         .lp-section-copy {
           font-family: 'DM Sans', sans-serif;
           font-size: 16px;
           line-height: 1.72;
-          color: #576785;
+          color: var(--lp-muted);
         }
         .lp-bento-grid {
           display: grid;
           grid-template-columns: repeat(12, minmax(0, 1fr));
           gap: 1px;
-          background: linear-gradient(180deg, rgba(124,116,255,0.18), rgba(255,127,80,0.18));
-          border: 1px solid rgba(16,33,63,0.08);
+          background: linear-gradient(180deg, rgba(26,111,212,0.18), rgba(249,115,22,0.18));
+          border: 1px solid rgba(26,111,212,0.1);
           border-radius: 28px;
           padding: 1px;
           overflow: hidden;
         }
         .lp-bento-card {
           background:
-            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,246,255,0.96));
+            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.96));
           padding: 26px;
           min-height: 170px;
         }
@@ -580,13 +589,13 @@ const LandingPage: React.FC = () => {
           font-size: 11px;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #7381aa;
+          color: var(--lp-faint);
         }
         .lp-bento-title {
           font-family: 'Syne', sans-serif;
           font-size: 22px;
           letter-spacing: -0.03em;
-          color: #10213f;
+          color: var(--lp-text);
           margin: 12px 0 12px;
         }
         .lp-mini-pill-row {
@@ -597,9 +606,9 @@ const LandingPage: React.FC = () => {
         .lp-mini-pill {
           padding: 7px 12px;
           border-radius: 999px;
-          background: rgba(124,116,255,0.1);
-          border: 1px solid rgba(124,116,255,0.14);
-          color: #5148b5;
+          background: rgba(26,111,212,0.1);
+          border: 1px solid rgba(26,111,212,0.14);
+          color: var(--lp-blue);
           font-family: 'DM Mono', monospace;
           font-size: 12px;
         }
@@ -631,30 +640,30 @@ const LandingPage: React.FC = () => {
           display: none;
         }
         .lp-pill {
-          border: 1px solid rgba(16,33,63,0.1);
+          border: 1px solid rgba(26,111,212,0.12);
           background: rgba(255,255,255,0.72);
           padding: 11px 16px;
           border-radius: 999px;
           cursor: pointer;
-          color: #5d6f94;
+          color: var(--lp-muted);
           font-family: 'DM Sans', sans-serif;
           font-size: 14px;
           font-weight: 700;
           white-space: nowrap;
         }
         .lp-pill-active {
-          background: linear-gradient(135deg, #7c74ff, #4ca8ff);
+          background: linear-gradient(135deg, var(--lp-blue), var(--lp-blue-soft));
           color: #fff;
           border-color: transparent;
-          box-shadow: 0 16px 34px rgba(76,168,255,0.22);
+          box-shadow: 0 16px 34px rgba(26,111,212,0.22);
         }
         .lp-phase-panel {
           margin-top: 18px;
           border-radius: 26px;
           padding: 24px;
           background: rgba(255,255,255,0.82);
-          border: 1px solid rgba(16,33,63,0.08);
-          box-shadow: 0 24px 56px rgba(17,33,67,0.08);
+          border: 1px solid rgba(26,111,212,0.1);
+          box-shadow: 0 24px 56px rgba(13,27,42,0.08);
         }
         .lp-phase-grid {
           display: grid;
@@ -664,14 +673,14 @@ const LandingPage: React.FC = () => {
         .lp-phase-stream {
           min-height: 178px;
           border-radius: 20px;
-          background: linear-gradient(180deg, rgba(241,245,255,0.98), rgba(255,248,244,0.98));
-          border: 1px solid rgba(16,33,63,0.08);
+          background: linear-gradient(180deg, rgba(240,247,255,0.98), rgba(255,248,244,0.98));
+          border: 1px solid rgba(26,111,212,0.1);
           padding: 20px;
         }
         .lp-phase-meta {
           border-radius: 20px;
-          background: linear-gradient(180deg, rgba(255,250,248,0.95), rgba(245,244,255,0.95));
-          border: 1px solid rgba(16,33,63,0.08);
+          background: linear-gradient(180deg, rgba(255,250,248,0.95), rgba(241,247,255,0.95));
+          border: 1px solid rgba(26,111,212,0.1);
           padding: 20px;
           display: flex;
           flex-direction: column;
@@ -683,11 +692,11 @@ const LandingPage: React.FC = () => {
           gap: 12px;
           font-family: 'DM Sans', sans-serif;
           font-size: 14px;
-          color: #576785;
+          color: var(--lp-muted);
         }
         .lp-meta-value {
           font-weight: 700;
-          color: #10213f;
+          color: var(--lp-text);
         }
         .lp-action-chip {
           display: inline-flex;
@@ -696,8 +705,8 @@ const LandingPage: React.FC = () => {
           padding: 7px 12px;
           border-radius: 999px;
           background: rgba(255,255,255,0.84);
-          border: 1px solid rgba(16,33,63,0.08);
-          color: #4f5d83;
+          border: 1px solid rgba(26,111,212,0.12);
+          color: var(--lp-muted);
           font-family: 'DM Mono', monospace;
           font-size: 11px;
           letter-spacing: 0.08em;
@@ -710,33 +719,33 @@ const LandingPage: React.FC = () => {
         }
         .lp-step-card {
           padding-top: 16px;
-          border-top: 1px solid rgba(16,33,63,0.1);
+          border-top: 1px solid rgba(26,111,212,0.12);
           position: relative;
         }
         .lp-step-number {
           font-family: 'DM Mono', monospace;
           font-size: 46px;
           line-height: 1;
-          color: rgba(124,116,255,0.16);
+          color: rgba(26,111,212,0.16);
           margin-bottom: 12px;
         }
         .lp-step-title {
           font-family: 'Syne', sans-serif;
           font-size: 30px;
           letter-spacing: -0.03em;
-          color: #10213f;
+          color: var(--lp-text);
           margin-bottom: 10px;
         }
         .lp-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          border-top: 1px solid rgba(16,33,63,0.08);
-          border-bottom: 1px solid rgba(16,33,63,0.08);
+          border-top: 1px solid rgba(26,111,212,0.12);
+          border-bottom: 1px solid rgba(26,111,212,0.12);
         }
         .lp-stat-block {
           padding: 28px 20px;
           text-align: center;
-          border-right: 1px solid rgba(16,33,63,0.08);
+          border-right: 1px solid rgba(26,111,212,0.12);
         }
         .lp-stat-block:last-child {
           border-right: none;
@@ -744,7 +753,7 @@ const LandingPage: React.FC = () => {
         .lp-stat-value {
           font-family: 'DM Mono', monospace;
           font-size: clamp(34px, 5vw, 56px);
-          color: #10213f;
+          color: var(--lp-text);
         }
         .lp-stat-label {
           margin-top: 10px;
@@ -752,23 +761,23 @@ const LandingPage: React.FC = () => {
           font-size: 11px;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #7381aa;
+          color: var(--lp-faint);
         }
         .lp-cta-panel {
           text-align: center;
           padding: 72px 24px;
           border-radius: 36px;
-          border: 1px solid rgba(16,33,63,0.08);
+          border: 1px solid rgba(26,111,212,0.1);
           background:
-            radial-gradient(circle at 50% 0%, rgba(124,116,255,0.22), transparent 46%),
+            radial-gradient(circle at 50% 0%, rgba(26,111,212,0.22), transparent 46%),
             linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,246,239,0.94));
-          box-shadow: 0 28px 64px rgba(17,33,67,0.08);
+          box-shadow: 0 28px 64px rgba(13,27,42,0.08);
         }
         .lp-footer {
           padding: 0 0 56px;
         }
         .lp-footer-shell {
-          border-top: 1px solid rgba(16,33,63,0.08);
+          border-top: 1px solid rgba(26,111,212,0.12);
           padding-top: 26px;
           display: flex;
           flex-direction: column;
@@ -791,7 +800,7 @@ const LandingPage: React.FC = () => {
           border: none;
           background: transparent;
           padding: 0;
-          color: #6d77a1;
+          color: var(--lp-faint);
           font-family: 'DM Mono', monospace;
           font-size: 12px;
           letter-spacing: 0.04em;
@@ -862,7 +871,7 @@ const LandingPage: React.FC = () => {
           }
           .lp-stat-block {
             border-right: none;
-            border-bottom: 1px solid rgba(16,33,63,0.08);
+            border-bottom: 1px solid rgba(26,111,212,0.12);
           }
           .lp-stat-block:last-child {
             border-bottom: none;
@@ -879,7 +888,7 @@ const LandingPage: React.FC = () => {
       <div className="lp-nav">
         <div
           className="lp-nav-inner"
-          style={navSolid ? { background: 'rgba(255,255,255,0.88)', borderColor: 'rgba(124,116,255,0.16)', boxShadow: '0 18px 56px rgba(17,33,67,0.12)' } : undefined}
+          style={navSolid ? { background: 'rgba(255,255,255,0.88)', borderColor: 'rgba(26,111,212,0.16)', boxShadow: '0 18px 56px rgba(13,27,42,0.12)' } : undefined}
         >
           <button
             onClick={() => scrollToId('top')}
@@ -1023,7 +1032,7 @@ const LandingPage: React.FC = () => {
                     <p className="lp-section-copy" style={{ fontSize: 15 }}>
                       GP2 turns messy project context into structured planning artifacts without making the UI feel synthetic.
                     </p>
-                    <div className="lp-demo-line" style={{ marginTop: 18, color: '#4f5d83' }}>
+                    <div className="lp-demo-line" style={{ marginTop: 18, color: 'var(--lp-muted)' }}>
                       <span className="lp-demo-dot" />
                       <span>Multi-role collaboration platform for capstone project delivery.</span>
                     </div>
@@ -1033,12 +1042,12 @@ const LandingPage: React.FC = () => {
                 {card.id === 'reqs' && (
                   <div style={{ display: 'flex', gap: 18, marginTop: 18 }}>
                     <div>
-                      <div className="lp-label" style={{ color: '#ff7f50' }}>confidence</div>
-                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: '#10213f' }}>92%</div>
+                      <div className="lp-label" style={{ color: 'var(--lp-orange)' }}>confidence</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: 'var(--lp-text)' }}>92%</div>
                     </div>
                     <div>
-                      <div className="lp-label" style={{ color: '#7c74ff' }}>requirements</div>
-                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: '#10213f' }}>47</div>
+                      <div className="lp-label" style={{ color: 'var(--lp-blue)' }}>requirements</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: 'var(--lp-text)' }}>47</div>
                     </div>
                   </div>
                 )}
@@ -1054,21 +1063,21 @@ const LandingPage: React.FC = () => {
                 {card.id === 'arch' && (
                   <div className="lp-node-map">
                     <svg viewBox="0 0 180 82" fill="none">
-                      <path d="M30 42h55M96 24l26 18M96 60l26-18" stroke="rgba(124,116,255,0.52)" strokeWidth="2" strokeLinecap="round" />
-                      <circle cx="28" cy="42" r="10" fill="#ff8b4b" />
-                      <circle cx="88" cy="24" r="10" fill="#7c74ff" />
-                      <circle cx="88" cy="60" r="10" fill="#4ca8ff" />
-                      <circle cx="132" cy="42" r="12" fill="#10213f" opacity="0.9" />
+                      <path d="M30 42h55M96 24l26 18M96 60l26-18" stroke="rgba(26,111,212,0.52)" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="28" cy="42" r="10" fill="#F97316" />
+                      <circle cx="88" cy="24" r="10" fill="#1A6FD4" />
+                      <circle cx="88" cy="60" r="10" fill="#3d8fe0" />
+                      <circle cx="132" cy="42" r="12" fill="#0D1B2A" opacity="0.9" />
                     </svg>
                   </div>
                 )}
 
                 {card.id === 'design' && (
                   <div className="lp-mini-pill-row" style={{ marginTop: 16 }}>
-                    <span className="lp-mini-pill" style={{ background: '#10213f', color: '#fff' }}>#10213F</span>
-                    <span className="lp-mini-pill" style={{ background: '#7c74ff', color: '#fff' }}>#7C74FF</span>
-                    <span className="lp-mini-pill" style={{ background: '#ff8b4b', color: '#fff' }}>#FF8B4B</span>
-                    <span className="lp-mini-pill" style={{ background: '#4ca8ff', color: '#fff' }}>#4CA8FF</span>
+                    <span className="lp-mini-pill" style={{ background: '#0D1B2A', color: '#fff' }}>#0D1B2A</span>
+                    <span className="lp-mini-pill" style={{ background: '#1A6FD4', color: '#fff' }}>#1A6FD4</span>
+                    <span className="lp-mini-pill" style={{ background: '#F97316', color: '#fff' }}>#F97316</span>
+                    <span className="lp-mini-pill" style={{ background: '#3d8fe0', color: '#fff' }}>#3D8FE0</span>
                   </div>
                 )}
 
@@ -1077,13 +1086,13 @@ const LandingPage: React.FC = () => {
                     {['Discovery', 'Scope', 'Build', 'QA'].map((bar, idx) => (
                       <div key={bar} style={{ display: 'grid', gridTemplateColumns: '76px 1fr', gap: 12, alignItems: 'center' }}>
                         <span className="lp-label" style={{ color: '#596987' }}>{bar}</span>
-                        <div style={{ height: 10, borderRadius: 999, background: 'rgba(124,116,255,0.12)', overflow: 'hidden' }}>
+                        <div style={{ height: 10, borderRadius: 999, background: 'rgba(26,111,212,0.12)', overflow: 'hidden' }}>
                           <div
                             style={{
                               width: `${[28, 46, 82, 52][idx]}%`,
                               height: '100%',
                               borderRadius: 999,
-                              background: 'linear-gradient(90deg, #ff8b4b, #7c74ff)',
+                              background: 'linear-gradient(90deg, #F97316, #1A6FD4)',
                             }}
                           />
                         </div>
@@ -1093,7 +1102,7 @@ const LandingPage: React.FC = () => {
                 )}
 
                 {card.id === 'cost' && (
-                  <div style={{ marginTop: 18, fontFamily: "'DM Mono', monospace", fontSize: 28, color: '#ff7f50' }}>
+                  <div style={{ marginTop: 18, fontFamily: "'DM Mono', monospace", fontSize: 28, color: 'var(--lp-orange)' }}>
                     $86,700 estimated
                   </div>
                 )}
@@ -1101,10 +1110,10 @@ const LandingPage: React.FC = () => {
                 {card.id === 'risk' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
                     {[
-                      ['Delivery dependencies', '#ff8b4b'],
-                      ['Scope churn risk', '#7c74ff'],
+                      ['Delivery dependencies', '#F97316'],
+                      ['Scope churn risk', '#1A6FD4'],
                     ].map(([text, color]) => (
-                      <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#4f5d83', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+                      <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--lp-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
                         <span style={{ width: 10, height: 10, borderRadius: '50%', background: color as string }} />
                         {text}
                       </div>
@@ -1114,13 +1123,13 @@ const LandingPage: React.FC = () => {
 
                 {card.id === 'test' && (
                   <div style={{ marginTop: 18 }}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: '#10213f' }}>85%</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: 'var(--lp-text)' }}>85%</div>
                     <div className="lp-section-copy" style={{ fontSize: 14 }}>coverage target</div>
                   </div>
                 )}
 
                 {card.id === 'deploy' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 20, color: '#4f5d83', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 20, color: 'var(--lp-muted)', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                     <span>CI</span>
                     <ChevronRight size={14} />
                     <span>Staging</span>
@@ -1225,14 +1234,14 @@ const LandingPage: React.FC = () => {
                       padding: 22,
                       borderRadius: 22,
                       background: 'rgba(255,255,255,0.78)',
-                      border: '1px solid rgba(16,33,63,0.08)',
-                      boxShadow: '0 18px 40px rgba(17,33,67,0.06)',
+                      border: '1px solid rgba(26,111,212,0.1)',
+                      boxShadow: '0 18px 40px rgba(13,27,42,0.06)',
                     }}
                   >
-                    <div style={{ width: 42, height: 42, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255,139,75,0.16), rgba(124,116,255,0.16))', marginBottom: 16 }}>
-                      <Icon size={18} color="#4f5d83" />
+                    <div style={{ width: 42, height: 42, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(249,115,22,0.16), rgba(26,111,212,0.16))', marginBottom: 16 }}>
+                      <Icon size={18} color="#243B55" />
                     </div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, letterSpacing: '-0.03em', color: '#10213f', marginBottom: 8 }}>{item.title}</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, letterSpacing: '-0.03em', color: 'var(--lp-text)', marginBottom: 8 }}>{item.title}</div>
                     <div className="lp-section-copy" style={{ fontSize: 15 }}>{item.copy}</div>
                   </m.div>
                 );

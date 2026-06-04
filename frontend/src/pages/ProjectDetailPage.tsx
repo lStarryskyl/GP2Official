@@ -249,7 +249,6 @@ export const ProjectDetailPage: React.FC = () => {
   const [error, setError]             = useState<string | null>(null);
   const [updatingPreset, setUpdatingPreset] = useState(false);
   const [treeView, setTreeView]       = useState(true);
-  const [headerScrollY, setHeaderScrollY] = useState(0);
 
   // Scaffolding state
   const [scaffoldingTarget, setScaffoldingTarget] = useState<string | null>(null);
@@ -282,15 +281,6 @@ export const ProjectDetailPage: React.FC = () => {
   useEffect(() => {
     const seenTour = localStorage.getItem('acorn_phase_tour');
     if (!seenTour) setTourRun(true);
-  }, []);
-
-  useEffect(() => {
-    let rafId: number;
-    const onScroll = () => {
-      rafId = requestAnimationFrame(() => setHeaderScrollY(window.scrollY));
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
   const loadProjectData = async () => {
@@ -537,10 +527,9 @@ export const ProjectDetailPage: React.FC = () => {
 
         {/* ── Header Card ── */}
         {(() => {
-          const scrollProgress = Math.min(headerScrollY / 200, 1);
-          const parallaxGradient = `linear-gradient(90deg, #3d8fe0 ${Math.round((1 - scrollProgress * 0.4) * 100)}%, #F97316 ${Math.round(60 + scrollProgress * 40)}%)`;
+          const parallaxGradient = 'linear-gradient(90deg, #3d8fe0 100%, #F97316 100%)';
           return (
-        <div className={`bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden project-header-sticky${headerScrollY > 40 ? ' scrolled' : ''}`}>
+        <div className="bg-[var(--brand-850)] border border-[var(--brand-700)]/50 rounded-2xl shadow-lg overflow-hidden">
           <div className="project-header-gradient-line" style={{ background: parallaxGradient }} />
           <div className="p-4 sm:p-6 space-y-4">
 

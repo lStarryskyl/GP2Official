@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
 import { AcornLogo } from '../components/AcornLogo';
@@ -16,11 +16,26 @@ export const SplashScreen: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef    = useRef<number>(0);
   const startRef  = useRef<number>(0);
+  const [readyToContinue, setReadyToContinue] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => navigate('/landing'), TOTAL_MS + 600);
+    const t = setTimeout(() => setReadyToContinue(true), TOTAL_MS + 300);
     return () => clearTimeout(t);
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (!readyToContinue) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        navigate('/landing');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate, readyToContinue]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,7 +186,16 @@ export const SplashScreen: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#050D1A' }}>
+    <div
+      onClick={() => readyToContinue && navigate('/landing')}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: '#050D1A',
+        cursor: readyToContinue ? 'pointer' : 'default',
+      }}
+    >
       {/* Canvas — space + orbiting phases */}
       <canvas
         ref={canvasRef}
@@ -208,6 +232,55 @@ export const SplashScreen: React.FC = () => {
           SDLC Intelligence Platform
         </m.div>
       </div>
+
+      <m.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={readyToContinue ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+        transition={{ duration: 0.35 }}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: '54px',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '10px',
+          pointerEvents: readyToContinue ? 'auto' : 'none',
+        }}
+      >
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            navigate('/landing');
+          }}
+          style={{
+            padding: '11px 22px',
+            borderRadius: '999px',
+            border: '1px solid rgba(249,115,22,0.45)',
+            background: 'linear-gradient(135deg, rgba(249,115,22,0.92), rgba(204,73,0,0.95))',
+            color: '#fff',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '14px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
+          }}
+        >
+          Enter Acorn
+        </button>
+        <span
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: '10px',
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+            color: '#4a6070',
+          }}
+        >
+          Tap anywhere or press enter
+        </span>
+      </m.div>
     </div>
   );
 };

@@ -17,6 +17,115 @@ import { ProjectProgressBar } from '@/components/ProjectProgressBar';
 import { exportFullProjectPdf } from '@/lib/exportFullProjectPdf';
 
 type DraftSectionKey = 'overview';
+type PhaseConfig = typeof phaseConfigs[number];
+
+const ProjectPhaseCard: React.FC<{
+  idx: number;
+  phase: PhaseConfig;
+  hovered: boolean;
+  phaseStatus: Record<string, string>;
+  phaseOutputs: Record<string, string>;
+  onHover: (phaseId: string | null) => void;
+  onPhaseClick: (phaseId: string) => void;
+}> = ({ idx, phase, hovered, phaseStatus, phaseOutputs, onHover, onPhaseClick }) => {
+  const [ripple, setRipple] = useState<{ x: number; y: number; key: number } | null>(null);
+
+  const rawStatus = (phaseStatus[phase.id] || 'locked').toLowerCase();
+  const isDone = rawStatus === 'completed';
+  const isInProgress = rawStatus === 'in_progress' || rawStatus === 'active';
+  const hasOut = Boolean(phaseOutputs[phase.id]);
+
+  const info = (() => {
+    if (rawStatus === 'completed') return { label: 'Completed', color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', border: 'rgba(26,111,212,0.4)' };
+    if (rawStatus === 'in_progress' || rawStatus === 'active') return { label: 'In Progress', color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.4)' };
+    if (rawStatus === 'ready') return { label: 'Ready', color: '#3d8fe0', bg: 'rgba(61,143,224,0.12)', border: 'rgba(61,143,224,0.3)' };
+    return { label: 'Locked', color: '#4a6070', bg: 'rgba(26,46,69,0.4)', border: 'rgba(30,53,82,0.5)' };
+  })();
+
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setRipple({ x: event.clientX - rect.left, y: event.clientY - rect.top, key: Date.now() });
+    setTimeout(() => setRipple(null), 700);
+    onPhaseClick(phase.id);
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      onMouseEnter={() => onHover(phase.id)}
+      onMouseLeave={() => onHover(null)}
+      className="phase-stagger ripple-host"
+      style={{
+        '--phase-i': idx,
+        background: hovered ? info.bg : 'var(--brand-800)',
+        border: `1px solid ${hovered ? info.border : 'rgba(30,53,82,0.6)'}`,
+        borderRadius: '14px',
+        padding: '16px',
+        cursor: 'pointer',
+        transition: 'all 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+        transform: hovered ? 'translateY(-3px)' : 'none',
+        boxShadow: hovered ? `0 10px 28px ${info.color}25` : '0 2px 8px rgba(0,0,0,0.2)',
+        position: 'relative',
+        flex: '1 1 0',
+        minWidth: 0,
+        overflow: 'hidden',
+      } as React.CSSProperties}
+    >
+      {ripple && (
+        <span
+          key={ripple.key}
+          className="ripple-wave"
+          style={{ left: ripple.x, top: ripple.y }}
+        />
+      )}
+
+      <div style={{ position: 'absolute', top: '12px', right: '12px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {isDone ? (
+          <svg className="svg-checkmark-circle" viewBox="0 0 22 22" fill="none" width="22" height="22">
+            <circle cx="11" cy="11" r="10" fill="#1A6FD4" />
+            <path className="svg-checkmark-path" d="M6.5 11.5l3 3 5.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        ) : (
+          <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-faint)' }}>{phase.stepNumber}</span>
+          </div>
+        )}
+      </div>
+
+      {isInProgress && !isDone && (
+        <div style={{ position: 'absolute', top: '14px', right: '38px' }}>
+          <div className="phase-pulse-dot" />
+        </div>
+      )}
+
+      {hasOut && !isDone && !isInProgress && (
+        <div style={{ position: 'absolute', top: '10px', right: '38px', width: '8px', height: '8px', borderRadius: '50%', background: '#F97316' }} />
+      )}
+
+      <p style={{ fontSize: '11px', color: info.color, fontWeight: 700, marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Phase {phase.stepNumber}
+      </p>
+      <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', lineHeight: 1.3 }}>
+        {phase.title}
+      </p>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {phase.description}
+      </p>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{
+          padding: '3px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
+          background: info.bg, color: info.color, border: `1px solid ${info.border}`,
+          display: 'inline-flex', alignItems: 'center', gap: '5px',
+        }}>
+          {isInProgress && !isDone && <span className="phase-pulse-dot" style={{ width: '5px', height: '5px', flexShrink: 0 }} />}
+          {info.label}
+        </span>
+        <ChevronRight size={14} color="var(--text-faint)" style={{ transition: 'transform 0.2s', transform: hovered ? 'translateX(2px)' : 'none' }} />
+      </div>
+    </div>
+  );
+};
 
 /* =========================================================
    PHASE KANBAN BOARD
@@ -30,123 +139,26 @@ const PhaseKanban: React.FC<{
 }> = ({ phases, phaseStatus, phaseOutputs, onPhaseClick }) => {
   const [hovered, setHovered] = useState<string | null>(null);
 
-  const getStatusInfo = (phaseId: string) => {
-    const s = (phaseStatus[phaseId] || 'locked').toLowerCase();
-    if (s === 'completed')   return { label: 'Completed',   color: '#1A6FD4', bg: 'rgba(26,111,212,0.15)', border: 'rgba(26,111,212,0.4)' };
-    if (s === 'in_progress') return { label: 'In Progress', color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.4)' };
-    if (s === 'active')      return { label: 'Active',      color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.4)' };
-    if (s === 'ready')       return { label: 'Ready',       color: '#3d8fe0', bg: 'rgba(61,143,224,0.12)', border: 'rgba(61,143,224,0.3)' };
-    return { label: 'Locked', color: '#4a6070', bg: 'rgba(26,46,69,0.4)', border: 'rgba(30,53,82,0.5)' };
-  };
-
   // Split into 2 rows of 5
   const row1 = phases.slice(0, 6);
   const row2 = phases.slice(6);
-
-  const PhaseCard = ({ phase, idx }: { phase: typeof phases[0]; idx: number }) => {
-    const [ripple, setRipple] = useState<{ x: number; y: number; key: number } | null>(null);
-    const info        = getStatusInfo(phase.id);
-    const isHov       = hovered === phase.id;
-    const hasOut      = Boolean(phaseOutputs[phase.id]);
-    const rawStatus   = (phaseStatus[phase.id] || '').toLowerCase();
-    const isDone      = rawStatus === 'completed';
-    const isInProgress = rawStatus === 'in_progress' || rawStatus === 'active';
-
-    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const key  = Date.now();
-      setRipple({ x: e.clientX - rect.left, y: e.clientY - rect.top, key });
-      setTimeout(() => setRipple(null), 700);
-      onPhaseClick(phase.id);
-    };
-
-    return (
-      <div
-        onClick={handleClick}
-        onMouseEnter={() => setHovered(phase.id)}
-        onMouseLeave={() => setHovered(null)}
-        className="phase-stagger ripple-host"
-        style={{
-          '--phase-i': idx,
-          background: isHov ? info.bg : 'var(--brand-800)',
-          border: `1px solid ${isHov ? info.border : 'rgba(30,53,82,0.6)'}`,
-          borderRadius: '14px',
-          padding: '16px',
-          cursor: 'pointer',
-          transition: 'all 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
-          transform: isHov ? 'translateY(-3px)' : 'none',
-          boxShadow: isHov ? `0 10px 28px ${info.color}25` : '0 2px 8px rgba(0,0,0,0.2)',
-          position: 'relative',
-          flex: '1 1 0',
-          minWidth: 0,
-          overflow: 'hidden',
-        } as React.CSSProperties}
-      >
-        {/* Ripple wave */}
-        {ripple && (
-          <span
-            key={ripple.key}
-            className="ripple-wave"
-            style={{ left: ripple.x, top: ripple.y }}
-          />
-        )}
-
-        {/* Step badge — animated checkmark when done */}
-        <div style={{ position: 'absolute', top: '12px', right: '12px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {isDone ? (
-            <svg className="svg-checkmark-circle" viewBox="0 0 22 22" fill="none" width="22" height="22">
-              <circle cx="11" cy="11" r="10" fill="#1A6FD4" />
-              <path className="svg-checkmark-path" d="M6.5 11.5l3 3 5.5-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
-          ) : (
-            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-faint)' }}>{phase.stepNumber}</span>
-            </div>
-          )}
-        </div>
-
-        {/* In-progress pulse dot */}
-        {isInProgress && !isDone && (
-          <div style={{ position: 'absolute', top: '14px', right: '38px' }}>
-            <div className="phase-pulse-dot" />
-          </div>
-        )}
-
-        {/* Output ready dot (only when not in-progress and not done) */}
-        {hasOut && !isDone && !isInProgress && (
-          <div style={{ position: 'absolute', top: '10px', right: '38px', width: '8px', height: '8px', borderRadius: '50%', background: '#F97316' }} />
-        )}
-
-        <p style={{ fontSize: '11px', color: info.color, fontWeight: 700, marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-          Phase {phase.stepNumber}
-        </p>
-        <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', lineHeight: 1.3 }}>
-          {phase.title}
-        </p>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {phase.description}
-        </p>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{
-            padding: '3px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
-            background: info.bg, color: info.color, border: `1px solid ${info.border}`,
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-          }}>
-            {isInProgress && !isDone && <span className="phase-pulse-dot" style={{ width: '5px', height: '5px', flexShrink: 0 }} />}
-            {info.label}
-          </span>
-          <ChevronRight size={14} color="var(--text-faint)" style={{ transition: 'transform 0.2s', transform: isHov ? 'translateX(2px)' : 'none' }} />
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* Row 1: phases 1-5 */}
       <div style={{ display: 'flex', gap: '10px' }}>
-        {row1.map((phase, i) => <PhaseCard key={phase.id} phase={phase} idx={i} />)}
+        {row1.map((phase, i) => (
+          <ProjectPhaseCard
+            key={phase.id}
+            idx={i}
+            phase={phase}
+            hovered={hovered === phase.id}
+            phaseStatus={phaseStatus}
+            phaseOutputs={phaseOutputs}
+            onHover={setHovered}
+            onPhaseClick={onPhaseClick}
+          />
+        ))}
       </div>
       {/* Connector arrow row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '4px 0' }}>
@@ -156,7 +168,18 @@ const PhaseKanban: React.FC<{
       </div>
       {/* Row 2: phases 6-10 (reversed to show flow) */}
       <div style={{ display: 'flex', gap: '10px', flexDirection: 'row-reverse' }}>
-        {row2.map((phase, i) => <PhaseCard key={phase.id} phase={phase} idx={i + 5} />)}
+        {row2.map((phase, i) => (
+          <ProjectPhaseCard
+            key={phase.id}
+            idx={i + 6}
+            phase={phase}
+            hovered={hovered === phase.id}
+            phaseStatus={phaseStatus}
+            phaseOutputs={phaseOutputs}
+            onHover={setHovered}
+            onPhaseClick={onPhaseClick}
+          />
+        ))}
       </div>
     </div>
   );

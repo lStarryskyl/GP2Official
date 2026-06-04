@@ -14,8 +14,9 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '@/lib/api';
-import { Loader2, Send, X, Sparkles, ChevronDown } from 'lucide-react';
+import { Loader2, Send, X, Sparkles } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -70,10 +71,16 @@ export const AIChatAssistant: React.FC<Props> = ({
   ]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const accentColor = PHASE_COLORS[phase] || 'var(--blue-400)';
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -128,14 +135,20 @@ export const AIChatAssistant: React.FC<Props> = ({
   };
 
   // ── Floating trigger button ───────────────────────────────────────────
-  return (
+  if (!isMounted) return null;
+
+  return createPortal(
     <>
       {/* Floating leaf button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm shadow-2xl transition-all duration-300 hover:scale-105"
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm shadow-2xl transition-all duration-300 hover:scale-105"
           style={{
+            position: 'fixed',
+            right: '24px',
+            bottom: '24px',
+            zIndex: 1200,
             background: `linear-gradient(135deg, ${accentColor}cc, ${accentColor})`,
             color: 'var(--brand-900)',
             boxShadow: `0 8px 32px ${accentColor}44`,
@@ -150,10 +163,14 @@ export const AIChatAssistant: React.FC<Props> = ({
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed bottom-6 right-6 z-50 flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+          className="flex flex-col rounded-2xl overflow-hidden shadow-2xl"
           style={{
-            width: '380px',
-            height: '520px',
+            position: 'fixed',
+            right: '24px',
+            bottom: '24px',
+            zIndex: 1200,
+            width: 'min(380px, calc(100vw - 24px))',
+            height: 'min(520px, calc(100vh - 48px))',
             background: 'var(--brand-850)',
             border: `1px solid ${accentColor}44`,
             boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 40px ${accentColor}18`,
@@ -264,7 +281,8 @@ export const AIChatAssistant: React.FC<Props> = ({
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 };
 

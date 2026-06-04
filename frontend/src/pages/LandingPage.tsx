@@ -1,654 +1,1332 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { m, AnimatePresence, useInView } from 'framer-motion';
 import {
-  ArrowRight, Sparkles, Shield, FileText, CheckCircle2,
-  Layers, GitBranch, DollarSign, AlertTriangle, ClipboardList,
-  Search, FlaskConical, Code2, LayoutDashboard, Rocket,
+  AnimatePresence,
+  animate,
+  m,
+  useInView,
+  useMotionValue,
+  useTransform,
+} from 'framer-motion';
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  ClipboardList,
+  Layers,
+  Rocket,
 } from 'lucide-react';
-import { AcornLogo } from '../components/AcornLogo';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import { AcornLogo } from '@/components/AcornLogo';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
-const PHASES = [
-  { id: 'brief',        label: 'Brief',        icon: ClipboardList,  color: '#1A6FD4', desc: 'Define goals, scope, and roadmap with AI-assisted project framing.' },
-  { id: 'feasibility',  label: 'Feasibility',  icon: Search,         color: '#2d88e8', desc: 'Validate technical and business viability before committing resources.' },
-  { id: 'requirements', label: 'Requirements', icon: FileText,       color: '#3d8fe0', desc: 'Generate detailed SRS with functional and non-functional requirements.' },
-  { id: 'validation',   label: 'Validation',   icon: CheckCircle2,   color: '#1A6FD4', desc: 'Ensure requirements are complete, consistent, and stakeholder-approved.' },
-  { id: 'tech-stack',   label: 'Tech Stack',   icon: Code2,          color: '#1A6FD4', desc: 'AI selects the optimal technology stack for your use case and constraints.' },
-  { id: 'architecture', label: 'Architecture', icon: Layers,         color: '#2d88e8', desc: 'Architecture diagrams, data models, and API contracts auto-generated.' },
-  { id: 'design',       label: 'Design',       icon: Sparkles,       color: '#F97316', desc: 'UI/UX design tokens, component specs, and design system scaffolding.' },
-  { id: 'planning',     label: 'Planning',     icon: LayoutDashboard,color: '#F97316', desc: 'Sprint breakdowns, story points, and Gantt charts generated automatically.' },
-  { id: 'tasks',        label: 'Tasks',        icon: GitBranch,      color: '#fb9042', desc: 'Prioritized backlog with dependencies, owners, and acceptance criteria.' },
-  { id: 'costs',        label: 'Costs',        icon: DollarSign,     color: '#F97316', desc: 'Detailed budget forecasts with ROI projections and resource planning.' },
-  { id: 'risk',         label: 'Risk',         icon: AlertTriangle,  color: '#fb9042', desc: 'Proactive risk identification with impact scores and mitigation plans.' },
-  { id: 'testing',      label: 'Testing',      icon: FlaskConical,   color: '#2A9D8F', desc: 'Test strategy, coverage plans, and QA checklists generated automatically.' },
-  { id: 'deployment',   label: 'Deployment',   icon: Rocket,         color: '#F97316', desc: 'CI/CD pipeline config, environment setup, and go-live checklist.' },
+const PARTNERS = ['Vertex Labs', 'Meridian Cloud', 'Northstar Ops', 'Signal Forge', 'Bluebeam Studio', 'Atlas Systems'];
+
+const HERO_REQUIREMENTS = [
+  'REQ-01 Authentication, SSO, and role-based access',
+  'REQ-07 Requirement traceability through deployment',
+  'REQ-12 AI-assisted delivery plan with cost forecast',
+  'REQ-18 Release checklist, QA scope, and rollout guardrails',
 ];
 
-const FEATURES = [
-  { icon: Shield,       title: 'Enterprise Grade', desc: 'SOC-2 compliant, SSO, audit logs, and role-based access control.' },
-  { icon: Sparkles,     title: 'Multi-Model AI',   desc: 'Orchestrates GPT-4, Gemini, and Claude for best-in-class output.' },
-  { icon: FlaskConical, title: 'Full SDLC',        desc: 'Every phase from idea to deployment, covered end-to-end.' },
+const BENTO_CARDS = [
+  { id: 'brief', title: 'Brief', label: 'Input', span: '1 / span 5', row: '1 / span 2' },
+  { id: 'reqs', title: 'Feasibility + Requirements', label: 'Output', span: '6 / span 4', row: '1 / span 1' },
+  { id: 'stack', title: 'Tech Stack', label: 'Stack', span: '10 / span 3', row: '1 / span 1' },
+  { id: 'arch', title: 'Architecture', label: 'System', span: '1 / span 4', row: '3 / span 1' },
+  { id: 'design', title: 'Design Tokens', label: 'Brand', span: '5 / span 4', row: '3 / span 1' },
+  { id: 'plan', title: 'Planning', label: 'Timeline', span: '9 / span 4', row: '2 / span 2' },
+  { id: 'cost', title: 'Cost Estimate', label: 'Budget', span: '1 / span 3', row: '4 / span 1' },
+  { id: 'risk', title: 'Risk Matrix', label: 'Risk', span: '4 / span 4', row: '4 / span 1' },
+  { id: 'test', title: 'Testing', label: 'QA', span: '8 / span 3', row: '4 / span 1' },
+  { id: 'deploy', title: 'Deployment', label: 'Delivery', span: '11 / span 2', row: '4 / span 1' },
 ];
 
-// ─── Motion variants ──────────────────────────────────────────────────────────
+const PHASE_STEPS = [
+  {
+    id: 'planning',
+    pill: 'Planning',
+    status: 'Sequencing',
+    confidence: '94%',
+    tokens: '1.8k',
+    actions: ['Roadmap', 'Milestones', 'Assumptions'],
+    lines: [
+      'Scope mapped into 3 delivery waves with owner checkpoints.',
+      'Critical path runs through onboarding, permissions, and billing.',
+      'Recommended sprint cadence: 2 weeks, 6 sprint MVP plan.',
+    ],
+  },
+  {
+    id: 'requirements',
+    pill: 'Requirements',
+    status: 'Reviewed',
+    confidence: '97%',
+    tokens: '2.6k',
+    actions: ['SRS', 'NFRs', 'Traceability'],
+    lines: [
+      '47 requirements generated across functional and non-functional groups.',
+      'Performance target: P95 response time under 300ms at 2k concurrent users.',
+      'Accessibility scope includes WCAG 2.1 AA for primary user journeys.',
+    ],
+  },
+  {
+    id: 'architecture',
+    pill: 'Architecture',
+    status: 'Ready',
+    confidence: '91%',
+    tokens: '2.1k',
+    actions: ['Services', 'Data model', 'APIs'],
+    lines: [
+      'Recommended split: React frontend, Django API, PostgreSQL core store.',
+      'Queue-backed notifications isolate spikes from transactional traffic.',
+      'Deployment topology supports staging parity and blue-green rollout.',
+    ],
+  },
+  {
+    id: 'testing',
+    pill: 'Testing',
+    status: 'Drafted',
+    confidence: '89%',
+    tokens: '1.5k',
+    actions: ['Coverage', 'Test matrix', 'Release gates'],
+    lines: [
+      'Coverage target set to 85% for domain logic and integration boundaries.',
+      'Regression suite prioritizes payments, permissions, and project exports.',
+      'Release gate blocks production if smoke, security, or migration checks fail.',
+    ],
+  },
+];
 
-const pageVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.4, ease: EASE_OUT } },
-};
-
-const navVariants = {
-  initial: { y: -60, opacity: 0 },
-  animate: { y: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 260, damping: 24, delay: 0.1 } },
-};
-
-const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
-};
-
-const staggerItem = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_OUT } },
-};
-
-const exitItem = {
-  exit: { opacity: 0, y: -10, transition: { duration: 0.25, ease: EASE_OUT } },
-};
-
-// ─── Canvas background (drifting pipeline nodes) ──────────────────────────────
-
-const HeroCanvas: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number>(0);
+function useTypewriter(text: string, active = true, charsPerSecond = 42) {
+  const [display, setDisplay] = useState('');
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!active) {
+      setDisplay('');
+      return undefined;
+    }
 
-    let W = canvas.offsetWidth;
-    let H = canvas.offsetHeight;
-    canvas.width = W;
-    canvas.height = H;
+    let frame = 0;
+    let start = 0;
 
-    const nodes = PHASES.map((p, i) => ({
-      x: (Math.random() * 0.7 + 0.15) * W,
-      y: (Math.random() * 0.7 + 0.15) * H,
-      vx: (Math.random() - 0.5) * 0.22,
-      vy: (Math.random() - 0.5) * 0.22,
-      phase: (Math.random() * Math.PI * 2),
-      label: p.label,
-      color: p.color,
-      idx: i,
-    }));
-
-    const resize = () => {
-      W = canvas.offsetWidth; H = canvas.offsetHeight;
-      canvas.width = W; canvas.height = H;
+    const tick = (time: number) => {
+      if (!start) start = time;
+      const elapsed = time - start;
+      const nextLength = Math.min(text.length, Math.floor((elapsed / 1000) * charsPerSecond));
+      setDisplay(text.slice(0, nextLength));
+      if (nextLength < text.length) frame = requestAnimationFrame(tick);
     };
-    window.addEventListener('resize', resize);
 
-    let t = 0;
-    const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      t += 0.008;
+    setDisplay('');
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [active, charsPerSecond, text]);
 
-      // Update positions with sine drift
-      nodes.forEach(n => {
-        n.x += n.vx + Math.sin(t + n.phase) * 0.15;
-        n.y += n.vy + Math.cos(t + n.phase * 1.3) * 0.12;
-        if (n.x < 60) { n.x = 60; n.vx *= -1; }
-        if (n.x > W - 60) { n.x = W - 60; n.vx *= -1; }
-        if (n.y < 40) { n.y = 40; n.vy *= -1; }
-        if (n.y > H - 40) { n.y = H - 40; n.vy *= -1; }
-      });
+  return display;
+}
 
-      // Draw connections between adjacent nodes (by index proximity)
-      for (let i = 0; i < nodes.length - 1; i++) {
-        const a = nodes[i];
-        const b = nodes[i + 1];
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const maxDist = 280;
-        if (dist < maxDist) {
-          const alpha = (1 - dist / maxDist) * 0.18;
-          ctx.strokeStyle = `rgba(26,111,212,${alpha})`;
-          ctx.lineWidth = 1;
-          ctx.setLineDash([4, 6]);
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
-          ctx.setLineDash([]);
+const MetricCounter: React.FC<{
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+  label: string;
+}> = ({ value, prefix = '', suffix = '', decimals = 0, label }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '0px 0px -80px 0px' });
+  const motionValue = useMotionValue(0);
+  const rounded = useTransform(motionValue, (latest) => latest.toFixed(decimals));
+  const [display, setDisplay] = useState(`0${suffix}`);
+
+  useEffect(() => {
+    if (!inView) return undefined;
+    const controls = animate(motionValue, value, { duration: 1.1, ease: EASE_OUT });
+    return () => controls.stop();
+  }, [inView, motionValue, value]);
+
+  useEffect(() => {
+    return rounded.on('change', (latest) => {
+      setDisplay(`${prefix}${latest}${suffix}`);
+    });
+  }, [prefix, rounded, suffix]);
+
+  return (
+    <div ref={ref} className="lp-stat-block">
+      <div className="lp-stat-value">{display}</div>
+      <div className="lp-stat-label">{label}</div>
+    </div>
+  );
+};
+
+const ProductDemoCard: React.FC = () => {
+  const brief = useTypewriter(
+    'Build a collaboration platform for student capstone teams with role-based access, document exports, planning workflows, and deployment guidance.',
+    true,
+    44,
+  );
+  const [visibleLineCount, setVisibleLineCount] = useState(0);
+
+  useEffect(() => {
+    setVisibleLineCount(0);
+    const interval = window.setInterval(() => {
+      setVisibleLineCount((current) => {
+        if (current >= HERO_REQUIREMENTS.length) {
+          window.clearInterval(interval);
+          return current;
         }
-      }
-
-      // Draw nodes
-      nodes.forEach(n => {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = n.color + '66';
-        ctx.fill();
-        ctx.strokeStyle = n.color + 'aa';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        return current + 1;
       });
-
-      rafRef.current = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      window.removeEventListener('resize', resize);
-    };
+    }, 550);
+    return () => window.clearInterval(interval);
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'absolute', inset: 0, width: '100%', height: '100%',
-        pointerEvents: 'none', opacity: 0.6,
-      }}
-    />
+    <div className="lp-demo-shell">
+      <div className="lp-demo-chrome">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="lp-demo-body">
+        <div className="lp-demo-label">// project brief</div>
+        <div className="lp-demo-brief">
+          {brief}
+          <span className="lp-cursor" />
+        </div>
+
+        <div className="lp-demo-divider" />
+
+        <div className="lp-demo-header-row">
+          <span className="lp-demo-label">generated outputs</span>
+          <span className="lp-demo-badge">live stream</span>
+        </div>
+
+        <div className="lp-demo-stream">
+          <AnimatePresence initial={false}>
+            {HERO_REQUIREMENTS.slice(0, visibleLineCount).map((line) => (
+              <m.div
+                key={line}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25, ease: EASE_OUT }}
+                className="lp-demo-line"
+              >
+                <span className="lp-demo-dot" />
+                <span>{line}</span>
+              </m.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
   );
 };
-
-// ─── Scroll-reveal wrapper ────────────────────────────────────────────────────
-
-const InViewStagger: React.FC<{ children: React.ReactNode; className?: string; style?: React.CSSProperties }> = ({ children, className, style }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '0px 0px -80px 0px' });
-  return (
-    <m.div
-      ref={ref}
-      className={className}
-      style={style}
-      variants={staggerContainer}
-      initial="initial"
-      animate={inView ? 'animate' : 'initial'}
-    >
-      {children}
-    </m.div>
-  );
-};
-
-// ─── Phase card ───────────────────────────────────────────────────────────────
-
-const PhaseCard: React.FC<{ phase: typeof PHASES[0]; index: number }> = ({ phase }) => {
-  const Icon = phase.icon;
-  const isOrange = ['design', 'planning', 'tasks', 'costs', 'risk', 'deployment'].includes(phase.id);
-
-  return (
-    <m.div
-      variants={staggerItem}
-      whileHover={{ y: -4, borderColor: phase.color + 'cc', transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-      whileTap={{ scale: 0.97 }}
-      style={{
-        padding: '20px 18px',
-        borderRadius: 16,
-        background: `linear-gradient(145deg, rgba(${isOrange ? '249,115,22' : '26,111,212'},0.08) 0%, rgba(13,27,42,0.5) 100%)`,
-        border: `1px solid rgba(${isOrange ? '249,115,22' : '26,111,212'},0.22)`,
-        cursor: 'default',
-        position: 'relative',
-        overflow: 'hidden',
-        willChange: 'transform',
-      }}
-    >
-      <div style={{
-        width: 36, height: 36, borderRadius: 10,
-        background: `linear-gradient(135deg, ${phase.color}, ${phase.color}bb)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 14, boxShadow: `0 4px 12px ${phase.color}44`,
-      }}>
-        <Icon size={16} color="#fff" strokeWidth={2.2} />
-      </div>
-      <div style={{
-        fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
-        color: '#E8EDF5', marginBottom: 8, letterSpacing: '-0.01em',
-      }}>
-        {phase.label}
-      </div>
-      <div style={{
-        fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, lineHeight: 1.55,
-        color: '#8899AA',
-      }}>
-        {phase.desc}
-      </div>
-    </m.div>
-  );
-};
-
-// ─── Feature card ─────────────────────────────────────────────────────────────
-
-const FeatureCard: React.FC<{ feature: typeof FEATURES[0] }> = ({ feature }) => {
-  const Icon = feature.icon;
-  return (
-    <m.div
-      variants={staggerItem}
-      whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-      style={{
-        padding: '32px 28px', borderRadius: 20,
-        background: 'rgba(10,21,37,0.7)',
-        border: '1px solid rgba(26,111,212,0.18)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      <div style={{
-        width: 48, height: 48, borderRadius: 14,
-        background: 'linear-gradient(135deg, rgba(26,111,212,0.25), rgba(26,111,212,0.08))',
-        border: '1px solid rgba(26,111,212,0.3)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 20,
-      }}>
-        <Icon size={22} color="#1A6FD4" strokeWidth={1.8} />
-      </div>
-      <div style={{
-        fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17,
-        color: '#E8EDF5', marginBottom: 10, letterSpacing: '-0.01em',
-      }}>
-        {feature.title}
-      </div>
-      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, lineHeight: 1.6, color: '#8899AA' }}>
-        {feature.desc}
-      </div>
-    </m.div>
-  );
-};
-
-// ─── Main LandingPage ─────────────────────────────────────────────────────────
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navSolid, setNavSolid] = useState(false);
+  const [activePhase, setActivePhase] = useState(PHASE_STEPS[0].id);
+  const activePhaseData = useMemo(
+    () => PHASE_STEPS.find((step) => step.id === activePhase) || PHASE_STEPS[0],
+    [activePhase],
+  );
 
-  const heroLine1Ref = useRef<HTMLDivElement>(null);
-  const heroLine2Ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleScroll = () => setNavSolid(window.scrollY > 80);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToId = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const phasePreview = useTypewriter(activePhaseData.lines.join(' '), true, 52);
 
   return (
     <m.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      style={{ minHeight: '100vh', background: '#050D1A', color: '#E8EDF5', overflowX: 'hidden' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="lp-page"
     >
-      {/* ── Nav ── */}
-      <m.nav
-        variants={navVariants}
-        initial="initial"
-        animate="animate"
-        style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 clamp(20px, 5vw, 60px)',
-          height: 64,
-          background: 'rgba(5,13,26,0.82)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(26,111,212,0.1)',
-        }}
-      >
-        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/landing')}>
-          <AcornLogo height={30} white />
-        </div>
-
-        {/* Desktop nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }} className="lp-nav-desktop">
-          {['Docs', 'Pricing', 'Sign in'].map(label => (
-            <button
-              key={label}
-              onClick={() => {
-                if (label === 'Sign in') navigate('/login');
-                else if (label === 'Docs') navigate('/docs');
-              }}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
-                color: '#8899AA', transition: 'color 0.2s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#E8EDF5'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#8899AA'; }}
-            >
-              {label}
-            </button>
-          ))}
-          <m.button
-            whileHover={{ y: -2, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/register')}
-            style={{
-              padding: '8px 20px', borderRadius: 999,
-              background: 'linear-gradient(135deg, #F97316, #e85d04)',
-              border: 'none', cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
-              color: '#fff', letterSpacing: '0.01em',
-            }}
-          >
-            Get started
-          </m.button>
-        </div>
-
-        {/* Mobile menu toggle */}
-        <button
-          className="lp-nav-mobile-toggle"
-          onClick={() => setMobileMenuOpen(o => !o)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#E8EDF5', display: 'none', padding: 8,
-          }}
-        >
-          <div style={{ width: 20, height: 2, background: '#E8EDF5', marginBottom: 5, borderRadius: 2 }} />
-          <div style={{ width: 20, height: 2, background: '#E8EDF5', marginBottom: 5, borderRadius: 2 }} />
-          <div style={{ width: 14, height: 2, background: '#E8EDF5', borderRadius: 2 }} />
-        </button>
-      </m.nav>
-
-      {/* ── Mobile menu overlay ── */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <m.div
-            key="mobile-menu"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.25, ease: EASE_OUT }}
-            style={{
-              position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99,
-              background: 'rgba(5,13,26,0.97)', padding: '24px 32px 32px',
-              borderBottom: '1px solid rgba(26,111,212,0.15)',
-            }}
-          >
-            {['Docs', 'Pricing', 'Sign in', 'Get started'].map((label, i) => (
-              <m.button
-                key={label}
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05, ease: EASE_OUT, duration: 0.3 }}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (label === 'Sign in') navigate('/login');
-                  else if (label === 'Get started') navigate('/register');
-                  else if (label === 'Docs') navigate('/docs');
-                }}
-                style={{
-                  display: 'block', width: '100%', background: 'none', border: 'none',
-                  textAlign: 'left', padding: '14px 0', cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 500,
-                  color: label === 'Get started' ? '#F97316' : '#E8EDF5',
-                  borderBottom: '1px solid rgba(26,111,212,0.08)',
-                }}
-              >
-                {label}
-              </m.button>
-            ))}
-          </m.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Hero ── */}
-      <section style={{
-        position: 'relative', minHeight: '100vh',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(100px, 12vh, 140px) clamp(20px, 6vw, 80px) clamp(80px, 10vh, 120px)',
-        textAlign: 'center', overflow: 'hidden',
-      }}>
-        {/* Canvas drifting nodes */}
-        <HeroCanvas />
-
-        {/* Gradient veil over canvas */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(5,13,26,0.3) 0%, rgba(5,13,26,0.75) 100%)',
-        }} />
-
-        {/* Glow orbs */}
-        <div aria-hidden style={{ position: 'absolute', top: '15%', left: '8%', width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,111,212,0.09) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div aria-hidden style={{ position: 'absolute', bottom: '10%', right: '8%', width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 780 }}>
-          {/* Badge */}
-          <m.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 22 }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '6px 16px', borderRadius: 999, marginBottom: 32,
-              background: 'rgba(26,111,212,0.12)',
-              border: '1px solid rgba(26,111,212,0.3)',
-              fontFamily: "'DM Mono', monospace", fontSize: 11,
-              color: '#3d8fe0', letterSpacing: '0.12em', textTransform: 'uppercase',
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F97316', display: 'inline-block' }} />
-            AI-Powered SDLC Platform
-          </m.div>
-
-          {/* Headline — two lines animating from opposite sides */}
-          <div style={{ overflow: 'hidden', marginBottom: 8 }}>
-            <m.div
-              ref={heroLine1Ref}
-              initial={{ x: -60, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.45, duration: 0.7, ease: EASE_OUT }}
-              style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                fontSize: 'clamp(36px, 6vw, 76px)',
-                letterSpacing: '-0.04em', lineHeight: 1.05, color: '#E8EDF5',
-              }}
-            >
-              From idea to
-            </m.div>
-          </div>
-          <div style={{ overflow: 'hidden', marginBottom: 28 }}>
-            <m.div
-              ref={heroLine2Ref}
-              initial={{ x: 60, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.57, duration: 0.7, ease: EASE_OUT }}
-              style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                fontSize: 'clamp(36px, 6vw, 76px)',
-                letterSpacing: '-0.04em', lineHeight: 1.05,
-                background: 'linear-gradient(135deg, #1A6FD4 0%, #F97316 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}
-            >
-              deployment in minutes
-            </m.div>
-          </div>
-
-          {/* Subtext */}
-          <m.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.72, duration: 0.6, ease: EASE_OUT }}
-            style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 'clamp(15px, 1.8vw, 19px)',
-              color: '#8899AA', lineHeight: 1.65, maxWidth: 560, margin: '0 auto 44px',
-            }}
-          >
-            Acorn orchestrates multi-model AI to automate every SDLC phase —
-            requirements, architecture, planning, costs, testing, and deployment.
-          </m.p>
-
-          {/* CTAs */}
-          <m.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.88, type: 'spring', stiffness: 260, damping: 20 }}
-            style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}
-          >
-            <m.button
-              whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate('/register')}
-              style={{
-                padding: '14px 32px', borderRadius: 12,
-                background: 'linear-gradient(135deg, #1A6FD4, #0d2b52)',
-                border: '1px solid rgba(26,111,212,0.5)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
-                fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600,
-                color: '#fff', willChange: 'transform',
-              }}
-            >
-              Start building free <ArrowRight size={16} />
-            </m.button>
-            <m.button
-              whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate('/docs')}
-              style={{
-                padding: '14px 32px', borderRadius: 12,
-                background: 'transparent',
-                border: '1px solid rgba(26,111,212,0.25)',
-                cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 500,
-                color: '#8899AA', willChange: 'transform',
-              }}
-            >
-              View docs
-            </m.button>
-          </m.div>
-        </div>
-      </section>
-
-      {/* ── Features strip ── */}
-      <section style={{
-        padding: 'clamp(60px, 8vh, 100px) clamp(20px, 6vw, 80px)',
-        maxWidth: 1200, margin: '0 auto',
-      }}>
-        <InViewStagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-          {FEATURES.map(f => <FeatureCard key={f.title} feature={f} />)}
-        </InViewStagger>
-      </section>
-
-      {/* ── Phase grid ── */}
-      <section style={{
-        padding: 'clamp(60px, 8vh, 100px) clamp(20px, 6vw, 80px)',
-        background: 'rgba(10,21,37,0.5)',
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <InViewStagger>
-            <m.div variants={staggerItem} style={{ textAlign: 'center', marginBottom: 56 }}>
-              <div style={{
-                fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: '0.18em',
-                color: '#1A6FD4', textTransform: 'uppercase', marginBottom: 14,
-              }}>
-                All 13 SDLC Phases
-              </div>
-              <h2 style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                fontSize: 'clamp(28px, 4vw, 48px)', letterSpacing: '-0.03em',
-                color: '#E8EDF5', marginBottom: 16,
-              }}>
-                Every phase. One platform.
-              </h2>
-              <p style={{
-                fontFamily: "'DM Sans', sans-serif", fontSize: 16,
-                color: '#8899AA', lineHeight: 1.65, maxWidth: 520, margin: '0 auto',
-              }}>
-                From initial brief to production deployment, every step is AI-assisted,
-                connected, and traceable.
-              </p>
-            </m.div>
-          </InViewStagger>
-
-          <InViewStagger style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 16,
-          }}>
-            {PHASES.map((phase, i) => (
-              <PhaseCard key={phase.id} phase={phase} index={i} />
-            ))}
-          </InViewStagger>
-        </div>
-      </section>
-
-      {/* ── CTA banner ── */}
-      <section style={{ padding: 'clamp(80px, 10vh, 120px) clamp(20px, 6vw, 80px)', textAlign: 'center' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <InViewStagger>
-            <m.div variants={staggerItem} style={{
-              padding: 'clamp(40px, 6vh, 64px) clamp(24px, 5vw, 64px)',
-              borderRadius: 24, position: 'relative', overflow: 'hidden',
-              background: 'linear-gradient(135deg, rgba(26,111,212,0.15) 0%, rgba(249,115,22,0.08) 100%)',
-              border: '1px solid rgba(26,111,212,0.25)',
-            }}>
-              <div aria-hidden style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-              <h2 style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                fontSize: 'clamp(24px, 3.5vw, 40px)', letterSpacing: '-0.03em',
-                color: '#E8EDF5', marginBottom: 16,
-              }}>
-                Ready to ship faster?
-              </h2>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 16, color: '#8899AA', marginBottom: 32, lineHeight: 1.6 }}>
-                Join teams using Acorn to turn ideas into production-grade software plans in minutes.
-              </p>
-              <m.button
-                whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => navigate('/register')}
-                style={{
-                  padding: '14px 36px', borderRadius: 12,
-                  background: 'linear-gradient(135deg, #F97316, #e85d04)',
-                  border: 'none', cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
-                  color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 10,
-                  willChange: 'transform',
-                }}
-              >
-                Get started for free <ArrowRight size={16} />
-              </m.button>
-            </m.div>
-          </InViewStagger>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer style={{
-        borderTop: '1px solid rgba(26,111,212,0.1)',
-        padding: 'clamp(32px, 5vh, 48px) clamp(20px, 6vw, 80px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 16,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <AcornLogo height={24} white />
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070' }}>
-            © 2025 Acorn
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 24 }}>
-          {['Docs', 'Privacy', 'Terms'].map(item => (
-            <button
-              key={item}
-              onClick={() => item === 'Docs' && navigate('/docs')}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070',
-              }}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </footer>
-
-      {/* ── Responsive nav styles ── */}
       <style>{`
-        @media (max-width: 640px) {
-          .lp-nav-desktop { display: none !important; }
-          .lp-nav-mobile-toggle { display: block !important; }
+        .lp-page {
+          min-height: 100vh;
+          color: #10213f;
+          background:
+            radial-gradient(circle at 8% 10%, rgba(249,115,22,0.18), transparent 24%),
+            radial-gradient(circle at 84% 14%, rgba(102,123,255,0.16), transparent 28%),
+            radial-gradient(circle at 68% 62%, rgba(80, 170, 255, 0.12), transparent 30%),
+            linear-gradient(180deg, #fffdf8 0%, #f7f2ff 26%, #edf6ff 62%, #fff6ef 100%);
+          position: relative;
+          overflow-x: hidden;
+        }
+        .lp-page::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0.32;
+          background-image:
+            radial-gradient(rgba(17,33,67,0.08) 1px, transparent 1px);
+          background-size: 18px 18px;
+          mask-image: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.05) 35%, transparent 85%);
+        }
+        .lp-shell {
+          width: min(1180px, calc(100% - 40px));
+          margin: 0 auto;
+          position: relative;
+          z-index: 1;
+        }
+        .lp-nav {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 120;
+          transition: background 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+        }
+        .lp-nav-inner {
+          width: min(1180px, calc(100% - 28px));
+          margin: 14px auto 0;
+          padding: 14px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          border-radius: 999px;
+          border: 1px solid rgba(17,33,67,0.08);
+          background: rgba(255,255,255,0.74);
+          backdrop-filter: blur(18px) saturate(180%);
+          box-shadow: 0 18px 50px rgba(17,33,67,0.08);
+        }
+        .lp-nav-links {
+          display: flex;
+          align-items: center;
+          gap: 22px;
+        }
+        .lp-nav-link {
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          color: #4c5d80;
+        }
+        .lp-cta-pill {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border: none;
+          cursor: pointer;
+          padding: 12px 20px;
+          border-radius: 999px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          color: #fff;
+          background: linear-gradient(135deg, #ff8b4b, #ff5d74 52%, #7c74ff 100%);
+          box-shadow: 0 14px 32px rgba(125,116,255,0.2);
+        }
+        .lp-section {
+          padding: 100px 0;
+        }
+        .lp-hero {
+          padding-top: 148px;
+          padding-bottom: 88px;
+        }
+        .lp-hero-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+          gap: 48px;
+          align-items: center;
+        }
+        .lp-hero-copy {
+          max-width: 590px;
+        }
+        .lp-label {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #6d77a1;
+        }
+        .lp-display {
+          font-family: 'Syne', sans-serif;
+          font-size: clamp(48px, 6vw, 82px);
+          line-height: 1.02;
+          letter-spacing: -0.04em;
+          font-weight: 700;
+          color: #10213f;
+          margin: 18px 0 20px;
+        }
+        .lp-gradient-word {
+          background: linear-gradient(135deg, #ff8b4b 0%, #ff5d74 40%, #7c74ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .lp-hero-body {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 17px;
+          line-height: 1.72;
+          color: #576785;
+          max-width: 560px;
+        }
+        .lp-hero-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 14px;
+          margin-top: 28px;
+        }
+        .lp-secondary-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 12px 20px;
+          border-radius: 999px;
+          border: 1px solid rgba(16,33,63,0.12);
+          background: rgba(255,255,255,0.72);
+          color: #10213f;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+        }
+        .lp-trust {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 14px;
+          margin-top: 24px;
+          color: #6d77a1;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+        }
+        .lp-hero-visual {
+          position: relative;
+        }
+        .lp-hero-visual::before {
+          content: '';
+          position: absolute;
+          inset: 10% -10% -8% 16%;
+          background: radial-gradient(circle, rgba(125,116,255,0.24), transparent 62%);
+          filter: blur(30px);
+          pointer-events: none;
+        }
+        .lp-demo-shell {
+          position: relative;
+          border-radius: 28px;
+          padding: 1px;
+          background: linear-gradient(135deg, rgba(255,127,80,0.62), rgba(124,116,255,0.42), rgba(80,170,255,0.4));
+          box-shadow: 0 34px 80px rgba(17,33,67,0.14);
+        }
+        .lp-demo-shell::after {
+          content: '';
+          position: absolute;
+          inset: 18px;
+          border-radius: 20px;
+          border: 1px solid rgba(255,255,255,0.3);
+          pointer-events: none;
+        }
+        .lp-demo-chrome {
+          display: flex;
+          gap: 8px;
+          padding: 18px 20px 0;
+        }
+        .lp-demo-chrome span {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.7);
+        }
+        .lp-demo-body {
+          margin: 12px;
+          border-radius: 22px;
+          background:
+            linear-gradient(180deg, rgba(16,33,63,0.94), rgba(22,41,78,0.92));
+          padding: 22px;
+          color: #edf3ff;
+        }
+        .lp-demo-label {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(220,229,255,0.58);
+        }
+        .lp-demo-brief {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 15px;
+          line-height: 1.7;
+          min-height: 104px;
+          margin-top: 14px;
+          color: #f9fbff;
+        }
+        .lp-cursor {
+          display: inline-block;
+          width: 9px;
+          height: 18px;
+          margin-left: 3px;
+          border-radius: 2px;
+          background: linear-gradient(180deg, #ff8b4b, #7c74ff);
+          animation: lpBlink 0.9s ease-in-out infinite;
+          vertical-align: text-bottom;
+        }
+        .lp-demo-divider {
+          height: 1px;
+          margin: 18px 0 16px;
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.22), rgba(255,255,255,0));
+        }
+        .lp-demo-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+        .lp-demo-badge {
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.12);
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #ffb288;
+        }
+        .lp-demo-stream {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-height: 188px;
+        }
+        .lp-demo-line {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          line-height: 1.6;
+          color: rgba(237,243,255,0.88);
+        }
+        .lp-demo-dot {
+          width: 10px;
+          height: 10px;
+          margin-top: 7px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          background: linear-gradient(135deg, #ff8b4b, #7c74ff);
+        }
+        .lp-marquee-wrap {
+          overflow: hidden;
+          mask-image: linear-gradient(90deg, transparent, black 15%, black 85%, transparent);
+        }
+        .lp-marquee-track {
+          display: flex;
+          width: max-content;
+          animation: lpMarquee 24s linear infinite;
+        }
+        .lp-marquee-item {
+          font-family: 'DM Mono', monospace;
+          font-size: 13px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #7281a7;
+          padding-right: 44px;
+          white-space: nowrap;
+        }
+        .lp-section-head {
+          max-width: 620px;
+          margin-bottom: 34px;
+        }
+        .lp-section-title {
+          font-family: 'Syne', sans-serif;
+          font-size: clamp(30px, 3.6vw, 52px);
+          line-height: 1.04;
+          letter-spacing: -0.03em;
+          color: #10213f;
+          margin: 14px 0 14px;
+        }
+        .lp-section-copy {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 16px;
+          line-height: 1.72;
+          color: #576785;
+        }
+        .lp-bento-grid {
+          display: grid;
+          grid-template-columns: repeat(12, minmax(0, 1fr));
+          gap: 1px;
+          background: linear-gradient(180deg, rgba(124,116,255,0.18), rgba(255,127,80,0.18));
+          border: 1px solid rgba(16,33,63,0.08);
+          border-radius: 28px;
+          padding: 1px;
+          overflow: hidden;
+        }
+        .lp-bento-card {
+          background:
+            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,246,255,0.96));
+          padding: 26px;
+          min-height: 170px;
+        }
+        .lp-bento-label {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #7381aa;
+        }
+        .lp-bento-title {
+          font-family: 'Syne', sans-serif;
+          font-size: 22px;
+          letter-spacing: -0.03em;
+          color: #10213f;
+          margin: 12px 0 12px;
+        }
+        .lp-mini-pill-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .lp-mini-pill {
+          padding: 7px 12px;
+          border-radius: 999px;
+          background: rgba(124,116,255,0.1);
+          border: 1px solid rgba(124,116,255,0.14);
+          color: #5148b5;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+        }
+        .lp-node-map {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 82px;
+        }
+        .lp-node-map svg {
+          width: 100%;
+          max-width: 180px;
+          height: 82px;
+        }
+        .lp-stepper-shell {
+          display: grid;
+          grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+          gap: 22px;
+          align-items: start;
+        }
+        .lp-pill-row {
+          display: flex;
+          gap: 12px;
+          overflow-x: auto;
+          padding-bottom: 8px;
+          scrollbar-width: none;
+        }
+        .lp-pill-row::-webkit-scrollbar {
+          display: none;
+        }
+        .lp-pill {
+          border: 1px solid rgba(16,33,63,0.1);
+          background: rgba(255,255,255,0.72);
+          padding: 11px 16px;
+          border-radius: 999px;
+          cursor: pointer;
+          color: #5d6f94;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+        .lp-pill-active {
+          background: linear-gradient(135deg, #7c74ff, #4ca8ff);
+          color: #fff;
+          border-color: transparent;
+          box-shadow: 0 16px 34px rgba(76,168,255,0.22);
+        }
+        .lp-phase-panel {
+          margin-top: 18px;
+          border-radius: 26px;
+          padding: 24px;
+          background: rgba(255,255,255,0.82);
+          border: 1px solid rgba(16,33,63,0.08);
+          box-shadow: 0 24px 56px rgba(17,33,67,0.08);
+        }
+        .lp-phase-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 240px;
+          gap: 18px;
+        }
+        .lp-phase-stream {
+          min-height: 178px;
+          border-radius: 20px;
+          background: linear-gradient(180deg, rgba(241,245,255,0.98), rgba(255,248,244,0.98));
+          border: 1px solid rgba(16,33,63,0.08);
+          padding: 20px;
+        }
+        .lp-phase-meta {
+          border-radius: 20px;
+          background: linear-gradient(180deg, rgba(255,250,248,0.95), rgba(245,244,255,0.95));
+          border: 1px solid rgba(16,33,63,0.08);
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .lp-meta-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          color: #576785;
+        }
+        .lp-meta-value {
+          font-weight: 700;
+          color: #10213f;
+        }
+        .lp-action-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 7px 12px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.84);
+          border: 1px solid rgba(16,33,63,0.08);
+          color: #4f5d83;
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .lp-steps-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 30px;
+        }
+        .lp-step-card {
+          padding-top: 16px;
+          border-top: 1px solid rgba(16,33,63,0.1);
+          position: relative;
+        }
+        .lp-step-number {
+          font-family: 'DM Mono', monospace;
+          font-size: 46px;
+          line-height: 1;
+          color: rgba(124,116,255,0.16);
+          margin-bottom: 12px;
+        }
+        .lp-step-title {
+          font-family: 'Syne', sans-serif;
+          font-size: 30px;
+          letter-spacing: -0.03em;
+          color: #10213f;
+          margin-bottom: 10px;
+        }
+        .lp-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          border-top: 1px solid rgba(16,33,63,0.08);
+          border-bottom: 1px solid rgba(16,33,63,0.08);
+        }
+        .lp-stat-block {
+          padding: 28px 20px;
+          text-align: center;
+          border-right: 1px solid rgba(16,33,63,0.08);
+        }
+        .lp-stat-block:last-child {
+          border-right: none;
+        }
+        .lp-stat-value {
+          font-family: 'DM Mono', monospace;
+          font-size: clamp(34px, 5vw, 56px);
+          color: #10213f;
+        }
+        .lp-stat-label {
+          margin-top: 10px;
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #7381aa;
+        }
+        .lp-cta-panel {
+          text-align: center;
+          padding: 72px 24px;
+          border-radius: 36px;
+          border: 1px solid rgba(16,33,63,0.08);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(124,116,255,0.22), transparent 46%),
+            linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,246,239,0.94));
+          box-shadow: 0 28px 64px rgba(17,33,67,0.08);
+        }
+        .lp-footer {
+          padding: 0 0 56px;
+        }
+        .lp-footer-shell {
+          border-top: 1px solid rgba(16,33,63,0.08);
+          padding-top: 26px;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+        .lp-footer-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 18px;
+          flex-wrap: wrap;
+        }
+        .lp-footer-links {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 18px;
+        }
+        .lp-footer-link,
+        .lp-footer-copy {
+          border: none;
+          background: transparent;
+          padding: 0;
+          color: #6d77a1;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          letter-spacing: 0.04em;
+        }
+        @keyframes lpBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.2; }
+        }
+        @keyframes lpMarquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @media (max-width: 1080px) {
+          .lp-hero-grid,
+          .lp-stepper-shell,
+          .lp-phase-grid {
+            grid-template-columns: 1fr;
+          }
+          .lp-bento-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .lp-bento-card {
+            grid-column: auto !important;
+            grid-row: auto !important;
+            min-height: auto;
+          }
+          .lp-steps-grid,
+          .lp-stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .lp-stat-block:nth-child(2) {
+            border-right: none;
+          }
+        }
+        @media (max-width: 760px) {
+          .lp-shell {
+            width: min(100% - 24px, 1180px);
+          }
+          .lp-nav-inner {
+            margin-top: 10px;
+            border-radius: 24px;
+            padding: 14px 16px;
+            flex-wrap: wrap;
+          }
+          .lp-nav-links {
+            order: 3;
+            width: 100%;
+            justify-content: space-between;
+            gap: 14px;
+          }
+          .lp-section {
+            padding: 72px 0;
+          }
+          .lp-hero {
+            padding-top: 138px;
+            padding-bottom: 56px;
+          }
+          .lp-display {
+            font-size: clamp(40px, 15vw, 64px);
+          }
+          .lp-demo-shell {
+            border-radius: 24px;
+          }
+          .lp-bento-grid,
+          .lp-steps-grid,
+          .lp-stats-grid {
+            grid-template-columns: 1fr;
+          }
+          .lp-stat-block {
+            border-right: none;
+            border-bottom: 1px solid rgba(16,33,63,0.08);
+          }
+          .lp-stat-block:last-child {
+            border-bottom: none;
+          }
+          .lp-phase-panel {
+            padding: 18px;
+          }
+          .lp-footer-row {
+            align-items: flex-start;
+          }
         }
       `}</style>
+
+      <div className="lp-nav">
+        <div
+          className="lp-nav-inner"
+          style={navSolid ? { background: 'rgba(255,255,255,0.88)', borderColor: 'rgba(124,116,255,0.16)', boxShadow: '0 18px 56px rgba(17,33,67,0.12)' } : undefined}
+        >
+          <button
+            onClick={() => scrollToId('top')}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            aria-label="Go to top"
+          >
+            <AcornLogo height={34} />
+          </button>
+
+          <div className="lp-nav-links">
+            <button className="lp-nav-link" onClick={() => scrollToId('how-it-works')}>How it works</button>
+            <button className="lp-nav-link" onClick={() => scrollToId('phases')}>Phases</button>
+            <button className="lp-nav-link" onClick={() => navigate('/docs')}>Docs</button>
+            <button className="lp-nav-link" onClick={() => navigate('/login')}>Sign in</button>
+          </div>
+
+          <button className="lp-cta-pill" onClick={() => navigate('/register')}>
+            Start Building <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+
+      <section id="top" className="lp-section lp-hero">
+        <div className="lp-shell">
+          <div className="lp-hero-grid">
+            <div className="lp-hero-copy">
+              <m.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: EASE_OUT }}
+                className="lp-label"
+              >
+                // AI-powered sdlc platform
+              </m.div>
+
+              <m.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08, duration: 0.45, ease: EASE_OUT }}
+                className="lp-display"
+              >
+                From brief
+                <br />
+                to <span className="lp-gradient-word">production.</span>
+              </m.h1>
+
+              <m.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.14, duration: 0.45, ease: EASE_OUT }}
+                className="lp-hero-body"
+              >
+                Paste a project brief. Get requirements, architecture, task boards, cost estimates,
+                export-ready documents, and delivery guidance in one connected workspace.
+              </m.p>
+
+              <m.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.45, ease: EASE_OUT }}
+                className="lp-hero-actions"
+              >
+                <button className="lp-cta-pill" onClick={() => navigate('/register')}>
+                  Start Building <ArrowRight size={16} />
+                </button>
+                <button className="lp-secondary-btn" onClick={() => scrollToId('phases')}>
+                  See how it works <ChevronRight size={16} />
+                </button>
+              </m.div>
+
+              <m.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.26, duration: 0.45, ease: EASE_OUT }}
+                className="lp-trust"
+              >
+                <span><Check size={14} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />No setup</span>
+                <span><Check size={14} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />Real output, not mockups</span>
+                <span><Check size={14} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />All 13 SDLC phases</span>
+              </m.div>
+            </div>
+
+            <m.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14, duration: 0.55, ease: EASE_OUT }}
+              className="lp-hero-visual"
+            >
+              <ProductDemoCard />
+            </m.div>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" style={{ paddingTop: 0, paddingBottom: 24 }}>
+        <div className="lp-shell" style={{ textAlign: 'center' }}>
+          <div className="lp-label" style={{ marginBottom: 18 }}>Trusted by engineering teams</div>
+          <div className="lp-marquee-wrap">
+            <div className="lp-marquee-track">
+              {[...PARTNERS, ...PARTNERS].map((name, index) => (
+                <span key={`${name}-${index}`} className="lp-marquee-item">{name}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" className="lp-section">
+        <div className="lp-shell">
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+            transition={{ duration: 0.4, ease: EASE_OUT }}
+            className="lp-section-head"
+          >
+            <div className="lp-label">// how it works</div>
+            <h2 className="lp-section-title">One brief. Full delivery motion.</h2>
+            <p className="lp-section-copy">
+              The landing page now leads with the product itself: structured inputs, generated plans,
+              connected phases, and a cleaner visual rhythm instead of generic AI-site patterns.
+            </p>
+          </m.div>
+
+          <div className="lp-bento-grid">
+            {BENTO_CARDS.map((card, index) => (
+              <m.div
+                key={card.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05, duration: 0.4, ease: EASE_OUT }}
+                className="lp-bento-card"
+                style={{ gridColumn: card.span, gridRow: card.row }}
+              >
+                <div className="lp-bento-label">{card.label}</div>
+                <div className="lp-bento-title">{card.title}</div>
+
+                {card.id === 'brief' && (
+                  <>
+                    <p className="lp-section-copy" style={{ fontSize: 15 }}>
+                      GP2 turns messy project context into structured planning artifacts without making the UI feel synthetic.
+                    </p>
+                    <div className="lp-demo-line" style={{ marginTop: 18, color: '#4f5d83' }}>
+                      <span className="lp-demo-dot" />
+                      <span>Multi-role collaboration platform for capstone project delivery.</span>
+                    </div>
+                  </>
+                )}
+
+                {card.id === 'reqs' && (
+                  <div style={{ display: 'flex', gap: 18, marginTop: 18 }}>
+                    <div>
+                      <div className="lp-label" style={{ color: '#ff7f50' }}>confidence</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: '#10213f' }}>92%</div>
+                    </div>
+                    <div>
+                      <div className="lp-label" style={{ color: '#7c74ff' }}>requirements</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: '#10213f' }}>47</div>
+                    </div>
+                  </div>
+                )}
+
+                {card.id === 'stack' && (
+                  <div className="lp-mini-pill-row" style={{ marginTop: 16 }}>
+                    <span className="lp-mini-pill">React</span>
+                    <span className="lp-mini-pill">Django</span>
+                    <span className="lp-mini-pill">PostgreSQL</span>
+                  </div>
+                )}
+
+                {card.id === 'arch' && (
+                  <div className="lp-node-map">
+                    <svg viewBox="0 0 180 82" fill="none">
+                      <path d="M30 42h55M96 24l26 18M96 60l26-18" stroke="rgba(124,116,255,0.52)" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="28" cy="42" r="10" fill="#ff8b4b" />
+                      <circle cx="88" cy="24" r="10" fill="#7c74ff" />
+                      <circle cx="88" cy="60" r="10" fill="#4ca8ff" />
+                      <circle cx="132" cy="42" r="12" fill="#10213f" opacity="0.9" />
+                    </svg>
+                  </div>
+                )}
+
+                {card.id === 'design' && (
+                  <div className="lp-mini-pill-row" style={{ marginTop: 16 }}>
+                    <span className="lp-mini-pill" style={{ background: '#10213f', color: '#fff' }}>#10213F</span>
+                    <span className="lp-mini-pill" style={{ background: '#7c74ff', color: '#fff' }}>#7C74FF</span>
+                    <span className="lp-mini-pill" style={{ background: '#ff8b4b', color: '#fff' }}>#FF8B4B</span>
+                    <span className="lp-mini-pill" style={{ background: '#4ca8ff', color: '#fff' }}>#4CA8FF</span>
+                  </div>
+                )}
+
+                {card.id === 'plan' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+                    {['Discovery', 'Scope', 'Build', 'QA'].map((bar, idx) => (
+                      <div key={bar} style={{ display: 'grid', gridTemplateColumns: '76px 1fr', gap: 12, alignItems: 'center' }}>
+                        <span className="lp-label" style={{ color: '#596987' }}>{bar}</span>
+                        <div style={{ height: 10, borderRadius: 999, background: 'rgba(124,116,255,0.12)', overflow: 'hidden' }}>
+                          <div
+                            style={{
+                              width: `${[28, 46, 82, 52][idx]}%`,
+                              height: '100%',
+                              borderRadius: 999,
+                              background: 'linear-gradient(90deg, #ff8b4b, #7c74ff)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {card.id === 'cost' && (
+                  <div style={{ marginTop: 18, fontFamily: "'DM Mono', monospace", fontSize: 28, color: '#ff7f50' }}>
+                    $86,700 estimated
+                  </div>
+                )}
+
+                {card.id === 'risk' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
+                    {[
+                      ['Delivery dependencies', '#ff8b4b'],
+                      ['Scope churn risk', '#7c74ff'],
+                    ].map(([text, color]) => (
+                      <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#4f5d83', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: color as string }} />
+                        {text}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {card.id === 'test' && (
+                  <div style={{ marginTop: 18 }}>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, color: '#10213f' }}>85%</div>
+                    <div className="lp-section-copy" style={{ fontSize: 14 }}>coverage target</div>
+                  </div>
+                )}
+
+                {card.id === 'deploy' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 20, color: '#4f5d83', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    <span>CI</span>
+                    <ChevronRight size={14} />
+                    <span>Staging</span>
+                    <ChevronRight size={14} />
+                    <span>Prod</span>
+                  </div>
+                )}
+              </m.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="phases" className="lp-section">
+        <div className="lp-shell">
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+            transition={{ duration: 0.4, ease: EASE_OUT }}
+            className="lp-section-head"
+          >
+            <div className="lp-label">// phase stepper</div>
+            <h2 className="lp-section-title">Preview the workflow before users log in.</h2>
+            <p className="lp-section-copy">
+              This keeps the landing page product-first. Each pill exposes a real phase outcome instead of a marketing card wall.
+            </p>
+          </m.div>
+
+          <div className="lp-stepper-shell">
+            <div>
+              <div className="lp-pill-row">
+                {PHASE_STEPS.map((step) => (
+                  <button
+                    key={step.id}
+                    onClick={() => setActivePhase(step.id)}
+                    className={`lp-pill${step.id === activePhase ? ' lp-pill-active' : ''}`}
+                  >
+                    {step.pill}
+                  </button>
+                ))}
+              </div>
+
+              <div className="lp-phase-panel">
+                <AnimatePresence mode="wait">
+                  <m.div
+                    key={activePhaseData.id}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2, ease: EASE_OUT }}
+                    className="lp-phase-grid"
+                  >
+                    <div className="lp-phase-stream">
+                      <div className="lp-label" style={{ marginBottom: 12 }}>streaming output</div>
+                      <div className="lp-section-copy" style={{ color: '#405171' }}>
+                        {phasePreview}
+                        <span className="lp-cursor" style={{ width: 8, height: 16 }} />
+                      </div>
+                    </div>
+
+                    <div className="lp-phase-meta">
+                      <div className="lp-label">metadata</div>
+                      <div className="lp-meta-row">
+                        <span>Status</span>
+                        <span className="lp-meta-value">{activePhaseData.status}</span>
+                      </div>
+                      <div className="lp-meta-row">
+                        <span>Confidence</span>
+                        <span className="lp-meta-value">{activePhaseData.confidence}</span>
+                      </div>
+                      <div className="lp-meta-row">
+                        <span>Token count</span>
+                        <span className="lp-meta-value">{activePhaseData.tokens}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                        {activePhaseData.actions.map((action) => (
+                          <span key={action} className="lp-action-chip">{action}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </m.div>
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: 16 }}>
+              {[
+                { icon: ClipboardList, title: 'Brief in', copy: 'Start with loose notes, a pasted brief, or an already-scoped idea.' },
+                { icon: Layers, title: 'Phases connected', copy: 'Outputs stay linked across requirements, planning, costs, and release prep.' },
+                { icon: Rocket, title: 'Ship-ready artifacts', copy: 'Export the work into documents, boards, and operational next steps.' },
+              ].map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <m.div
+                    key={item.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.06, duration: 0.4, ease: EASE_OUT }}
+                    style={{
+                      padding: 22,
+                      borderRadius: 22,
+                      background: 'rgba(255,255,255,0.78)',
+                      border: '1px solid rgba(16,33,63,0.08)',
+                      boxShadow: '0 18px 40px rgba(17,33,67,0.06)',
+                    }}
+                  >
+                    <div style={{ width: 42, height: 42, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255,139,75,0.16), rgba(124,116,255,0.16))', marginBottom: 16 }}>
+                      <Icon size={18} color="#4f5d83" />
+                    </div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, letterSpacing: '-0.03em', color: '#10213f', marginBottom: 8 }}>{item.title}</div>
+                    <div className="lp-section-copy" style={{ fontSize: 15 }}>{item.copy}</div>
+                  </m.div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section">
+        <div className="lp-shell">
+          <div className="lp-steps-grid">
+            {[
+              ['01', 'Write your brief', 'Bring rough notes, project goals, or stakeholder asks. The system is designed to absorb messy starting points.'],
+              ['02', 'AI builds the SDLC', 'Phases generate in sequence so requirements, planning, architecture, and delivery stay coherent together.'],
+              ['03', 'Ship with confidence', 'Export the artifacts, validate the plan, and move into execution with less translation overhead.'],
+            ].map(([num, title, copy], index) => (
+              <m.div
+                key={title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+                transition={{ delay: index * 0.06, duration: 0.4, ease: EASE_OUT }}
+                className="lp-step-card"
+              >
+                <div className="lp-step-number">{num}</div>
+                <div className="lp-step-title">{title}</div>
+                <div className="lp-section-copy">{copy}</div>
+              </m.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" style={{ paddingTop: 24 }}>
+        <div className="lp-shell">
+          <div className="lp-stats-grid">
+            <MetricCounter value={13} label="SDLC phases covered" />
+            <MetricCounter value={47} suffix="+" label="Avg. requirements generated" />
+            <MetricCounter value={3} prefix="< " label="Avg. full generation time (min)" />
+            <MetricCounter value={100} suffix="%" label="Real output, not templates" />
+          </div>
+        </div>
+      </section>
+
+      <section id="cta" className="lp-section">
+        <div className="lp-shell">
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+            transition={{ duration: 0.4, ease: EASE_OUT }}
+            className="lp-cta-panel"
+          >
+            <div className="lp-label" style={{ marginBottom: 16 }}>Ready when you are</div>
+            <div className="lp-display" style={{ fontSize: 'clamp(42px, 6vw, 72px)', margin: 0 }}>
+              Ready to ship faster?
+            </div>
+            <p className="lp-section-copy" style={{ maxWidth: 560, margin: '16px auto 28px' }}>
+              Your first project is free. Start with the landing experience, then carry the same visual confidence into the workspace.
+            </p>
+            <button className="lp-cta-pill" onClick={() => navigate('/register')}>
+              Start Building <ArrowRight size={16} />
+            </button>
+            <button
+              onClick={() => navigate('/docs')}
+              className="lp-footer-link"
+              style={{ display: 'block', margin: '18px auto 0', cursor: 'pointer' }}
+            >
+              Or explore the docs →
+            </button>
+          </m.div>
+        </div>
+      </section>
+
+      <footer className="lp-footer">
+        <div className="lp-shell">
+          <div className="lp-footer-shell">
+            <div className="lp-footer-row">
+              <AcornLogo height={30} />
+              <div className="lp-footer-links">
+                <button className="lp-footer-link" onClick={() => navigate('/docs')}>Docs</button>
+                <button className="lp-footer-link" onClick={() => window.open('https://github.com', '_blank', 'noopener,noreferrer')}>GitHub</button>
+                <button className="lp-footer-link">Privacy</button>
+                <button className="lp-footer-link">Terms</button>
+              </div>
+            </div>
+            <div className="lp-footer-row">
+              <span className="lp-footer-copy">© 2026 Acorn</span>
+              <span className="lp-footer-copy">Built with the GP2 SDLC platform</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </m.div>
   );
 };

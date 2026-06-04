@@ -497,7 +497,7 @@ export const RegisterPage: React.FC = () => {
             <Link to="/login" style={{ color: '#3d8fe0', fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>
           </p>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <Link to="/" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070', textDecoration: 'none' }}>
+            <Link to="/landing" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070', textDecoration: 'none' }}>
               ← Back to Home
             </Link>
           </div>

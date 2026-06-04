@@ -33,6 +33,14 @@ import { UxFlowPage } from './pages/UxFlowPage';
 import { PageTransition } from './components/PageTransition';
 import DemoMode from './components/DemoMode';
 
+// Show splash once per session, then land on /landing
+const RootRoute: React.FC = () => {
+  const seen = sessionStorage.getItem('acorn_splash_seen');
+  if (seen) return <Navigate to="/landing" replace />;
+  sessionStorage.setItem('acorn_splash_seen', '1');
+  return <SplashScreen />;
+};
+
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, checkAuth } = useAuthStore();
   const [isChecking, setIsChecking] = React.useState(true);
@@ -65,7 +73,8 @@ function App() {
         <PageTransition>
         <Routes>
         <Route path="/splash" element={<SplashScreen />} />
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
@@ -239,7 +248,7 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/landing" replace />} />
         </Routes>
         </PageTransition>
         <DemoMode />

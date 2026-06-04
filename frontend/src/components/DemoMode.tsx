@@ -13,7 +13,7 @@ interface DemoStep {
 
 function buildSteps(projectId: string): DemoStep[] {
   const pub: DemoStep[] = [
-    { path: '/',         label: 'Landing',  dwell: 5000 },
+    { path: '/landing',  label: 'Landing',  dwell: 5000 },
     { path: '/login',    label: 'Sign In',  dwell: 4000 },
     { path: '/register', label: 'Register', dwell: 4000 },
   ];

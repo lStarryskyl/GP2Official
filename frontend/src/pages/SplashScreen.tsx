@@ -161,7 +161,7 @@ export const SplashScreen: React.FC = () => {
     const totalDuration = PIPELINE.length * 280 + 1600;
     const t = setTimeout(() => {
       setExiting(true);
-      setTimeout(() => navigate('/'), 450);
+      setTimeout(() => navigate('/landing'), 450);
     }, totalDuration);
     return () => clearTimeout(t);
   }, [navigate]);

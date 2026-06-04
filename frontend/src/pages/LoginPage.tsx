@@ -344,7 +344,7 @@ const LoginPage: React.FC = () => {
 
             <m.div variants={fieldVariants} style={{ textAlign: 'center', marginTop: 12 }}>
               <Link
-                to="/"
+                to="/landing"
                 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4a6070', textDecoration: 'none' }}
               >
                 ← Back to Home

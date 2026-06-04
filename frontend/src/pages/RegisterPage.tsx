@@ -91,11 +91,25 @@ const OrbitalCanvas: React.FC = () => {
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(cx, cy, R1 * 0.4, 0, Math.PI * 2); ctx.fill();
 
       nodes.forEach(n => {
-        ctx.beginPath(); ctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = n.color + '99'; ctx.fill();
-        ctx.strokeStyle = n.color + 'cc'; ctx.lineWidth = 1.2; ctx.stroke();
-        ctx.font = "10px 'DM Sans', sans-serif"; ctx.fillStyle = 'rgba(232,237,245,0.5)';
-        ctx.textAlign = 'center'; ctx.fillText(n.label, n.x, n.y - 10);
+        const label = n.label;
+        ctx.font = "600 11px 'DM Sans', sans-serif";
+        const tw = ctx.measureText(label).width;
+        const pw = tw + 20; const ph = 22;
+        const px = n.x - pw / 2; const py = n.y - ph / 2; const r = ph / 2;
+        ctx.beginPath();
+        ctx.moveTo(px + r, py); ctx.lineTo(px + pw - r, py);
+        ctx.arcTo(px + pw, py, px + pw, py + r, r);
+        ctx.lineTo(px + pw, py + ph - r);
+        ctx.arcTo(px + pw, py + ph, px + pw - r, py + ph, r);
+        ctx.lineTo(px + r, py + ph);
+        ctx.arcTo(px, py + ph, px, py + ph - r, r);
+        ctx.lineTo(px, py + r); ctx.arcTo(px, py, px + r, py, r);
+        ctx.closePath();
+        ctx.fillStyle = n.color + '22'; ctx.fill();
+        ctx.strokeStyle = n.color + '88'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = 'rgba(232,237,245,0.85)';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, n.x, n.y); ctx.textBaseline = 'alphabetic';
       });
 
       rafRef.current = requestAnimationFrame(draw);

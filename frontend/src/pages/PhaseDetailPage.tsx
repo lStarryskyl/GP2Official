@@ -155,6 +155,7 @@ export const PhaseDetailPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const generationInFlightRef = useRef(false);
   const [pipelineStep, setPipelineStep] = useState(0);
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -999,11 +1000,16 @@ export const PhaseDetailPage: React.FC = () => {
 
   const handleGenerate = async (prompt?: string) => {
     if (!id || !phaseId) return;
+    if (generationInFlightRef.current) return;
     if (!canTriggerAi) {
       setError('Your role cannot run AI generations. Ask a Program Manager for elevated access.');
       return;
     }
+
+    generationInFlightRef.current = true;
     setIsGenerating(true);
+    setIsStreaming(false);
+    setStreamingText('');
     setError(null);
 
     try {
@@ -1064,10 +1070,9 @@ export const PhaseDetailPage: React.FC = () => {
         userPrompt = `${userPrompt}\n${scenarioSummary}`;
       }
 
-      // Try streaming first for real-time feedback
-      await generateWithStreaming(phaseId, userPrompt);
-
-      // After streaming completes, fetch final structured data
+      // Use the authenticated API client as the single source of truth for generation.
+      // The previous EventSource-first path could not send Authorization headers, silently
+      // failed on first touch, and then triggered a second generation request.
       const response = await api.generatePhase(id, phaseId, userPrompt);
       setPhaseStatus(response.phase_status);
       const updatedArtifacts = await api.getArtifacts(id);
@@ -1520,10 +1525,14 @@ export const PhaseDetailPage: React.FC = () => {
       }
       if (prompt) setInput(''); // Clear input if prompt was provided externally
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Failed to generate phase output';
+      const msg = err.code === 'ECONNABORTED'
+        ? 'Generation is taking longer than expected. Please try again in a moment.'
+        : err.response?.data?.detail || 'Failed to generate phase output';
       setError(msg);
       toastError(msg);
     } finally {
+      generationInFlightRef.current = false;
+      setIsStreaming(false);
       setIsGenerating(false);
     }
   };

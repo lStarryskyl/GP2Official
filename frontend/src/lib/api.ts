@@ -574,7 +574,11 @@ class ApiClient {
     phase: string,
     prompt: string
   ): Promise<PhaseGenerateResponse> {
-    const response = await this.client.post(`/projects/${projectId}/phases/${phase}/generate/`, { prompt });
+    const response = await this.client.post(
+      `/projects/${projectId}/phases/${phase}/generate/`,
+      { prompt },
+      { timeout: 180000 }
+    );
     return response.data;
   }
 

@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { Layout } from '@/components/Layout';
@@ -2193,17 +2193,6 @@ export const PhaseDetailPage: React.FC = () => {
                     projectDescription={project.description || ''}
                   />
                 </div>
-              )}
-
-              {/* AI Suggestions Panel */}
-              {phaseId && project && (
-                <AISuggestionsPanel
-                  projectId={id || ''}
-                  phase={phaseId}
-                  phaseContent={phaseMarkdown}
-                  projectName={project.name}
-                  projectDescription={project.description || ''}
-                />
               )}
 
               {/* Phase Content */}
